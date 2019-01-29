@@ -301,13 +301,6 @@ pair<string,string> split_once(string delimited, char delimiter) {
     return { delimited.substr(0, pos), delimited.substr(pos+1) };
 }
 
-
-//\[selectivity\] is a floating point, e.g.:
-//- 0.5 (means 50% selectivity)
-//- 1e-2 (means 1% selectivity)
-//- 1e-7 (means 0.00001% selectivity)
-
-
 int main(int argc, char** argv) {
     string COLUMN_FILE_PATH , QUERIES_FILE_PATH , ANSWER_FILE_PATH;
     float SELECTIVITY_PERCENTAGE;

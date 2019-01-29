@@ -7,7 +7,7 @@
 #include "../include/util/file_manager.h"
 
 using namespace std;
-int64_t COLUMN_SIZE;
+int COLUMN_SIZE;
 string COLUMN_FILE_PATH;
 
 int generate_column(int N){

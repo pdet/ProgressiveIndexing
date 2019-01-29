@@ -28,5 +28,5 @@ add_executable(generate_column
 add_executable(generate_workload
         src/util/file_manager.cpp src/generate/generate_workload.cpp)
 
-#add_executable(main
-#        src/data/file_manager.cpp src/cracking/avl_tree.cpp src/util.cpp src/cracking/standard_cracking.cpp src/main.cpp)
+add_executable(main
+        src/util/file_manager.cpp src/util/binary_search.cpp src/full_index/hybrid_radix_insert_sort.cpp src/full_index/bulkloading_bp_tree.cpp src/main.cpp)

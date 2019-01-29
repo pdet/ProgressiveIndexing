@@ -26,6 +26,9 @@ SkewZoomOutAlt=14
 Periodic=15
 Mixed=16
 
+#Setting Values For Different Algorithms
+FullScan = 0
+FullIndex = 1
 COLUMN_SIZE_LIST = [100000000]#[100000000,1000000000]
 ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
                      ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
@@ -79,8 +82,64 @@ def generate_query(NUM_QUERIES,COLUMN_SIZE, COLUMN_PATH, QUERY_PATH,ANSWER_PATH,
         exit()
 
 #Generate Query Patterns
-for column_size in COLUMN_SIZE_LIST:
-    for query in ALL_WORKLOAD_LIST:
-        q_path = query_path(experiment_path,QUERY_SELECTIVITY,query)
-        a_path = answer_path(experiment_path,QUERY_SELECTIVITY,query)
-        generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,QUERY_SELECTIVITY,query)
+# for column_size in COLUMN_SIZE_LIST:
+#     for query in ALL_WORKLOAD_LIST:
+#         q_path = query_path(experiment_path,QUERY_SELECTIVITY,query)
+#         a_path = answer_path(experiment_path,QUERY_SELECTIVITY,query)
+#         generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,QUERY_SELECTIVITY,query)
+
+def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS=True):
+    COLUMN_PATH = column_path(COLUMN_SIZE)
+    QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
+             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
+             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)
+    print(codestr)
+    if CORRECTNESS:
+        if os.system(codestr) != 0:
+            print("Failed!")
+    else:
+        result = os.popen(codestr).read()
+        print(result)
+    # else:
+    #     getFolderToSaveExperiments(COLUMN_PATTERN+"_"+QUERY_PATTERN+ "/")
+    #     repetition =1
+    #     result = os.popen(codestr).read()
+    #     file = create_output()
+    #     generate_output(file,result,repetition,QUERY_PATTERN,COLUMN_PATTERN,PIVOT_TYPE,PIVOT_SELECTION_TYPE,PIECE_TO_CRACK_TYPE)
+
+def run_all_workloads(ALGORITHM,CORRECTNESS=True):
+    for column_size in COLUMN_SIZE_LIST:
+        for query in ALL_WORKLOAD_LIST:
+            run_experiment(column_size,query,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS)
+
+
+def test_correctness():
+    ALGORITHM_LIST = [FullScan,FullIndex]
+    for algorithm in ALGORITHM_LIST:
+        run_all_workloads(algorithm)
+
+test_correctness()
+
+
+# def run():
+#     PIVOT_TYPES_LIST = [PIVOT_EXACT_PREDICATE,PIVOT_WITHIN_QUERY_PREDICATE,PIVOT_WITHIN_QUERY,PIVOT_WITHIN_COLUMN]
+#     PIVOT_SELECTION_LIST = [RANDOM_P,MEDIAN,APPROXIMATE_MEDIAN]
+#     PIECE_TO_CRACK_LIST = [ANY_PIECE,BIGGEST_PIECE]
+#     for pivot_type in PIVOT_TYPES_LIST:
+#         if pivot_type == PIVOT_EXACT_PREDICATE:
+#             run_all_workloads(pivot_type,CORRECTNESS = False)
+#         if pivot_type == PIVOT_WITHIN_QUERY_PREDICATE:
+#             for pivot_selection in PIVOT_SELECTION_LIST:
+#                 run_all_workloads(pivot_type,pivot_selection,CORRECTNESS = False)
+#         if pivot_type == PIVOT_WITHIN_QUERY:
+#             for pivot_selection in PIVOT_SELECTION_LIST:
+#                 for piece_to_crack in PIECE_TO_CRACK_LIST:
+#                     run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
+#         if pivot_type == PIVOT_WITHIN_COLUMN:
+#             for pivot_selection in PIVOT_SELECTION_LIST:
+#                 for piece_to_crack in PIECE_TO_CRACK_LIST:
+#                     run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
+#
+# run()
