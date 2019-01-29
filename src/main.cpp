@@ -18,17 +18,22 @@
 #include "include/util/binary_search.h"
 #include "include/full_index/hybrid_radix_insert_sort.h"
 #include "include/full_index/bulkloading_bp_tree.h"
+#include "include/cracking/standard_cracking.h"
+#include "include/cracking/stochastic_cracking.h"
+#include "include/cracking/progressive_stochastic_cracking.h"
 
 
 #pragma clang diagnostic ignored "-Wformat"
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
-int64_t  COLUMN_SIZE,NUM_QUERIES;
+int64_t  COLUMN_SIZE,NUM_QUERIES,L2_SIZE;
 int ALGORITHM;
+double ALLOWED_SWAPS_PERCENTAGE;
+int64_t num_partitions = 0;
+#define DEBUG
 
 void full_scan(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time) {
     chrono::time_point<chrono::system_clock> start, end;
-    chrono::duration<double> elapsed_seconds;
     for (size_t i = 0; i < NUM_QUERIES; i++) {
         start = chrono::system_clock::now();
         int64_t sum=0;
@@ -37,7 +42,6 @@ void full_scan(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answer
                 sum += column.data[j];
         end = chrono::system_clock::now();
         time[i] += chrono::duration<double>(end - start).count();
-//        fprintf(stderr, "Query %zu\n", i);
         if (sum != answers[i])
             fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], sum );
     }
@@ -85,6 +89,218 @@ void full_index(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answe
     free(T);
 }
 
+void standard_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
+    IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    //Creating Cracker Column
+    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+        crackercolumn[i].m_key = column.data[i];
+        crackercolumn[i].m_rowId = i;
+    }
+    //Initialitizing Cracker Index
+    AvlTree T = NULL;
+    end = chrono::system_clock::now();
+    time[0] += chrono::duration<double>(end - start).count();
+
+    for (size_t i = 0; i < NUM_QUERIES; i++) {
+        start = chrono::system_clock::now();
+        //Partitioning Column and Inserting in Cracker Indexing
+        T = standardCracking(crackercolumn , COLUMN_SIZE, T, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]+1);
+        //Querying
+        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[i], (AvlTree)T, COLUMN_SIZE-1);
+        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[i]+1, (AvlTree)T, COLUMN_SIZE-1);
+        int offset1 = p1->first;
+        int offset2 = p2->second;
+        free(p1);
+        free(p2);
+        int64_t sum = scanQuery(crackercolumn, offset1, offset2);
+        end = chrono::system_clock::now();
+        time[i] += chrono::duration<double>(end - start).count();
+        if (sum != answers[i])
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], sum );
+    }
+    free(crackercolumn);
+}
+
+int64_t queryStochastic(IndexEntry *crackercolumn,int limit){
+    int offset1 = 0;
+    int offset2 = limit;
+    return scanQuery(crackercolumn, offset1, offset2);
+
+}
+void stochastic_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
+    IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    //Creating Cracker Column
+    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+        crackercolumn[i].m_key = column.data[i];
+        crackercolumn[i].m_rowId = i;
+    }
+    //Initialitizing Cracker Index
+    AvlTree T = NULL;
+    //Intializing Query Output
+    QueryOutput *qo = (QueryOutput*) malloc(sizeof(struct QueryOutput));
+    qo->sum = 0;
+    end = chrono::system_clock::now();
+    time[0] += chrono::duration<double>(end - start).count();
+
+    for (size_t i = 0; i < NUM_QUERIES; i++) {
+        start = chrono::system_clock::now();
+        qo->view1 = NULL;
+        qo->view_size1 = 0;
+        qo->view2 = NULL;
+        qo->view_size2 = 0;
+        qo->middlePart = NULL;
+        qo->middlePart_size = 0;
+        qo->sum = 0;
+
+
+        //Partitioning Column and Inserting in Cracker Indexing
+        T = stochasticCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[i],
+                               rangeQueries.rightpredicate[i]+1, qo);
+
+        //Querying
+        if(qo->view1) {
+            qo->sum += queryStochastic(qo->view1, qo->view_size1-1);
+        }
+        if(qo->middlePart_size > 0) {
+            qo->sum += queryStochastic(qo->middlePart, qo->middlePart_size-1);
+        }
+        if(qo->view2) {
+            qo->sum += queryStochastic(qo->view2,qo->view_size2-1);
+        }
+        if(qo->view1) {
+            free(qo->view1);
+            qo->view1 = NULL;
+        }
+        if(qo->view2) {
+            free(qo->view2);
+            qo->view2 = NULL;
+        }
+        end = chrono::system_clock::now();
+        time[i] += chrono::duration<double>(end - start).count();
+        if (qo->sum != answers[i])
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], qo->sum );
+    }
+    free(crackercolumn);
+}
+
+void progressive_stochastic_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
+    IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    //Creating Cracker Column
+    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+        crackercolumn[i].m_key = column.data[i];
+        crackercolumn[i].m_rowId = i;
+    }
+    //Initialitizing Cracker Index
+    AvlTree T = NULL;
+    //Intializing Query Output
+    QueryOutput *qo = (QueryOutput*) malloc(sizeof(struct QueryOutput));
+    qo->sum = 0;
+    end = chrono::system_clock::now();
+    time[0] += chrono::duration<double>(end - start).count();
+    for (size_t i = 0; i < NUM_QUERIES; i++) {
+        start = chrono::system_clock::now();
+        qo->view1 = NULL;
+        qo->view_size1 = 0;
+        qo->view2 = NULL;
+        qo->view_size2 = 0;
+        qo->middlePart = NULL;
+        qo->middlePart_size = 0;
+        qo->sum = 0;
+        //Partitioning Column and Inserting in Cracker Indexing
+        T = progressiveStochasticCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[i],
+                                          rangeQueries.rightpredicate[i]+1, qo);
+
+        //Querying
+        if(qo->view1) {
+            qo->sum += queryStochastic(qo->view1, qo->view_size1-1);
+        }
+        if(qo->middlePart_size > 0) {
+            qo->sum += queryStochastic(qo->middlePart, qo->middlePart_size-1);
+        }
+        if(qo->view2) {
+            qo->sum += queryStochastic(qo->view2,qo->view_size2-1);
+        }
+        if(qo->view1) {
+            free(qo->view1);
+            qo->view1 = NULL;
+        }
+        if(qo->view2) {
+            free(qo->view2);
+            qo->view2 = NULL;
+        }
+        end = chrono::system_clock::now();
+        time[i] += chrono::duration<double>(end - start).count();
+        if (qo->sum != answers[i])
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], qo->sum );
+
+    }
+    free(crackercolumn);
+
+}
+
+void generate_equal_size_partitions_order(vector<int64_t> * partitions, int64_t min, int64_t max){
+    int64_t medium = (max+min)/2;
+    partitions->push_back(medium);
+    num_partitions++;
+    if (num_partitions > 999)
+        return;
+    generate_equal_size_partitions_order(partitions , min, medium);
+    generate_equal_size_partitions_order(partitions , medium, max);
+
+}
+
+
+void coarse_granular_index(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+    chrono::time_point<chrono::system_clock> start, middle, end;
+    chrono::duration<double> elapsed_seconds;
+    start = chrono::system_clock::now();
+    vector<int64_t>  partitions;
+    generate_equal_size_partitions_order(&partitions,0,COLUMN_SIZE);
+    IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    //Creating Cracker Column
+    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+        crackercolumn[i].m_key = column.data[i];
+        crackercolumn[i].m_rowId = i;
+    }
+    //Initialitizing Cracker Index
+    AvlTree T = NULL;
+    // Running 1000 - equal sized partitions
+    for (size_t i = 0 ; i < 1000; i ++){
+        T = standardCracking(crackercolumn , COLUMN_SIZE, T, partitions[i], partitions[i]);
+    }
+
+    end = chrono::system_clock::now();
+    time[0] += chrono::duration<double>(end - start).count();
+
+    for (size_t q = 0; q < NUM_QUERIES; q++) {
+        start = chrono::system_clock::now();
+        // crack
+        T = standardCracking(crackercolumn , COLUMN_SIZE, T, rangeQueries.leftpredicate[q], rangeQueries.rightpredicate[q]+1);
+        // query
+        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[q], (AvlTree)T, COLUMN_SIZE-1);
+        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[q]+1, (AvlTree)T, COLUMN_SIZE-1);
+        int64_t offset1 = p1->first;
+        int64_t offset2 = p2->second;
+        free(p1);
+        free(p2);
+        int64_t sum = scanQuery(crackercolumn, offset1, offset2);
+
+        end = chrono::system_clock::now();
+        time[q] += chrono::duration<double>(end - start).count();
+        if (sum != answers[q])
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", q,answers[q], sum );
+
+    }
+}
+
+
+
 void print_help(int argc, char** argv) {
     fprintf(stderr, "Unrecognized command line option.\n");
     fprintf(stderr, "Usage: %s [args]\n", argv[0]);
@@ -94,6 +310,7 @@ void print_help(int argc, char** argv) {
     fprintf(stderr, "   --num-queries\n");
     fprintf(stderr, "   --column-size\n");
     fprintf(stderr, "   --algorithm\n");
+    fprintf(stderr, "   --progressive-cracking-swap\n");
 
 }
 
@@ -106,7 +323,8 @@ int main(int argc, char** argv) {
     COLUMN_FILE_PATH = "column";
     QUERIES_FILE_PATH = "query";
     ANSWER_FILE_PATH = "answer";
-
+    L2_SIZE = 16000; // 320000 64 bit integers
+    ALLOWED_SWAPS_PERCENTAGE = 0.1;
     NUM_QUERIES = 1000;
     COLUMN_SIZE = 10000000;
     ALGORITHM = 0;
@@ -134,16 +352,14 @@ int main(int argc, char** argv) {
         } else if (arg_name == "algorithm") {
             ALGORITHM = atoi(arg_value.c_str());
         }
+        else if (arg_name == "progressive-cracking-swap") {
+            ALLOWED_SWAPS_PERCENTAGE = atof(arg_value.c_str());
+        }
         else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
     }
-
-    chrono::time_point<chrono::system_clock> start, middle, end;
-    chrono::duration<double> elapsed_seconds;
-    start = chrono::system_clock::now();
-
     int total;
 
     RangeQuery rangequeries;
@@ -154,12 +370,30 @@ int main(int argc, char** argv) {
 
     vector<int64_t> answers;
     load_answers(&answers,ANSWER_FILE_PATH,NUM_QUERIES);
+#ifndef DEBUG
+    repetition = 5;
+#endif
 
     vector<double> times(NUM_QUERIES);
     for (size_t i = 0; i < repetition; i ++){
         switch(ALGORITHM){
             case 0:
                 full_scan(c, rangequeries, answers, times);
+                break;
+            case 1:
+                full_index(c, rangequeries, answers, times);
+                break;
+            case 2:
+                standard_cracking(c, rangequeries, answers, times);
+                break;
+            case 3:
+                stochastic_cracking(c, rangequeries, answers, times);
+                break;
+            case 4:
+                progressive_stochastic_cracking(c, rangequeries, answers, times);
+                break;
+            case 5:
+                coarse_granular_index(c, rangequeries, answers, times);
                 break;
         }
     }

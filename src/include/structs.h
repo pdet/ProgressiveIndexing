@@ -1,5 +1,5 @@
-#ifndef _PROGIDX_STRUCTS_H_
-#define _PROGIDX_STRUCTS_H_
+#ifndef PROGRESSIVEINDEXING_STRUCTS_H_
+#define PROGRESSIVEINDEXING_STRUCTS_H_
 
 #pragma once
 
@@ -83,4 +83,17 @@ struct AvlNode
     AvlTree  Right;
     int64_t      Height;
 };
+
+// Used for stochastic cracking to check its views
+struct QueryOutput{
+    int64_t sum;					// stores the sum result
+    IndexEntry *view1;					// stores a materialized view of the lower part
+    int64_t view_size1;			// stores the size of the view of the lower part
+    IndexEntry *middlePart;				// if there is a middle part, store the address
+    int64_t middlePart_size;		// and the corresponding size here
+    IndexEntry *view2;					// stores a materialized view of the upper part
+    int64_t view_size2;			// stores the size of the view of the upper part
+};
+
+
 #endif

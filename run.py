@@ -29,12 +29,18 @@ Mixed=16
 #Setting Values For Different Algorithms
 FullScan = 0
 FullIndex = 1
+StandardCracking = 2
+StochasticCracking = 3
+ProgressiveStochasticCracking=4
+CoarseGranularIndex=5
+
+
 COLUMN_SIZE_LIST = [100000000]#[100000000,1000000000]
+SWAP_PG_CRACKING_LIST = [0.01,0.1]
 ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
                      ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
 NUM_QUERIES = 1000
 QUERY_SELECTIVITY = 0.01
-NUMBER_OF_REPETITIONS = 10
 
 PATH = ''
 
@@ -88,7 +94,7 @@ def generate_query(NUM_QUERIES,COLUMN_SIZE, COLUMN_PATH, QUERY_PATH,ANSWER_PATH,
 #         a_path = answer_path(experiment_path,QUERY_SELECTIVITY,query)
 #         generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,QUERY_SELECTIVITY,query)
 
-def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS=True):
+def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM):
     COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
@@ -96,27 +102,22 @@ def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECT
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)
     print(codestr)
-    if CORRECTNESS:
-        if os.system(codestr) != 0:
-            print("Failed!")
-    else:
-        result = os.popen(codestr).read()
-        print(result)
-    # else:
+    result = os.popen(codestr).read()
+    print(result)
     #     getFolderToSaveExperiments(COLUMN_PATTERN+"_"+QUERY_PATTERN+ "/")
     #     repetition =1
     #     result = os.popen(codestr).read()
     #     file = create_output()
     #     generate_output(file,result,repetition,QUERY_PATTERN,COLUMN_PATTERN,PIVOT_TYPE,PIVOT_SELECTION_TYPE,PIECE_TO_CRACK_TYPE)
 
-def run_all_workloads(ALGORITHM,CORRECTNESS=True):
+def run_all_workloads(ALGORITHM):
     for column_size in COLUMN_SIZE_LIST:
         for query in ALL_WORKLOAD_LIST:
-            run_experiment(column_size,query,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS)
+            run_experiment(column_size,query,QUERY_SELECTIVITY,ALGORITHM)
 
 
 def test_correctness():
-    ALGORITHM_LIST = [FullScan,FullIndex]
+    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
     for algorithm in ALGORITHM_LIST:
         run_all_workloads(algorithm)
 

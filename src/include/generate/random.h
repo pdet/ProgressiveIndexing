@@ -1,5 +1,5 @@
-#ifndef _PROGIDX_RANDOM_H_
-#define _PROGIDX_RANDOM_H_
+#ifndef PROGRESSIVEINDEXING_RANDOM_H_
+#define PROGRESSIVEINDEXING_RANDOM_H_
 
 #include <assert.h>
 

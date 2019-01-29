@@ -1,5 +1,5 @@
-#ifndef _PROGIDX_FILE_MANAGER_H_
-#define _PROGIDX_FILE_MANAGER_H_
+#ifndef PROGRESSIVEINDEXING_FILE_MANAGER_H_
+#define PROGRESSIVEINDEXING_FILE_MANAGER_H_
 
 #include "../structs.h"
 #include <iostream>

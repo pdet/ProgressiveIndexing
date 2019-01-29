@@ -29,4 +29,7 @@ add_executable(generate_workload
         src/util/file_manager.cpp src/generate/generate_workload.cpp)
 
 add_executable(main
-        src/util/file_manager.cpp src/util/binary_search.cpp src/full_index/hybrid_radix_insert_sort.cpp src/full_index/bulkloading_bp_tree.cpp src/main.cpp)
+        src/util/file_manager.cpp src/util/binary_search.cpp src/full_index/hybrid_radix_insert_sort.cpp
+        src/full_index/bulkloading_bp_tree.cpp src/util/avl_tree.cpp src/cracking/cracking_util.cpp
+        src/cracking/standard_cracking.cpp src/cracking/stochastic_cracking.cpp
+        src/cracking/progressive_stochastic_cracking.cpp src/main.cpp)

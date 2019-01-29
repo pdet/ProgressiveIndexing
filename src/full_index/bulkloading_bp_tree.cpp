@@ -2,7 +2,8 @@
 #include "../include/util/binary_search.h"
 #include <cstring>
 
-int64_t BPTREE_ELEMENTSPERNODE, COLUMN_SIZE3;
+int64_t BPTREE_ELEMENTSPERNODE = 16384;
+extern int64_t COLUMN_SIZE;
 int64_t binary_search_pure(colKey_t *c, int64_t key, int64_t lower, int64_t upper, bool* foundKey) {
 
     *foundKey = false;
@@ -163,7 +164,7 @@ rowId_t LeafNode::getLT(const colKey_t& key) const {
         }
         else {
             // the key was not found and we are the end, so return the data size
-            return COLUMN_SIZE3;
+            return COLUMN_SIZE;
         }
     }
 }
