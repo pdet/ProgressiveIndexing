@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+
+Makefile
+ProgressiveIndexing.cbp
+answer
+cmake-build-debug/
+cmake_install.cmake
+generate_column
+generate_workload
+generated_data/
+query
+.idea/
+CMakeCache.txt
+CMakeFiles/
