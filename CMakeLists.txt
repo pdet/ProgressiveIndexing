@@ -33,4 +33,8 @@ add_executable(main
         src/full_index/bulkloading_bp_tree.cpp src/util/avl_tree.cpp src/cracking/cracking_util.cpp
         src/cracking/standard_cracking.cpp src/cracking/stochastic_cracking.cpp
         src/cracking/progressive_stochastic_cracking.cpp src/progressive/progressive_quicksort.cpp
-        src/progressive/progressive_cracking.cpp src/main.cpp)
+        src/progressive/progressive_cracking.cpp src/progressive/progressive_cracking_cost_model.cpp
+        src/main.cpp)
+
+add_executable(measure
+        scripts/cost_model/measure.cpp)

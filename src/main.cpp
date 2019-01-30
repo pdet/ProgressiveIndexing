@@ -374,6 +374,56 @@ void progressive_cracking(Column& column, RangeQuery& rangeQueries, vector<int64
     }
 }
 
+void progressive_cracking_cost_model(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& times){
+    chrono::time_point<chrono::system_clock> start, end;
+    BulkBPTree* T ;
+    int64_t sum = 0;
+    bool converged = false;
+    // The target interactivity threshold, scale for data size
+    double interactivity_threshold = 0.5 * (column.data.size() / 100000000.0);
+
+    double estimated_time = 0;
+    for(int i = 0; i < NUM_QUERIES; i++) {
+        int64_t low = min(rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]);
+        int64_t high = max(rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]);
+
+        size_t ITERATIONS = 5;
+
+        double estimated_delta = 0.5;
+        double offset = estimated_delta / 2;
+        for(size_t j = 0; j < ITERATIONS; j++) {
+            estimated_time = get_estimated_time_cracking(column, low, high, estimated_delta);
+            if (estimated_time > interactivity_threshold) {
+                estimated_delta -= offset;
+            } else {
+                estimated_delta += offset;
+            }
+            offset /= 2;
+        }
+        ResultStruct results;
+        start = chrono::system_clock::now();
+        if (column.converged) {
+            int64_t offset1 = (T)->gte(low);
+            int64_t offset2 = (T)->lte(high);
+            sum = scanQuery(column.final_data, offset1, offset2);
+        } else {
+            results = range_query_incremental_cracking(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], estimated_delta);
+            sum = results.sum;
+        }
+        end = chrono::system_clock::now();
+        if (sum != answers[i]) {
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
+        }
+        // now interpolate the real delta
+        times[i] += chrono::duration<double>(end - start).count();
+        if (!converged && column.converged) {
+            converged = true;
+            cout << "CONVERGED:" << i << "\n";
+            T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
+        }
+    }
+}
+
 
 
 
@@ -480,6 +530,10 @@ int main(int argc, char** argv) {
                 progressive_quicksort(c, rangequeries, answers, times);
             case 7:
                 progressive_cracking(c, rangequeries, answers, times);
+//            case 8:
+//                progressive_quicksort_cost_model();
+            case 9:
+                progressive_cracking_cost_model(c, rangequeries, answers, times);
         }
     }
 //#ifndef DEBUG

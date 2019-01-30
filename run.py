@@ -33,7 +33,8 @@ StandardCracking = 2
 StochasticCracking = 3
 ProgressiveStochasticCracking=4
 CoarseGranularIndex=5
-
+ProgressiveQuicksort=6
+ProgressiveCracking=7
 
 COLUMN_SIZE_LIST = [100000000]#[100000000,1000000000]
 SWAP_PG_CRACKING_LIST = [0.01,0.1]
@@ -44,6 +45,9 @@ QUERY_SELECTIVITY = 0.01
 
 PATH = ''
 
+
+print("Generating Cost Model Constants")
+os.system("python scripts/cost_model/generate_constants.py")
 
 print("Compiling")
 os.environ['OPT'] = 'true'
@@ -135,12 +139,12 @@ test_correctness()
 #             for pivot_selection in PIVOT_SELECTION_LIST:
 #                 run_all_workloads(pivot_type,pivot_selection,CORRECTNESS = False)
 #         if pivot_type == PIVOT_WITHIN_QUERY:
-#             for pivot_selection in PIVOT_SELECTION_LIST:
-#                 for piece_to_crack in PIECE_TO_CRACK_LIST:
-#                     run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
-#         if pivot_type == PIVOT_WITHIN_COLUMN:
-#             for pivot_selection in PIVOT_SELECTION_LIST:
-#                 for piece_to_crack in PIECE_TO_CRACK_LIST:
-#                     run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
-#
-# run()
+            for pivot_selection in PIVOT_SELECTION_LIST:
+                for piece_to_crack in PIECE_TO_CRACK_LIST:
+                    run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
+        if pivot_type == PIVOT_WITHIN_COLUMN:
+            for pivot_selection in PIVOT_SELECTION_LIST:
+                for piece_to_crack in PIECE_TO_CRACK_LIST:
+                    run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
+
+run()

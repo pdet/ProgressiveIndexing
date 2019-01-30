@@ -44,3 +44,5 @@ query
 CMakeCache.txt
 CMakeFiles/
 main
+measure
+*DS_Store*
