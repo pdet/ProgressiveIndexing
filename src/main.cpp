@@ -21,6 +21,7 @@
 #include "include/cracking/standard_cracking.h"
 #include "include/cracking/stochastic_cracking.h"
 #include "include/cracking/progressive_stochastic_cracking.h"
+#include "include/progressive/incremental.h"
 
 
 #pragma clang diagnostic ignored "-Wformat"
@@ -30,6 +31,8 @@ int64_t  COLUMN_SIZE,NUM_QUERIES,L2_SIZE;
 int ALGORITHM;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
+double DELTA;
+
 #define DEBUG
 
 void full_scan(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time) {
@@ -299,6 +302,79 @@ void coarse_granular_index(Column& column, RangeQuery& rangeQueries, vector<int6
     }
 }
 
+int64_t scanQuery(int64_t *c, int64_t from, int64_t to){
+    int64_t  sum = 0;
+    for(int64_t i = from;i<=to;i++) {
+        sum += c[i];
+    }
+
+    return sum;
+}
+
+void *fullIndex(int64_t* c, int n){
+    void *I = build_bptree_bulk_int(c, n);
+    return I;
+}
+
+void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+    chrono::time_point<chrono::system_clock> start, end;
+    BulkBPTree* T ;
+    int64_t sum = 0;
+    bool converged = false;
+    for(int i = 0; i < NUM_QUERIES; i++) {
+        start = chrono::system_clock::now();
+        ResultStruct results;
+        if (column.converged) {
+            int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[i]);
+            int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[i]);
+            sum = scanQuery(column.final_data, offset1, offset2);
+        } else {
+            results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], DELTA);
+            sum = results.sum;
+        }
+
+        end = chrono::system_clock::now();
+        if (sum != answers[i])
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
+        time[i] += chrono::duration<double>(end - start).count();
+        if (!converged && column.converged) {
+            converged = true;
+            cout << "CONVERGED:" << i << "\n";
+            T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
+        }
+    }
+}
+
+void progressive_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+    chrono::time_point<chrono::system_clock> start, end;
+    BulkBPTree* T ;
+    int64_t sum = 0;
+    bool converged = false;
+    for(int i = 0; i < NUM_QUERIES; i++) {
+        start = chrono::system_clock::now();
+        ResultStruct results;
+        if (column.converged) {
+            int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[i]);
+            int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[i]);
+            sum = scanQuery(column.final_data, offset1, offset2);
+        } else {
+            results = range_query_incremental_cracking(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], DELTA);
+            sum = results.sum;
+        }
+
+        end = chrono::system_clock::now();
+        if (sum != answers[i])
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
+        time[i] += chrono::duration<double>(end - start).count();
+        if (!converged && column.converged) {
+            converged = true;
+            cout << "CONVERGED:" << i << "\n";
+            T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
+        }
+    }
+}
+
+
 
 
 void print_help(int argc, char** argv) {
@@ -311,6 +387,8 @@ void print_help(int argc, char** argv) {
     fprintf(stderr, "   --column-size\n");
     fprintf(stderr, "   --algorithm\n");
     fprintf(stderr, "   --progressive-cracking-swap\n");
+    fprintf(stderr, "   --delta\n");
+
 
 }
 
@@ -328,6 +406,8 @@ int main(int argc, char** argv) {
     NUM_QUERIES = 1000;
     COLUMN_SIZE = 10000000;
     ALGORITHM = 0;
+    DELTA = 0.1;
+
     int repetition = 1;
 
     for(int i = 1; i < argc; i++) {
@@ -351,9 +431,10 @@ int main(int argc, char** argv) {
             COLUMN_SIZE = atoi(arg_value.c_str());
         } else if (arg_name == "algorithm") {
             ALGORITHM = atoi(arg_value.c_str());
-        }
-        else if (arg_name == "progressive-cracking-swap") {
+        } else if (arg_name == "progressive-cracking-swap") {
             ALLOWED_SWAPS_PERCENTAGE = atof(arg_value.c_str());
+        } else if (arg_name == "delta") {
+            DELTA = atof(arg_value.c_str());
         }
         else {
             print_help(argc, argv);
@@ -395,12 +476,16 @@ int main(int argc, char** argv) {
             case 5:
                 coarse_granular_index(c, rangequeries, answers, times);
                 break;
+            case 6:
+                progressive_quicksort(c, rangequeries, answers, times);
+            case 7:
+                progressive_cracking(c, rangequeries, answers, times);
         }
     }
-#ifndef DEBUG
+//#ifndef DEBUG
     for (size_t i = 0; i < NUM_QUERIES; i ++){
             cout << times[i]/repetition << "\n";
         }
-#endif
+//#endif
 
 }
