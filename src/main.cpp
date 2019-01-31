@@ -28,12 +28,10 @@
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
 int64_t  COLUMN_SIZE,NUM_QUERIES,L2_SIZE;
-int ALGORITHM;
+int ALGORITHM,RUN_CORRECTNESS;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
 double DELTA;
-
-#define DEBUG
 
 void full_scan(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time) {
     chrono::time_point<chrono::system_clock> start, end;
@@ -316,7 +314,7 @@ void *fullIndex(int64_t* c, int n){
     return I;
 }
 
-void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time, vector<double>& deltas){
     chrono::time_point<chrono::system_clock> start, end;
     BulkBPTree* T ;
     int64_t sum = 0;
@@ -329,7 +327,8 @@ void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int6
             int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[i]);
             sum = scanQuery(column.final_data, offset1, offset2);
         } else {
-            results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], DELTA);
+            results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i],
+                                                        rangeQueries.rightpredicate[i], DELTA);
             sum = results.sum;
         }
 
@@ -339,42 +338,14 @@ void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int6
         time[i] += chrono::duration<double>(end - start).count();
         if (!converged && column.converged) {
             converged = true;
-            cout << "CONVERGED:" << i << "\n";
+//            cout << "CONVERGED:" << i << "\n";
             T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
         }
+        deltas[i] += DELTA;
     }
 }
 
-void progressive_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
-    chrono::time_point<chrono::system_clock> start, end;
-    BulkBPTree* T ;
-    int64_t sum = 0;
-    bool converged = false;
-    for(int i = 0; i < NUM_QUERIES; i++) {
-        start = chrono::system_clock::now();
-        ResultStruct results;
-        if (column.converged) {
-            int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[i]);
-            int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[i]);
-            sum = scanQuery(column.final_data, offset1, offset2);
-        } else {
-            results = range_query_incremental_cracking(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], DELTA);
-            sum = results.sum;
-        }
-
-        end = chrono::system_clock::now();
-        if (sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
-        time[i] += chrono::duration<double>(end - start).count();
-        if (!converged && column.converged) {
-            converged = true;
-            cout << "CONVERGED:" << i << "\n";
-            T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
-        }
-    }
-}
-
-void progressive_cracking_cost_model(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& times){
+void progressive_quicksort_cost_model(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& times, vector<double>& deltas){
     chrono::time_point<chrono::system_clock> start, end;
     BulkBPTree* T ;
     int64_t sum = 0;
@@ -384,15 +355,12 @@ void progressive_cracking_cost_model(Column& column, RangeQuery& rangeQueries, v
 
     double estimated_time = 0;
     for(int i = 0; i < NUM_QUERIES; i++) {
-        int64_t low = min(rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]);
-        int64_t high = max(rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]);
-
         size_t ITERATIONS = 5;
-
         double estimated_delta = 0.5;
         double offset = estimated_delta / 2;
         for(size_t j = 0; j < ITERATIONS; j++) {
-            estimated_time = get_estimated_time_cracking(column, low, high, estimated_delta);
+            estimated_time = get_estimated_time_quicksort(column, rangeQueries.leftpredicate[i],
+                                                          rangeQueries.rightpredicate[i], estimated_delta);
             if (estimated_time > interactivity_threshold) {
                 estimated_delta -= offset;
             } else {
@@ -401,27 +369,43 @@ void progressive_cracking_cost_model(Column& column, RangeQuery& rangeQueries, v
             offset /= 2;
         }
         ResultStruct results;
+        // first get the base time with delta = 0
         start = chrono::system_clock::now();
-        if (column.converged) {
-            int64_t offset1 = (T)->gte(low);
-            int64_t offset2 = (T)->lte(high);
+        results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i],
+                                                    rangeQueries.rightpredicate[i], 0);
+        end = chrono::system_clock::now();
+
+        double base_time = chrono::duration<double>(end - start).count();
+
+        // now get the time with delta = estimated_delta
+        start = chrono::system_clock::now();
+        if (converged) {
+            int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[i]);
+            int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[i]);
             sum = scanQuery(column.final_data, offset1, offset2);
         } else {
-            results = range_query_incremental_cracking(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], estimated_delta);
+            results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i],
+                                                        rangeQueries.rightpredicate[i], estimated_delta);
             sum = results.sum;
         }
         end = chrono::system_clock::now();
+        double time = chrono::duration<double>(end - start).count();
         if (sum != answers[i]) {
             fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
         }
         // now interpolate the real delta
+        double cost_per_delta = (time - base_time) / estimated_delta;
+        double real_delta = (interactivity_threshold - base_time) / cost_per_delta;
+
         times[i] += chrono::duration<double>(end - start).count();
         if (!converged && column.converged) {
             converged = true;
-            cout << "CONVERGED:" << i << "\n";
             T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
         }
+        if(!converged)
+            deltas[i] += real_delta;
     }
+    column.Clear();
 }
 
 
@@ -438,6 +422,8 @@ void print_help(int argc, char** argv) {
     fprintf(stderr, "   --algorithm\n");
     fprintf(stderr, "   --progressive-cracking-swap\n");
     fprintf(stderr, "   --delta\n");
+    fprintf(stderr, "   --correctness\n");
+
 
 
 }
@@ -457,6 +443,7 @@ int main(int argc, char** argv) {
     COLUMN_SIZE = 10000000;
     ALGORITHM = 0;
     DELTA = 0.1;
+    RUN_CORRECTNESS = 0; // By Default run regular runs
 
     int repetition = 1;
 
@@ -485,13 +472,15 @@ int main(int argc, char** argv) {
             ALLOWED_SWAPS_PERCENTAGE = atof(arg_value.c_str());
         } else if (arg_name == "delta") {
             DELTA = atof(arg_value.c_str());
-        }
-        else {
+        } else if (arg_name == "correctness") {
+            RUN_CORRECTNESS = atoi(arg_value.c_str());
+        } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
     }
-    int total;
+
+        int total;
 
     RangeQuery rangequeries;
     load_queries(&rangequeries,QUERIES_FILE_PATH,NUM_QUERIES);
@@ -501,11 +490,13 @@ int main(int argc, char** argv) {
 
     vector<int64_t> answers;
     load_answers(&answers,ANSWER_FILE_PATH,NUM_QUERIES);
-#ifndef DEBUG
-    repetition = 5;
-#endif
+
+    if (!RUN_CORRECTNESS)
+        repetition = 5;
 
     vector<double> times(NUM_QUERIES);
+    vector<double> deltas(NUM_QUERIES);
+
     for (size_t i = 0; i < repetition; i ++){
         switch(ALGORITHM){
             case 0:
@@ -527,19 +518,13 @@ int main(int argc, char** argv) {
                 coarse_granular_index(c, rangequeries, answers, times);
                 break;
             case 6:
-                progressive_quicksort(c, rangequeries, answers, times);
+                progressive_quicksort(c, rangequeries, answers, times,deltas);
             case 7:
-                progressive_cracking(c, rangequeries, answers, times);
-//            case 8:
-//                progressive_quicksort_cost_model();
-            case 9:
-                progressive_cracking_cost_model(c, rangequeries, answers, times);
+                progressive_quicksort_cost_model(c, rangequeries, answers, times,deltas);
         }
     }
-//#ifndef DEBUG
-    for (size_t i = 0; i < NUM_QUERIES; i ++){
-            cout << times[i]/repetition << "\n";
-        }
-//#endif
-
+    if (!RUN_CORRECTNESS)
+        for (size_t i = 0; i < NUM_QUERIES; i ++){
+                cout << deltas[i]/repetition << ";" << times[i]/repetition << "\n";
+            }
 }

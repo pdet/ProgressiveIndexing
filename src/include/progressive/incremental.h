@@ -11,10 +11,7 @@
 #include <chrono>
 #include <unordered_map>
 
-ResultStruct range_query_incremental_quicksort(Column& c, int64_t low, int64_t high, double delta);
-
-
-ResultStruct range_query_incremental_cracking(Column& c, int64_t low, int64_t high, double delta);
+ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t high, double delta);
 
 
 void SortedCheck(Column& c, QuicksortNode& node);
@@ -29,7 +26,7 @@ void range_query_sorted_subsequent_value(int64_t* index, size_t index_size, int6
 void range_query_sorted_subsequent_value(int64_t* index, size_t index_size, int64_t low, int64_t high,
 										 ResultStruct& results);
 
-double get_estimated_time_cracking(Column &c, int64_t low, int64_t high, double delta);
+double get_estimated_time_quicksort(Column &c, int64_t low, int64_t high, double delta);
 
 #define PROFILE_BINARY_SEARCH 1
 #define PROFILE_BASE_SCAN 2

@@ -49,7 +49,11 @@ struct Column {
     IncrementalQuicksortIndex qs_index;
     bool converged = false;
     int64_t* final_data = nullptr;
-    void Clear();
+    void Clear(){
+        converged = false;
+        final_data = nullptr;
+        qs_index.clear();
+    };
 
 
 };
@@ -160,7 +164,6 @@ struct ResultStruct {
 
     ResultStruct() : sum(0) { }
 };
-
 
 
 #endif

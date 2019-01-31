@@ -34,10 +34,10 @@ StochasticCracking = 3
 ProgressiveStochasticCracking=4
 CoarseGranularIndex=5
 ProgressiveQuicksort=6
-ProgressiveCracking=7
+ProgressiveQuicksortCostModel=7
 
 COLUMN_SIZE_LIST = [100000000]#[100000000,1000000000]
-SWAP_PG_CRACKING_LIST = [0.01,0.1]
+SWAP_PG_CRACKING_LIST = [0.1]
 ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
                      ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
 NUM_QUERIES = 1000
@@ -45,6 +45,24 @@ QUERY_SELECTIVITY = 0.01
 
 PATH = ''
 
+def translate_alg(alg):
+    if alg == FullScan:
+        return 'fs'
+    if alg == StandardCracking:
+        return 'std'
+    if alg == StochasticCracking:
+        return 'stc'
+    if alg == CoarseGranularIndex:
+        return 'cgi'
+    if alg == ProgressiveStochasticCracking:
+        return 'pstc'
+    if alg == FullIndex:
+        return 'fi'
+    if alg == ProgressiveQuicksort:
+        return 'pqs'
+    if alg == ProgressiveQuicksortCostModel:
+        return 'pqscm'
+    return alg
 
 print("Generating Cost Model Constants")
 os.system("python scripts/cost_model/generate_constants.py")
@@ -91,6 +109,37 @@ def generate_query(NUM_QUERIES,COLUMN_SIZE, COLUMN_PATH, QUERY_PATH,ANSWER_PATH,
         print("Generating Queries Failed")
         exit()
 
+def getFolderToSaveExperiments(algorithm,folder=""):
+    global PATH
+    if os.path.exists("ResultsCSV/+folder") != 1:
+        os.system('mkdir -p ResultsCSV/'+folder)
+    experimentsList = os.listdir("ResultsCSV/"+folder)
+    aux = 0
+    for experiment in experimentsList:
+        if experiment != ".DS_Store":
+            if aux < int(experiment):
+                aux = int(experiment)
+    currentexperiment = aux + 1
+    PATH = "ResultsCSV/"+ folder+translate_alg(algorithm) + "/"+ str(currentexperiment) + '/'
+    os.system('mkdir -p ' + PATH)
+
+#Output is a csv file with:
+# ""algorithm;query_pattern;query_number;delta;query_time"
+def generate_output(file,query_result,QUERY_PATTERN,algorithm):
+    query_result = query_result.split("\n")
+    for query in range(0, len(query_result)/2 -1):
+        file.write(translate_alg(algorithm) + ";" + str(query) + ";" + str(QUERY_PATTERN) + ';' + query_result[query])
+        file.write('\n')
+    file.close()
+
+# Saving Experiments
+def create_output():
+    header = "algorithm;query_pattern;query_number;delta;query_time"
+    file = open(PATH + "results.csv", "w")
+    file.write(header)
+    file.write('\n')
+    return file
+
 #Generate Query Patterns
 # for column_size in COLUMN_SIZE_LIST:
 #     for query in ALL_WORKLOAD_LIST:
@@ -98,53 +147,43 @@ def generate_query(NUM_QUERIES,COLUMN_SIZE, COLUMN_PATH, QUERY_PATH,ANSWER_PATH,
 #         a_path = answer_path(experiment_path,QUERY_SELECTIVITY,query)
 #         generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,QUERY_SELECTIVITY,query)
 
-def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM):
+def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS=0):
     COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
-             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)
+             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --correctness=" + str(CORRECTNESS)
     print(codestr)
-    result = os.popen(codestr).read()
-    print(result)
-    #     getFolderToSaveExperiments(COLUMN_PATTERN+"_"+QUERY_PATTERN+ "/")
-    #     repetition =1
-    #     result = os.popen(codestr).read()
-    #     file = create_output()
-    #     generate_output(file,result,repetition,QUERY_PATTERN,COLUMN_PATTERN,PIVOT_TYPE,PIVOT_SELECTION_TYPE,PIECE_TO_CRACK_TYPE)
+    if CORRECTNESS:
+        if os.system(codestr) != 0:
+            print("Failed!")
+    else:
+        getFolderToSaveExperiments(ALGORITHM,str(COLUMN_SIZE)+"_"+str(QUERY_PATTERN)+ "/")
+        result = os.popen(codestr).read()
+        file = create_output()
+        generate_output(file,result,QUERY_PATTERN,ALGORITHM)
 
-def run_all_workloads(ALGORITHM):
+def run_all_workloads(ALGORITHM,CORRECTNESS=0):
+    # ALL_WORKLOAD_LIST = [Random]
     for column_size in COLUMN_SIZE_LIST:
         for query in ALL_WORKLOAD_LIST:
-            run_experiment(column_size,query,QUERY_SELECTIVITY,ALGORITHM)
+            run_experiment(column_size,query,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS)
 
 
 def test_correctness():
-    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
+    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
+    # ALGORITHM_LIST = []
+    for algorithm in ALGORITHM_LIST:
+        run_all_workloads(algorithm,1)
+
+
+
+def run():
+    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
+    # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
     for algorithm in ALGORITHM_LIST:
         run_all_workloads(algorithm)
 
 test_correctness()
-
-
-# def run():
-#     PIVOT_TYPES_LIST = [PIVOT_EXACT_PREDICATE,PIVOT_WITHIN_QUERY_PREDICATE,PIVOT_WITHIN_QUERY,PIVOT_WITHIN_COLUMN]
-#     PIVOT_SELECTION_LIST = [RANDOM_P,MEDIAN,APPROXIMATE_MEDIAN]
-#     PIECE_TO_CRACK_LIST = [ANY_PIECE,BIGGEST_PIECE]
-#     for pivot_type in PIVOT_TYPES_LIST:
-#         if pivot_type == PIVOT_EXACT_PREDICATE:
-#             run_all_workloads(pivot_type,CORRECTNESS = False)
-#         if pivot_type == PIVOT_WITHIN_QUERY_PREDICATE:
-#             for pivot_selection in PIVOT_SELECTION_LIST:
-#                 run_all_workloads(pivot_type,pivot_selection,CORRECTNESS = False)
-#         if pivot_type == PIVOT_WITHIN_QUERY:
-            for pivot_selection in PIVOT_SELECTION_LIST:
-                for piece_to_crack in PIECE_TO_CRACK_LIST:
-                    run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
-        if pivot_type == PIVOT_WITHIN_COLUMN:
-            for pivot_selection in PIVOT_SELECTION_LIST:
-                for piece_to_crack in PIECE_TO_CRACK_LIST:
-                    run_all_workloads(pivot_type,pivot_selection,piece_to_crack,CORRECTNESS = False)
-
-run()
+# run()
