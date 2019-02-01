@@ -69,17 +69,15 @@ def translate_alg(alg):
         return 'pqs'
     if alg == ProgressiveQuicksortCostModel:
         return 'pqscm'
+    if alg == MergeComplete:
+        return 'mc'
+    if alg == MergeGradually:
+        return 'mg'
+    if alg == MergeRipple:
+        return 'mr'
+    if alg == ProgressiveMergesort:
+        return 'pms'
     return alg
-
-print("Generating Cost Model Constants")
-os.system("python scripts/cost_model/generate_constants.py")
-
-print("Compiling")
-os.environ['OPT'] = 'true'
-if os.system('cmake -DCMAKE_BUILD_TYPE=Release && make') != 0:
-    print("Make Failed")
-    exit()
-
 
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
@@ -94,10 +92,6 @@ def generate_column(COLUMN_SIZE,COLUMN_PATH):
         print("Generating Column Failed")
         exit()
 
-# Uniform Random Column Distribution
-for column_size in COLUMN_SIZE_LIST:
-    experiment_path = column_path(column_size)
-    generate_column(column_size,experiment_path + "column")
 
 def query_path(EXPERIMENT_PATH, SELECTIVITY_PERCENTAGE,QUERIES_PATTERN):
     return EXPERIMENT_PATH + "query_" + str(SELECTIVITY_PERCENTAGE) + "_" + str(QUERIES_PATTERN)
@@ -118,9 +112,9 @@ def generate_query(NUM_QUERIES,COLUMN_SIZE, COLUMN_PATH, QUERY_PATH,ANSWER_PATH,
 
 def getFolderToSaveExperiments(algorithm,folder=""):
     global PATH
-    if os.path.exists("ResultsCSV/+folder") != 1:
-        os.system('mkdir -p ResultsCSV/'+folder)
-    experimentsList = os.listdir("ResultsCSV/"+folder)
+    if os.path.exists("ResultsCSV/"+folder+translate_alg(algorithm) + "/") != 1:
+        os.system('mkdir -p ResultsCSV/'+folder+translate_alg(algorithm) + "/")
+    experimentsList = os.listdir("ResultsCSV/"+folder+translate_alg(algorithm) + "/")
     aux = 0
     for experiment in experimentsList:
         if experiment != ".DS_Store":
@@ -147,12 +141,24 @@ def create_output():
     file.write('\n')
     return file
 
-#Generate Query Patterns
-# for column_size in COLUMN_SIZE_LIST:
-#     for query in ALL_WORKLOAD_LIST:
-#         q_path = query_path(experiment_path,QUERY_SELECTIVITY,query)
-#         a_path = answer_path(experiment_path,QUERY_SELECTIVITY,query)
-#         generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,QUERY_SELECTIVITY,query)
+def setup():
+    print("Generating Cost Model Constants")
+    os.system("python scripts/cost_model/generate_constants.py")
+    print("Compiling")
+    os.environ['OPT'] = 'true'
+    if os.system('cmake -DCMAKE_BUILD_TYPE=Release && make') != 0:
+        print("Make Failed")
+        exit()
+    # Uniform Random Column Distribution
+    for column_size in COLUMN_SIZE_LIST:
+        experiment_path = column_path(column_size)
+        generate_column(column_size,experiment_path + "column")
+    #Generate Query Patterns
+    # for column_size in COLUMN_SIZE_LIST:
+    #     for query in ALL_WORKLOAD_LIST:
+    #         q_path = query_path(experiment_path,QUERY_SELECTIVITY,query)
+    #         a_path = answer_path(experiment_path,QUERY_SELECTIVITY,query)
+    #         generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,QUERY_SELECTIVITY,query)
 
 def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS=0):
     COLUMN_PATH = column_path(COLUMN_SIZE)
@@ -179,6 +185,7 @@ def run_all_workloads(ALGORITHM,CORRECTNESS=0):
 
 
 def test_correctness():
+    setup()
     ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
     # ALGORITHM_LIST = []
     for algorithm in ALGORITHM_LIST:
@@ -187,12 +194,14 @@ def test_correctness():
 
 
 def run():
+    setup()
     ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
     # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
     for algorithm in ALGORITHM_LIST:
         run_all_workloads(algorithm)
 
 def test_correctness_updates():
+    setup()
     ALGORITHM_LIST = [MergeComplete,MergeGradually,MergeRipple,ProgressiveMergesort]
     # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
     for algorithm in ALGORITHM_LIST:
@@ -200,12 +209,18 @@ def test_correctness_updates():
             run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,1)
 
 def run_updates():
+    setup()
     ALGORITHM_LIST = [MergeComplete,MergeGradually,MergeRipple,ProgressiveMergesort]
     # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
     for algorithm in ALGORITHM_LIST:
         for column_size in COLUMN_SIZE_LIST:
             run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,0)
 
+def plots():
+    execfile(SCRIPT_PATH+"/scripts/plots/plot.py")
+
 # test_correctness()
-test_correctness_updates()
+# test_correctness_updates()
 # run()
+# run_updates()
+plots()

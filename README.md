@@ -1,8 +1,8 @@
 # Progressive Indexing
-This project is a stand alone implementation of all the experiments presented in the * Progressive Index : Indexing Without Prejudice * paper.
+This project is a stand-alone implementation of all the experiments presented in the **Progressive Index: Indexing Without Prejudice** paper.
 
 # Requirements
-[CMake](https://cmake.org) to be installed and a `C++11` compliant compiler. Python 2.7 is necessary to run all the setup scripts. RScript is used for plots
+[CMake](https://cmake.org) to be installed and a `C++11` compliant compiler. Python 2.7 is necessary to run all the setup scripts. R ("dplyr", "ggplot2", "ggthemes", "ggrepel", "data.table", "RColorBrewer") is used to plot the results to the figures referenced in the paper.
 
 ## Available Indexing Algorithms
 * [Standard Cracking](https://stratos.seas.harvard.edu/files/IKM_CIDR07.pdf)
@@ -24,8 +24,8 @@ This project is a stand alone implementation of all the experiments presented in
 
 
 ## Running/Plotting the experiments/results
-To run all the experiments and and automatically plot all the images used in the paper execute the run.py script. After it, all picutres will be generated under the generated_plots/ folder.
-Note that the first time you run this application it might take a couple hours since it download/generate all data and workloads used, as check all the algorithms for correctness before running and timing them.
+To run all the experiments and automatically plot all the images used in the paper execute the run.py script. After it, all pictures will be generated under the generated_plots/ folder.
+Note that the first time you run this application it might take a couple of hours since it download/generate all data and workloads used, as check all the algorithms for correctness before running and timing them.
 ```bash
 python run.py
 ```
@@ -33,5 +33,5 @@ python run.py
 ## Manually Running Experiments
 
 ## Third Party Code
-www.github.com/felix-halim/scrack
-www.bigdata.uni-saarland.de/publications/uncracked_pieces_sourcecode.zip
+* www.github.com/felix-halim/scrack
+* www.bigdata.uni-saarland.de/publications/uncracked_pieces_sourcecode.zip
