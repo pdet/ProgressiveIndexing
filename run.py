@@ -36,10 +36,17 @@ CoarseGranularIndex=5
 ProgressiveQuicksort=6
 ProgressiveQuicksortCostModel=7
 
+#Setting Values For Update Algorithms
+MergeComplete = 8
+MergeGradually = 9
+MergeRipple = 10
+ProgressiveMergesort = 11
+
 COLUMN_SIZE_LIST = [100000000]#[100000000,1000000000]
 SWAP_PG_CRACKING_LIST = [0.1]
 ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
                      ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+
 NUM_QUERIES = 1000
 QUERY_SELECTIVITY = 0.01
 
@@ -185,5 +192,20 @@ def run():
     for algorithm in ALGORITHM_LIST:
         run_all_workloads(algorithm)
 
-test_correctness()
+def test_correctness_updates():
+    ALGORITHM_LIST = [MergeComplete,MergeGradually,MergeRipple,ProgressiveMergesort]
+    # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
+    for algorithm in ALGORITHM_LIST:
+        for column_size in COLUMN_SIZE_LIST:
+            run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,1)
+
+def run_updates():
+    ALGORITHM_LIST = [MergeComplete,MergeGradually,MergeRipple,ProgressiveMergesort]
+    # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
+    for algorithm in ALGORITHM_LIST:
+        for column_size in COLUMN_SIZE_LIST:
+            run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,0)
+
+# test_correctness()
+test_correctness_updates()
 # run()

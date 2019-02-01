@@ -50,6 +50,7 @@ struct Column {
     bool converged = false;
     int64_t* final_data = nullptr;
     void Clear(){
+        data.clear();
         converged = false;
         final_data = nullptr;
         qs_index.clear();

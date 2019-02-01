@@ -34,7 +34,7 @@ add_executable(main
         src/cracking/standard_cracking.cpp src/cracking/stochastic_cracking.cpp
         src/cracking/progressive_stochastic_cracking.cpp
         src/progressive/progressive_quicksort.cpp
-        src/main.cpp)
+        src/cracking/cracking_updates.cpp src/main.cpp)
 
 add_executable(measure
         scripts/cost_model/measure.cpp)
