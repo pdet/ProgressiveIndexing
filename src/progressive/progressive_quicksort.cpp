@@ -3,20 +3,20 @@
 #include "../include/full_index/hybrid_radix_insert_sort.h"
 #include "../include/progressive/constants.h"
 
-void range_query_sorted_subsequent_value(int64_t* index,
+void range_query_sorted_subsequent_value(int64_t *index,
                                          size_t index_size, int64_t low, int64_t high,
                                          int64_t min, int64_t max,
-                                         ResultStruct& results) {
+                                         ResultStruct &results) {
     if (low <= min) {
         if (high >= max) {
             // just add all the elements
-            for(size_t i = 0; i < index_size; i++) {
+            for (size_t i = 0; i < index_size; i++) {
                 results.push_back(index[i]);
             }
         } else {
             // no need for binary search to obtain first entry
             // first entry is 0
-            for(size_t i = 0; i < index_size; i++) {
+            for (size_t i = 0; i < index_size; i++) {
                 if (index[i] <= high) {
                     results.push_back(index[i]);
                 } else {
@@ -29,11 +29,11 @@ void range_query_sorted_subsequent_value(int64_t* index,
         auto entry = &index[binary_search_gte(index, low, 0, index_size)];
         if (high >= max) {
             // no need for check after binary search
-            for(; entry != index + index_size; entry++) {
+            for (; entry != index + index_size; entry++) {
                 results.push_back(*entry);
             }
         } else {
-            for(; entry != index + index_size; entry++) {
+            for (; entry != index + index_size; entry++) {
                 if (*entry <= high) {
                     results.push_back(*entry);
                 } else {
@@ -45,16 +45,17 @@ void range_query_sorted_subsequent_value(int64_t* index,
 }
 
 
-void range_query_sorted_subsequent_value(int64_t* index, size_t index_size, int64_t low, int64_t high, ResultStruct& results) {
+void range_query_sorted_subsequent_value(int64_t *index, size_t index_size, int64_t low, int64_t high,
+                                         ResultStruct &results) {
 
     int64_t lower_bound = binary_search_gte(index, low, 0, index_size);
     int64_t high_bound = binary_search_lte(index, high, 0, index_size);
-    for(int64_t i = lower_bound;i<=high_bound;i++) {
+    for (int64_t i = lower_bound; i <= high_bound; i++) {
         results.push_back(index[i]);
     }
 }
 
-void SortedCheck(Column& c, QuicksortNode& node) {
+void SortedCheck(Column &c, QuicksortNode &node) {
     if (c.qs_index.nodes[node.left].sorted && c.qs_index.nodes[node.right].sorted) {
         node.sorted = true;
         node.left = -1;
@@ -71,10 +72,9 @@ void SortedCheck(Column& c, QuicksortNode& node) {
 
 
 void range_query_incremental_quicksort_recursive(Column &c, QuicksortNode &node, ResultStruct &results, int64_t low,
-                                                 int64_t high, ssize_t &remaining_swaps)
-{
+                                                 int64_t high, ssize_t &remaining_swaps) {
     int64_t *index = c.qs_index.data;
-    size_t* pointers = c.qs_index.index;
+    size_t *pointers = c.qs_index.index;
     if (node.sorted) {
         Profiler::Start(PROFILE_BASE_SCAN);
         if (low <= node.min && high >= node.max) {
@@ -104,8 +104,7 @@ void range_query_incremental_quicksort_recursive(Column &c, QuicksortNode &node,
             Profiler::End(PROFILE_BASE_SCAN);
             Profiler::AddTuples(PROFILE_BASE_SCAN, node.end - node.start);
             return;
-        }
-        else if ((node.end - node.start) <= 1024) {
+        } else if ((node.end - node.start) <= 1024) {
             // node is very small, just sort it normally
             if (remaining_swaps > (node.end - node.start) * 5) {
                 Profiler::Start(PROFILE_INDEX_SORT);
@@ -267,13 +266,12 @@ void range_query_incremental_quicksort_recursive(Column &c, QuicksortNode &node,
     }
 }
 
-ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t high, double delta)
-{
+ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t high, double delta) {
     if (!c.qs_index.index) {
         // fill the initial sortindex
         // choose an initial pivot point
-        c.qs_index.index = (size_t*) malloc(sizeof(size_t) * c.data.size());
-        c.qs_index.data = (int64_t*) malloc(sizeof(int64_t) * c.data.size());
+        c.qs_index.index = (size_t *) malloc(sizeof(size_t) * c.data.size());
+        c.qs_index.data = (int64_t *) malloc(sizeof(int64_t) * c.data.size());
         c.qs_index.root.pivot = (c.data.front() + c.data.back()) / 2;
         c.qs_index.root.start = 0;
         c.qs_index.root.end = c.data.size();
@@ -297,29 +295,29 @@ ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t h
         return results;
     }
 
-    ssize_t remaining_swaps = (ssize_t)(c.data.size() * delta);
+    ssize_t remaining_swaps = (ssize_t) (c.data.size() * delta);
 
     // start doing swaps
     bool initial_run = c.qs_index.root.left < 0;
     if (initial_run) {
-        int64_t* index = c.qs_index.data;
-        size_t* pointers = c.qs_index.index;
+        int64_t *index = c.qs_index.data;
+        size_t *pointers = c.qs_index.index;
 
         // for the initial run, we write the indices instead of swapping them
         // because the current array has not been initialized yet
-        QuicksortNode& node = c.qs_index.root;
+        QuicksortNode &node = c.qs_index.root;
         // first look through the part we have already pivoted
         // for data that matches the points
         Profiler::Start(PROFILE_INDEX_SCAN);
         if (low < node.pivot) {
-            for(size_t i = 0; i < node.current_start; i++) {
+            for (size_t i = 0; i < node.current_start; i++) {
                 int matching = index[i] >= low &&
                                index[i] <= high;
                 results.maybe_push_back(index[i], matching);
             }
         }
         if (high >= node.pivot) {
-            for(size_t i = node.current_end + 1; i < c.data.size(); i++) {
+            for (size_t i = node.current_end + 1; i < c.data.size(); i++) {
                 int matching = index[i] >= low &&
                                index[i] <= high;
                 results.maybe_push_back(index[i], matching);
@@ -331,7 +329,7 @@ ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t h
         // now we start filling the index with at most remaining_swap entries
         size_t next_index = std::min(c.qs_index.current_position + remaining_swaps, c.data.size());
         remaining_swaps -= next_index - c.qs_index.current_position;
-        for(size_t i = c.qs_index.current_position; i < next_index; i++) {
+        for (size_t i = c.qs_index.current_position; i < next_index; i++) {
             int matching = c.data[i] >= low && c.data[i] <= high;
             results.maybe_push_back(c.data[i], matching);
 
@@ -378,7 +376,7 @@ ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t h
             // now we query the remainder of the data
             Profiler::Start(PROFILE_BASE_SCAN);
 
-            for(size_t i = c.qs_index.current_position; i < c.data.size(); i++) {
+            for (size_t i = c.qs_index.current_position; i < c.data.size(); i++) {
                 int matching = c.data[i] >= low &&
                                c.data[i] <= high;
                 results.maybe_push_back(c.data[i], matching);
@@ -389,8 +387,8 @@ ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t h
         range_query_incremental_quicksort_recursive(c, c.qs_index.root, results, low, high, remaining_swaps);
     }
 
-    while(remaining_swaps > 0 && c.qs_index.current_pivot < c.qs_index.nodes.size()) {
-        QuicksortNode& node = c.qs_index.nodes[c.qs_index.current_pivot];
+    while (remaining_swaps > 0 && c.qs_index.current_pivot < c.qs_index.nodes.size()) {
+        QuicksortNode &node = c.qs_index.nodes[c.qs_index.current_pivot];
         if (node.sorted || node.left >= 0) {
             c.qs_index.current_pivot++;
             continue;
@@ -417,7 +415,7 @@ ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t h
             Profiler::AddTuples(PROFILE_INDEX_SORT, node.end - node.start);
         } else {
             int64_t *index = c.qs_index.data;
-            size_t* pointers = c.qs_index.index;
+            size_t *pointers = c.qs_index.index;
 
             ssize_t elements_in_piece = node.current_end - node.current_start;
             ssize_t swaps_to_do = std::min((ssize_t) remaining_swaps, elements_in_piece);
@@ -498,16 +496,14 @@ ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t h
     }
     return results;
 }
+
 std::unordered_map<int, double> Profiler::times;
 std::chrono::time_point<std::chrono::system_clock> Profiler::start;
 std::unordered_map<int, size_t> Profiler::tuples;
 std::unordered_map<int, size_t> Profiler::scan_counts;
 
 
-
-
-
-QuicksortNode& FindLowestNode(Column &c, QuicksortNode &node, int64_t value) {
+QuicksortNode &FindLowestNode(Column &c, QuicksortNode &node, int64_t value) {
     if (node.left < 0) {
         return node;
     }
@@ -530,8 +526,8 @@ double get_estimated_time_quicksort(Column &c, int64_t low, int64_t high, double
         return (scan_cost + RANDOM_ACCESS_PAGE_MS * log2(c.data.size())) / 1000.0;
     }
     bool initial_run = c.qs_index.root.left < 0;
-    QuicksortNode& node = c.qs_index.root;
-    double page_count = (c.data.size() / ELEMENTS_PER_PAGE) + (c.data.size() % ((int)ELEMENTS_PER_PAGE) != 0 ? 1 : 0);
+    QuicksortNode &node = c.qs_index.root;
+    double page_count = (c.data.size() / ELEMENTS_PER_PAGE) + (c.data.size() % ((int) ELEMENTS_PER_PAGE) != 0 ? 1 : 0);
     double scan_speed = READ_ONE_PAGE_SEQ_MS * page_count;
     if (initial_run) {
         // figure out unindexed fraction
@@ -560,10 +556,12 @@ double get_estimated_time_quicksort(Column &c, int64_t low, int64_t high, double
         auto left_position = left_node.start;
         auto right_position = right_node.end;
         if (left_node.sorted) {
-            left_position = left_node.start + binary_search_gte(c.qs_index.data + left_node.start, low, 0, left_node.end - left_node.start);
+            left_position = left_node.start + binary_search_gte(c.qs_index.data + left_node.start, low, 0,
+                                                                left_node.end - left_node.start);
         }
         if (right_node.sorted) {
-            right_position = right_node.start + binary_search_lte(c.qs_index.data + right_node.start, high, 0, right_node.end - right_node.start);
+            right_position = right_node.start + binary_search_lte(c.qs_index.data + right_node.start, high, 0,
+                                                                  right_node.end - right_node.start);
         }
 
         double alpha = (double) (right_position - left_position) / (double) c.data.size();

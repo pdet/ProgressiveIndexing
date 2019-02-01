@@ -14,17 +14,17 @@
 ResultStruct range_query_incremental_quicksort(Column &c, int64_t low, int64_t high, double delta);
 
 
-void SortedCheck(Column& c, QuicksortNode& node);
-void VerifyIndex(Column& c, QuicksortNode& node, int min, int max);
+void SortedCheck(Column &c, QuicksortNode &node);
+
+void VerifyIndex(Column &c, QuicksortNode &node, int min, int max);
 
 
+void range_query_sorted_subsequent_value(int64_t *index, size_t index_size, int64_t low, int64_t high,
+                                         int64_t min, int64_t max,
+                                         ResultStruct &results);
 
-void range_query_sorted_subsequent_value(int64_t* index, size_t index_size, int64_t low, int64_t high,
-										 int64_t min, int64_t max,
-										 ResultStruct& results);
-
-void range_query_sorted_subsequent_value(int64_t* index, size_t index_size, int64_t low, int64_t high,
-										 ResultStruct& results);
+void range_query_sorted_subsequent_value(int64_t *index, size_t index_size, int64_t low, int64_t high,
+                                         ResultStruct &results);
 
 double get_estimated_time_quicksort(Column &c, int64_t low, int64_t high, double delta);
 
@@ -43,28 +43,43 @@ struct Profiler {
     static void Start(int entry) {
         start = std::chrono::system_clock::now();
     }
+
     static void End(int entry) {
         auto end = std::chrono::system_clock::now();
         times[entry] += std::chrono::duration<double>(end - start).count();
         scan_counts[entry]++;
     }
+
     static void AddTuples(int entry, size_t count) {
         tuples[entry] += count;
     }
+
     static void Print() {
         std::cout << "<<Profiler>>\n";
-        for(auto &entry : times) {
+        for (auto &entry : times) {
             const char *name = "Unknown";
-            switch(entry.first) {
-                case PROFILE_BINARY_SEARCH: name = "PROFILE_BINARY_SEARCH"; break;
-                case PROFILE_BASE_SCAN: name = "PROFILE_BASE_SCAN"; break;
-                case PROFILE_INDEX_SCAN: name = "PROFILE_INDEX_SCAN"; break;
-                case PROFILE_INDEX_SWAP: name = "PROFILE_INDEX_SWAP"; break;
-                case PROFILE_INDEX_SORT: name = "PROFILE_INDEX_SORT"; break;
+            switch (entry.first) {
+                case PROFILE_BINARY_SEARCH:
+                    name = "PROFILE_BINARY_SEARCH";
+                    break;
+                case PROFILE_BASE_SCAN:
+                    name = "PROFILE_BASE_SCAN";
+                    break;
+                case PROFILE_INDEX_SCAN:
+                    name = "PROFILE_INDEX_SCAN";
+                    break;
+                case PROFILE_INDEX_SWAP:
+                    name = "PROFILE_INDEX_SWAP";
+                    break;
+                case PROFILE_INDEX_SORT:
+                    name = "PROFILE_INDEX_SORT";
+                    break;
             }
-            std::cout << name << ": " << entry.second << "s (Tuples: " << tuples[entry.first] << ", Count: " << scan_counts[entry.first] <<")" << "\n";
+            std::cout << name << ": " << entry.second << "s (Tuples: " << tuples[entry.first] << ", Count: "
+                      << scan_counts[entry.first] << ")" << "\n";
         }
     }
+
     static void Reset() {
         times.clear();
         tuples.clear();

@@ -6,52 +6,43 @@ int64_t insertCount = 0;
 
 
 AvlTree
-MakeEmpty( AvlTree T )
-{
-    if( T != NULL )
-    {
-        MakeEmpty( T->Left );
-        MakeEmpty( T->Right );
-        free( T );
+MakeEmpty(AvlTree T) {
+    if (T != NULL) {
+        MakeEmpty(T->Left);
+        MakeEmpty(T->Right);
+        free(T);
     }
     return NULL;
 }
 
 int64_t
-FindLT( ElementType X, AvlTree T )
-{
-    if( T == NULL )
+FindLT(ElementType X, AvlTree T) {
+    if (T == NULL)
         return -1;
-    if( X < T->Element )
-        return FindLT( X, T->Left );
-    else
-    if( X > T->Element )
-        return FindLT( X, T->Right );
+    if (X < T->Element)
+        return FindLT(X, T->Left);
+    else if (X > T->Element)
+        return FindLT(X, T->Right);
     else
         return T->offset;
 }
 
 int64_t
-FindLTE( ElementType X, AvlTree T, ElementType limit )
-{
-    if(T) {
-        if( X < T->Element )
-            if(!T->Left) {
+FindLTE(ElementType X, AvlTree T, ElementType limit) {
+    if (T) {
+        if (X < T->Element)
+            if (!T->Left) {
                 return 0;
+            } else {
+                return FindLTE(X, T->Left, limit);
             }
-            else {
-                return FindLTE( X, T->Left, limit );
-            }
-        else
-        if( X > T->Element) {
-            if(!T->Right) {
+        else if (X > T->Element) {
+            if (!T->Right) {
                 return T->offset;
+            } else {
+                return FindLTE(X, T->Right, limit);
             }
-            else {
-                return FindLTE( X, T->Right, limit );
-            }
-        }
-        else
+        } else
             return T->offset;
     }
 
@@ -59,32 +50,29 @@ FindLTE( ElementType X, AvlTree T, ElementType limit )
 }
 
 PositionAVL
-FindMin( AvlTree T )
-{
-    if( T == NULL )
+FindMin(AvlTree T) {
+    if (T == NULL)
         return NULL;
-    else
-    if( T->Left == NULL )
+    else if (T->Left == NULL)
         return T;
     else
-        return FindMin( T->Left );
+        return FindMin(T->Left);
 }
 
 
 /* START: fig4_36.txt */
 static int64_t
-Height( PositionAVL P )
-{
-    if( P == NULL )
+Height(PositionAVL P) {
+    if (P == NULL)
         return -1;
     else
         return P->Height;
 }
+
 /* END */
 
 static ElementType
-Max( ElementType Lhs, ElementType Rhs )
-{
+Max(ElementType Lhs, ElementType Rhs) {
     return Lhs > Rhs ? Lhs : Rhs;
 }
 
@@ -94,16 +82,15 @@ Max( ElementType Lhs, ElementType Rhs )
 /* Update heights, then return new root */
 
 static PositionAVL
-SingleRotateWithLeft( PositionAVL K2 )
-{
+SingleRotateWithLeft(PositionAVL K2) {
     PositionAVL K1;
 
     K1 = K2->Left;
     K2->Left = K1->Right;
     K1->Right = K2;
 
-    K2->Height = Max( Height( K2->Left ), Height( K2->Right ) ) + 1;
-    K1->Height = Max( Height( K1->Left ), K2->Height ) + 1;
+    K2->Height = Max(Height(K2->Left), Height(K2->Right)) + 1;
+    K1->Height = Max(Height(K1->Left), K2->Height) + 1;
 
     return K1;  /* New root */
 }
@@ -114,16 +101,15 @@ SingleRotateWithLeft( PositionAVL K2 )
 /* Update heights, then return new root */
 
 static PositionAVL
-SingleRotateWithRight( PositionAVL K1 )
-{
+SingleRotateWithRight(PositionAVL K1) {
     PositionAVL K2;
 
     K2 = K1->Right;
     K1->Right = K2->Left;
     K2->Left = K1;
 
-    K1->Height = Max( Height( K1->Left ), Height( K1->Right ) ) + 1;
-    K2->Height = Max( Height( K2->Right ), K1->Height ) + 1;
+    K1->Height = Max(Height(K1->Left), Height(K1->Right)) + 1;
+    K2->Height = Max(Height(K2->Right), K1->Height) + 1;
 
     return K2;  /* New root */
 }
@@ -135,13 +121,12 @@ SingleRotateWithRight( PositionAVL K1 )
 /* Update heights, then return new root */
 
 static PositionAVL
-DoubleRotateWithLeft( PositionAVL K3 )
-{
+DoubleRotateWithLeft(PositionAVL K3) {
     /* Rotate between K1 and K2 */
-    K3->Left = SingleRotateWithRight( K3->Left );
+    K3->Left = SingleRotateWithRight(K3->Left);
 
     /* Rotate between K3 and K2 */
-    return SingleRotateWithLeft( K3 );
+    return SingleRotateWithLeft(K3);
 }
 /* END */
 
@@ -151,100 +136,87 @@ DoubleRotateWithLeft( PositionAVL K3 )
 /* Update heights, then return new root */
 
 static PositionAVL
-DoubleRotateWithRight( PositionAVL K1 )
-{
+DoubleRotateWithRight(PositionAVL K1) {
     /* Rotate between K3 and K2 */
-    K1->Right = SingleRotateWithLeft( K1->Right );
+    K1->Right = SingleRotateWithLeft(K1->Right);
 
     /* Rotate between K1 and K2 */
-    return SingleRotateWithRight( K1 );
+    return SingleRotateWithRight(K1);
 }
 
 int64_t lookup(ElementType X, AvlTree T) {
     while (true) {
-    if (X == T->Element)
-        return T->offset;
-    else if (X < T->Element)
-        T = T->Left;
-    else
-        T = T->Right;
+        if (X == T->Element)
+            return T->offset;
+        else if (X < T->Element)
+            T = T->Left;
+        else
+            T = T->Right;
 
     }
 }
 
 
-
 /* START: fig4_37.txt */
 AvlTree
-Insert( int64_t offset, ElementType X, AvlTree T )
-{
-    if( T == NULL )
-    {
+Insert(int64_t offset, ElementType X, AvlTree T) {
+    if (T == NULL) {
         insertCount++;
 //        std::cout << "Insert Count: " << insertCount << "s\n";
         /* Create and return a one-node tree */
-        T = (AvlTree) malloc( sizeof( struct AvlNode ) );
-        if( T == NULL )
-            printf( "Out of space!!!" );
-        else
-        {
-            T->Element = X; T->Height = 0;
+        T = (AvlTree) malloc(sizeof(struct AvlNode));
+        if (T == NULL)
+            printf("Out of space!!!");
+        else {
+            T->Element = X;
+            T->Height = 0;
             T->Left = T->Right = NULL;
             T->offset = offset;
         }
-    }
-    else
-    if( X < T->Element )
-    {
-        T->Left = Insert( offset, X, T->Left );
-        if( Height( T->Left ) - Height( T->Right ) == 2 ){
-            if( X < T->Left->Element )
-                T = SingleRotateWithLeft( T );
+    } else if (X < T->Element) {
+        T->Left = Insert(offset, X, T->Left);
+        if (Height(T->Left) - Height(T->Right) == 2) {
+            if (X < T->Left->Element)
+                T = SingleRotateWithLeft(T);
             else
-                T = DoubleRotateWithLeft( T );
+                T = DoubleRotateWithLeft(T);
         }
-    }
-    else
-    if( X > T->Element )
-    {
-        T->Right = Insert( offset, X, T->Right );
-        if( Height( T->Right ) - Height( T->Left ) == 2 ){
-            if( X > T->Right->Element )
-                T = SingleRotateWithRight( T );
+    } else if (X > T->Element) {
+        T->Right = Insert(offset, X, T->Right);
+        if (Height(T->Right) - Height(T->Left) == 2) {
+            if (X > T->Right->Element)
+                T = SingleRotateWithRight(T);
             else
-                T = DoubleRotateWithRight( T );
+                T = DoubleRotateWithRight(T);
         }
     }
     /* Else X is in the tree already; we'll do nothing */
 
-    T->Height = Max( Height( T->Left ), Height( T->Right ) ) + 1;
+    T->Height = Max(Height(T->Left), Height(T->Right)) + 1;
 
     return T;
 }
 
 
 /* END */
-IntPair createOffsetPair(PositionAVL first, PositionAVL second, ElementType limit){
+IntPair createOffsetPair(PositionAVL first, PositionAVL second, ElementType limit) {
     IntPair op = (IntPair) malloc(sizeof(struct int_pair));
-    if (first && second){
+    if (first && second) {
         if (first->offset == 0)
             op->first = first->offset;
         else
-        op->first = first->offset+1;
+            op->first = first->offset + 1;
         op->second = second->offset;
-    }
-    else if (first){
+    } else if (first) {
         if (first->offset == 0)
             op->first = first->offset;
         else
-        op->first = first->offset+1;
+            op->first = first->offset + 1;
         op->second = limit;
-    }
-    else if (second){
+    } else if (second) {
         op->first = 0;
         op->second = second->offset;
-    }
-    else{
+    } else {
         op->first = 0;
         op->second = limit;
     }
@@ -252,34 +224,30 @@ IntPair createOffsetPair(PositionAVL first, PositionAVL second, ElementType limi
 }
 
 PositionAVL
-FindMax( AvlTree T )
-{
-    if( T != NULL )
-        while( T->Right != NULL )
+FindMax(AvlTree T) {
+    if (T != NULL)
+        while (T->Right != NULL)
             T = T->Right;
 
     return T;
 }
 
 IntPair
-FindNeighborsLT( ElementType X, AvlTree T, ElementType limit )
-{
+FindNeighborsLT(ElementType X, AvlTree T, ElementType limit) {
     PositionAVL first = 0, second = 0;
     //if( T == NULL )
     //	return NULL;
 
     while (T != NULL) {
-        if( X < T->Element ){
+        if (X < T->Element) {
             second = T;
             T = T->Left;
-        }
-        else if( X > T->Element ){
+        } else if (X > T->Element) {
             first = T;
             T = T->Right;
-        }
-        else {
+        } else {
             second = T;
-            if(T->Left != NULL) {
+            if (T->Left != NULL) {
                 first = FindMax(T->Left);
             }
             break;
@@ -290,15 +258,13 @@ FindNeighborsLT( ElementType X, AvlTree T, ElementType limit )
 }
 
 AvlTree
-FindNeighborsLT( ElementType X, AvlTree T)
-{
-    AvlTree  aux;
+FindNeighborsLT(ElementType X, AvlTree T) {
+    AvlTree aux;
     while (T != NULL) {
-        if( X < T->Element ){
+        if (X < T->Element) {
             aux = T;
             T = T->Left;
-        }
-        else if( X >= T->Element ) {
+        } else if (X >= T->Element) {
             aux = T;
             T = T->Right;
             if (T && X < T->Element) {
@@ -312,21 +278,18 @@ FindNeighborsLT( ElementType X, AvlTree T)
 
 
 IntPair
-FindNeighborsGTE( ElementType X, AvlTree T, ElementType limit )
-{
+FindNeighborsGTE(ElementType X, AvlTree T, ElementType limit) {
     PositionAVL first = 0, second = 0;
 
     while (T != NULL) {
-        if( X < T->Element ){
+        if (X < T->Element) {
             second = T;
             T = T->Left;
-        }
-        else if( X > T->Element ){
+        } else if (X > T->Element) {
             first = T;
             T = T->Right;
-        }
-        else {
-            first = T;		// this is the only difference from FindNeighborsLT !
+        } else {
+            first = T;        // this is the only difference from FindNeighborsLT !
             break;
         }
     }
@@ -335,19 +298,17 @@ FindNeighborsGTE( ElementType X, AvlTree T, ElementType limit )
 }
 
 AvlTree
-FindNodeLTE( ElementType X, AvlTree T)
-{
+FindNodeLTE(ElementType X, AvlTree T) {
     {
-        AvlTree  aux;
+        AvlTree aux;
         while (T != NULL) {
-            if( X < T->Element ){
+            if (X < T->Element) {
                 aux = T;
                 T = T->Left;
                 if (T && X >= T->Element) {
                     return aux;
                 }
-            }
-            else if( X >= T->Element ) {
+            } else if (X >= T->Element) {
                 aux = T;
                 T = T->Right;
 //            if (T && X < T->Element) {
@@ -361,20 +322,18 @@ FindNodeLTE( ElementType X, AvlTree T)
 }
 
 AvlTree
-FindFirstPiece( AvlTree T )
-{
+FindFirstPiece(AvlTree T) {
     AvlTree auxNode;
     while (T != NULL) {
-            auxNode = T;
-            T = T->Left;
+        auxNode = T;
+        T = T->Left;
     }
 
     return auxNode;
 }
 
 AvlTree
-FindLastPiece( AvlTree T )
-{
+FindLastPiece(AvlTree T) {
     AvlTree auxNode;
     while (T != NULL) {
         auxNode = T;
@@ -385,46 +344,40 @@ FindLastPiece( AvlTree T )
 }
 
 
-AvlTree FindNeighborsLTFinal( ElementType X, AvlTree T)
-{
-    AvlTree  aux = NULL;
+AvlTree FindNeighborsLTFinal(ElementType X, AvlTree T) {
+    AvlTree aux = NULL;
     AvlTree original;
     original = T;
     while (T != NULL) {
-        if( X < T->Element ){
+        if (X < T->Element) {
             aux = T;
             T = T->Left;
-        }
-        else if( X > T->Element ){
+        } else if (X > T->Element) {
 //            aux = T;
             T = T->Right;
-        }
-        else {
+        } else {
             aux = T;
-            if(T->Left != NULL) {
+            if (T->Left != NULL) {
                 aux = FindMax(T->Left);
             }
             break;
         }
     }
-    if (!aux){
+    if (!aux) {
         aux = FindMax(original);
     }
     return aux;
 }
 
-AvlTree FindNeighborsGTFinal( ElementType X, AvlTree T)
-{
-    AvlTree  aux = NULL;
+AvlTree FindNeighborsGTFinal(ElementType X, AvlTree T) {
+    AvlTree aux = NULL;
     while (T != NULL) {
-        if( X < T->Element ){
+        if (X < T->Element) {
             T = T->Left;
-        }
-        else if( X > T->Element ){
+        } else if (X > T->Element) {
             aux = T;
             T = T->Right;
-        }
-        else {
+        } else {
             aux = T;
             break;
         }
@@ -433,7 +386,7 @@ AvlTree FindNeighborsGTFinal( ElementType X, AvlTree T)
     return aux;
 }
 
-void _GetNodesInOrder(AvlTree T, std::vector<AvlTree>& vector) {
+void _GetNodesInOrder(AvlTree T, std::vector<AvlTree> &vector) {
     if (T->Left) {
         _GetNodesInOrder(T->Left, vector);
     }
@@ -444,20 +397,19 @@ void _GetNodesInOrder(AvlTree T, std::vector<AvlTree>& vector) {
 }
 
 
-std::vector<AvlTree> GetNodesInOrder(AvlTree T ){
+std::vector<AvlTree> GetNodesInOrder(AvlTree T) {
     std::vector<AvlTree> nodesOrder;
     _GetNodesInOrder(T, nodesOrder);
     return nodesOrder;
 }
 
 
+void Print(AvlTree T) {
 
-void Print( AvlTree T ){
-
-    if(T==NULL)
+    if (T == NULL)
         return;
 
-    printf("(%lld,%lld) ",(long long int) T->Element, (long long int) T->offset);
+    printf("(%lld,%lld) ", (long long int) T->Element, (long long int) T->offset);
     Print(T->Right);
     Print(T->Left);
     printf("\n");

@@ -1,7 +1,10 @@
 #include "../include/cracking/cracking_updates.h"
 
 extern int64_t COLUMN_SIZE_DUMMY;
-void merge_ripple(IndexEntry *&column,size_t &capacity, AvlTree T, Column &updates, int64_t posL, int64_t posH, int64_t low, int64_t high) {
+
+void
+merge_ripple(IndexEntry *&column, size_t &capacity, AvlTree T, Column &updates, int64_t posL, int64_t posH, int64_t low,
+             int64_t high) {
     int64_t remaining = posH - posL + 1;
     AvlTree lastPiece = FindLastPiece(T);
 
@@ -14,24 +17,14 @@ void merge_ripple(IndexEntry *&column,size_t &capacity, AvlTree T, Column &updat
         return;
     }
     while (node_to_swap_out->offset + remaining + 1 >= COLUMN_SIZE_DUMMY) {
-        column[COLUMN_SIZE_DUMMY].m_key = column[node_to_swap_out->offset+1].m_key ;
-        column[node_to_swap_out->offset+1].m_key = updates.data[posH];
+        column[COLUMN_SIZE_DUMMY].m_key = column[node_to_swap_out->offset + 1].m_key;
+        column[node_to_swap_out->offset + 1].m_key = updates.data[posH];
         posH--;
         COLUMN_SIZE_DUMMY++;
         remaining--;
         node_to_swap_out->offset++;
     }
-//    while (node_to_swap_out == lastPiece && node_to_swap_out->offset + remaining + 1 >= COLUMN_SIZE) {
-//        column[COLUMN_SIZE].m_key = column[node_to_swap_out->offset+1].m_key ;
-//        column[node_to_swap_out->offset+1].m_key = updates.data[posH];
-//        posH--;
-//        COLUMN_SIZE++;
-//        remaining--;
-//        node_to_swap_out->offset++;
-//    }
-//    verify_tree(column, T);
 
-//    IndexEntry stored_entries[remaining];
     IndexEntry *stored_entries = (IndexEntry *) malloc(remaining * 2 * sizeof(int64_t));
 
     for (size_t i = 0; i < remaining; i++) {
@@ -61,7 +54,8 @@ void merge_ripple(IndexEntry *&column,size_t &capacity, AvlTree T, Column &updat
     free(stored_entries);
 }
 
-void merge(IndexEntry *&column, size_t &capacity, AvlTree T, Column &updates, int64_t posL, int64_t posH, int64_t _next) {
+void
+merge(IndexEntry *&column, size_t &capacity, AvlTree T, Column &updates, int64_t posL, int64_t posH, int64_t _next) {
     int64_t remaining = posH - posL + 1;
     int64_t ins = posH;
     int64_t next = _next < 0 ? COLUMN_SIZE_DUMMY - 1 : _next;

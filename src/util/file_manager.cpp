@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void load_queries(RangeQuery *rangequeries,string QUERIES_FILE_PATH, int64_t NUM_QUERIES){
+void load_queries(RangeQuery *rangequeries, string QUERIES_FILE_PATH, int64_t NUM_QUERIES) {
     FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "r");
     if (!f) {
         printf("Cannot open file.\n");
@@ -25,7 +25,7 @@ void load_queries(RangeQuery *rangequeries,string QUERIES_FILE_PATH, int64_t NUM
 
 }
 
-void load_column(Column *c,string COLUMN_FILE_PATH, int64_t COLUMN_SIZE){
+void load_column(Column *c, string COLUMN_FILE_PATH, int64_t COLUMN_SIZE) {
     FILE *f = fopen(COLUMN_FILE_PATH.c_str(), "r");
     if (!f) {
         printf("Cannot open file.\n");
@@ -41,7 +41,7 @@ void load_column(Column *c,string COLUMN_FILE_PATH, int64_t COLUMN_SIZE){
     fclose(f);
 }
 
-void load_answers(vector<int64_t> *answers,string QUERIES_ANSWERS_PATH, int64_t NUM_QUERIES){
+void load_answers(vector<int64_t> *answers, string QUERIES_ANSWERS_PATH, int64_t NUM_QUERIES) {
     FILE *f = fopen(QUERIES_ANSWERS_PATH.c_str(), "r");
     if (!f) {
         printf("Cannot open file.\n");
@@ -55,7 +55,7 @@ void load_answers(vector<int64_t> *answers,string QUERIES_ANSWERS_PATH, int64_t 
     fclose(f);
 }
 
-bool file_exists (const string& name) {
+bool file_exists(const string &name) {
     if (FILE *file = fopen(name.c_str(), "r")) {
         fclose(file);
         return true;

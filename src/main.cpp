@@ -29,43 +29,44 @@
 #pragma clang diagnostic ignored "-Wformat"
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
-int64_t  COLUMN_SIZE,NUM_QUERIES,L2_SIZE, COLUMN_SIZE_DUMMY;
-int ALGORITHM,RUN_CORRECTNESS, NUM_UPDATES,FREQUENCY;
+int64_t COLUMN_SIZE, NUM_QUERIES, L2_SIZE, COLUMN_SIZE_DUMMY;
+int ALGORITHM, RUN_CORRECTNESS, NUM_UPDATES, FREQUENCY;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
 double DELTA;
 
-void full_scan(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time) {
+void full_scan(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers, vector<double> &time) {
     chrono::time_point<chrono::system_clock> start, end;
     for (size_t i = 0; i < NUM_QUERIES; i++) {
         start = chrono::system_clock::now();
-        int64_t sum=0;
+        int64_t sum = 0;
         for (size_t j = 0; j < COLUMN_SIZE; j++)
-            if (column.data[j] >= rangeQueries.leftpredicate[i] && column.data[j] <=rangeQueries.rightpredicate[i])
+            if (column.data[j] >= rangeQueries.leftpredicate[i] && column.data[j] <= rangeQueries.rightpredicate[i])
                 sum += column.data[j];
         end = chrono::system_clock::now();
         time[i] += chrono::duration<double>(end - start).count();
         if (sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], sum );
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i, answers[i], sum);
     }
 }
 
-int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to){
-    int64_t  sum = 0;
-    for(int64_t i = from;i<=to;i++) {
+int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
+    int64_t sum = 0;
+    for (int64_t i = from; i <= to; i++) {
         sum += c[i].m_key;
     }
 
     return sum;
 }
-void *fullIndex(IndexEntry *c){
+
+void *fullIndex(IndexEntry *c) {
     hybrid_radixsort_insert(c, COLUMN_SIZE);
     void *I = build_bptree_bulk(c, COLUMN_SIZE);
 
     return I;
 }
 
-void full_index(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers, vector<double> &time) {
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -73,10 +74,10 @@ void full_index(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answe
         data[i].m_key = column.data[i];
         data[i].m_rowId = i;
     }
-    BulkBPTree* T = (BulkBPTree*) fullIndex(data);
+    BulkBPTree *T = (BulkBPTree *) fullIndex(data);
     end = chrono::system_clock::now();
     time[0] += chrono::duration<double>(end - start).count();
-    for(int i=0;i<NUM_QUERIES;i++){
+    for (int i = 0; i < NUM_QUERIES; i++) {
         // query
         start = chrono::system_clock::now();
         int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[i]);
@@ -85,14 +86,14 @@ void full_index(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answe
         end = chrono::system_clock::now();
         time[i] += chrono::duration<double>(end - start).count();
         if (sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, answers[i], sum);
 
     }
     free(data);
     free(T);
 }
 
-void standard_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers, vector<double> &time) {
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -109,10 +110,11 @@ void standard_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t>
     for (size_t i = 0; i < NUM_QUERIES; i++) {
         start = chrono::system_clock::now();
         //Partitioning Column and Inserting in Cracker Indexing
-        T = standardCracking(crackercolumn , COLUMN_SIZE, T, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]+1);
+        T = standardCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[i],
+                             rangeQueries.rightpredicate[i] + 1);
         //Querying
-        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[i], (AvlTree)T, COLUMN_SIZE-1);
-        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[i]+1, (AvlTree)T, COLUMN_SIZE-1);
+        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[i], (AvlTree) T, COLUMN_SIZE - 1);
+        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[i] + 1, (AvlTree) T, COLUMN_SIZE - 1);
         int offset1 = p1->first;
         int offset2 = p2->second;
         free(p1);
@@ -121,18 +123,19 @@ void standard_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t>
         end = chrono::system_clock::now();
         time[i] += chrono::duration<double>(end - start).count();
         if (sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], sum );
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i, answers[i], sum);
     }
     free(crackercolumn);
 }
 
-int64_t queryStochastic(IndexEntry *crackercolumn,int limit){
+int64_t queryStochastic(IndexEntry *crackercolumn, int limit) {
     int offset1 = 0;
     int offset2 = limit;
     return scanQuery(crackercolumn, offset1, offset2);
 
 }
-void stochastic_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+
+void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers, vector<double> &time) {
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -144,7 +147,7 @@ void stochastic_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_
     //Initialitizing Cracker Index
     AvlTree T = NULL;
     //Intializing Query Output
-    QueryOutput *qo = (QueryOutput*) malloc(sizeof(struct QueryOutput));
+    QueryOutput *qo = (QueryOutput *) malloc(sizeof(struct QueryOutput));
     qo->sum = 0;
     end = chrono::system_clock::now();
     time[0] += chrono::duration<double>(end - start).count();
@@ -162,35 +165,36 @@ void stochastic_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_
 
         //Partitioning Column and Inserting in Cracker Indexing
         T = stochasticCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[i],
-                               rangeQueries.rightpredicate[i]+1, qo);
+                               rangeQueries.rightpredicate[i] + 1, qo);
 
         //Querying
-        if(qo->view1) {
-            qo->sum += queryStochastic(qo->view1, qo->view_size1-1);
+        if (qo->view1) {
+            qo->sum += queryStochastic(qo->view1, qo->view_size1 - 1);
         }
-        if(qo->middlePart_size > 0) {
-            qo->sum += queryStochastic(qo->middlePart, qo->middlePart_size-1);
+        if (qo->middlePart_size > 0) {
+            qo->sum += queryStochastic(qo->middlePart, qo->middlePart_size - 1);
         }
-        if(qo->view2) {
-            qo->sum += queryStochastic(qo->view2,qo->view_size2-1);
+        if (qo->view2) {
+            qo->sum += queryStochastic(qo->view2, qo->view_size2 - 1);
         }
-        if(qo->view1) {
+        if (qo->view1) {
             free(qo->view1);
             qo->view1 = NULL;
         }
-        if(qo->view2) {
+        if (qo->view2) {
             free(qo->view2);
             qo->view2 = NULL;
         }
         end = chrono::system_clock::now();
         time[i] += chrono::duration<double>(end - start).count();
         if (qo->sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], qo->sum );
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i, answers[i], qo->sum);
     }
     free(crackercolumn);
 }
 
-void progressive_stochastic_cracking(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
+                                     vector<double> &time) {
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -202,7 +206,7 @@ void progressive_stochastic_cracking(Column& column, RangeQuery& rangeQueries, v
     //Initialitizing Cracker Index
     AvlTree T = NULL;
     //Intializing Query Output
-    QueryOutput *qo = (QueryOutput*) malloc(sizeof(struct QueryOutput));
+    QueryOutput *qo = (QueryOutput *) malloc(sizeof(struct QueryOutput));
     qo->sum = 0;
     end = chrono::system_clock::now();
     time[0] += chrono::duration<double>(end - start).count();
@@ -217,54 +221,54 @@ void progressive_stochastic_cracking(Column& column, RangeQuery& rangeQueries, v
         qo->sum = 0;
         //Partitioning Column and Inserting in Cracker Indexing
         T = progressiveStochasticCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[i],
-                                          rangeQueries.rightpredicate[i]+1, qo);
+                                          rangeQueries.rightpredicate[i] + 1, qo);
 
         //Querying
-        if(qo->view1) {
-            qo->sum += queryStochastic(qo->view1, qo->view_size1-1);
+        if (qo->view1) {
+            qo->sum += queryStochastic(qo->view1, qo->view_size1 - 1);
         }
-        if(qo->middlePart_size > 0) {
-            qo->sum += queryStochastic(qo->middlePart, qo->middlePart_size-1);
+        if (qo->middlePart_size > 0) {
+            qo->sum += queryStochastic(qo->middlePart, qo->middlePart_size - 1);
         }
-        if(qo->view2) {
-            qo->sum += queryStochastic(qo->view2,qo->view_size2-1);
+        if (qo->view2) {
+            qo->sum += queryStochastic(qo->view2, qo->view_size2 - 1);
         }
-        if(qo->view1) {
+        if (qo->view1) {
             free(qo->view1);
             qo->view1 = NULL;
         }
-        if(qo->view2) {
+        if (qo->view2) {
             free(qo->view2);
             qo->view2 = NULL;
         }
         end = chrono::system_clock::now();
         time[i] += chrono::duration<double>(end - start).count();
         if (qo->sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i,answers[i], qo->sum );
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", i, answers[i], qo->sum);
 
     }
     free(crackercolumn);
 
 }
 
-void generate_equal_size_partitions_order(vector<int64_t> * partitions, int64_t min, int64_t max){
-    int64_t medium = (max+min)/2;
+void generate_equal_size_partitions_order(vector<int64_t> *partitions, int64_t min, int64_t max) {
+    int64_t medium = (max + min) / 2;
     partitions->push_back(medium);
     num_partitions++;
     if (num_partitions > 999)
         return;
-    generate_equal_size_partitions_order(partitions , min, medium);
-    generate_equal_size_partitions_order(partitions , medium, max);
+    generate_equal_size_partitions_order(partitions, min, medium);
+    generate_equal_size_partitions_order(partitions, medium, max);
 
 }
 
 
-void coarse_granular_index(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time){
+void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers, vector<double> &time) {
     chrono::time_point<chrono::system_clock> start, middle, end;
     chrono::duration<double> elapsed_seconds;
     start = chrono::system_clock::now();
-    vector<int64_t>  partitions;
-    generate_equal_size_partitions_order(&partitions,0,COLUMN_SIZE);
+    vector<int64_t> partitions;
+    generate_equal_size_partitions_order(&partitions, 0, COLUMN_SIZE);
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
     //Creating Cracker Column
     for (size_t i = 0; i < COLUMN_SIZE; i++) {
@@ -274,8 +278,8 @@ void coarse_granular_index(Column& column, RangeQuery& rangeQueries, vector<int6
     //Initialitizing Cracker Index
     AvlTree T = NULL;
     // Running 1000 - equal sized partitions
-    for (size_t i = 0 ; i < 1000; i ++){
-        T = standardCracking(crackercolumn , COLUMN_SIZE, T, partitions[i], partitions[i]);
+    for (size_t i = 0; i < 1000; i++) {
+        T = standardCracking(crackercolumn, COLUMN_SIZE, T, partitions[i], partitions[i]);
     }
 
     end = chrono::system_clock::now();
@@ -284,10 +288,11 @@ void coarse_granular_index(Column& column, RangeQuery& rangeQueries, vector<int6
     for (size_t q = 0; q < NUM_QUERIES; q++) {
         start = chrono::system_clock::now();
         // crack
-        T = standardCracking(crackercolumn , COLUMN_SIZE, T, rangeQueries.leftpredicate[q], rangeQueries.rightpredicate[q]+1);
+        T = standardCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[q],
+                             rangeQueries.rightpredicate[q] + 1);
         // query
-        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[q], (AvlTree)T, COLUMN_SIZE-1);
-        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[q]+1, (AvlTree)T, COLUMN_SIZE-1);
+        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[q], (AvlTree) T, COLUMN_SIZE - 1);
+        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[q] + 1, (AvlTree) T, COLUMN_SIZE - 1);
         int64_t offset1 = p1->first;
         int64_t offset2 = p2->second;
         free(p1);
@@ -297,31 +302,32 @@ void coarse_granular_index(Column& column, RangeQuery& rangeQueries, vector<int6
         end = chrono::system_clock::now();
         time[q] += chrono::duration<double>(end - start).count();
         if (sum != answers[q])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", q,answers[q], sum );
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", q, answers[q], sum);
     }
     free(crackercolumn);
 }
 
-int64_t scanQuery(int64_t *c, int64_t from, int64_t to){
-    int64_t  sum = 0;
-    for(int64_t i = from;i<=to;i++) {
+int64_t scanQuery(int64_t *c, int64_t from, int64_t to) {
+    int64_t sum = 0;
+    for (int64_t i = from; i <= to; i++) {
         sum += c[i];
     }
 
     return sum;
 }
 
-void *fullIndex(int64_t* c, int n){
+void *fullIndex(int64_t *c, int n) {
     void *I = build_bptree_bulk_int(c, n);
     return I;
 }
 
-void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& time, vector<double>& deltas){
+void progressive_quicksort(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers, vector<double> &time,
+                           vector<double> &deltas) {
     chrono::time_point<chrono::system_clock> start, end;
-    BulkBPTree* T ;
+    BulkBPTree *T;
     int64_t sum = 0;
     bool converged = false;
-    for(int i = 0; i < NUM_QUERIES; i++) {
+    for (int i = 0; i < NUM_QUERIES; i++) {
         start = chrono::system_clock::now();
         ResultStruct results;
         if (column.converged) {
@@ -336,31 +342,32 @@ void progressive_quicksort(Column& column, RangeQuery& rangeQueries, vector<int6
 
         end = chrono::system_clock::now();
         if (sum != answers[i])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, answers[i], sum);
         time[i] += chrono::duration<double>(end - start).count();
         if (!converged && column.converged) {
             converged = true;
 //            cout << "CONVERGED:" << i << "\n";
-            T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
+            T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
         }
         deltas[i] += DELTA;
     }
 }
 
-void progressive_quicksort_cost_model(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers, vector<double>& times, vector<double>& deltas){
+void progressive_quicksort_cost_model(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
+                                      vector<double> &times, vector<double> &deltas) {
     chrono::time_point<chrono::system_clock> start, end;
-    BulkBPTree* T ;
+    BulkBPTree *T;
     int64_t sum = 0;
     bool converged = false;
     // The target interactivity threshold, scale for data size
     double interactivity_threshold = 0.5 * (column.data.size() / 100000000.0);
 
     double estimated_time = 0;
-    for(int i = 0; i < NUM_QUERIES; i++) {
+    for (int i = 0; i < NUM_QUERIES; i++) {
         size_t ITERATIONS = 5;
         double estimated_delta = 0.5;
         double offset = estimated_delta / 2;
-        for(size_t j = 0; j < ITERATIONS; j++) {
+        for (size_t j = 0; j < ITERATIONS; j++) {
             estimated_time = get_estimated_time_quicksort(column, rangeQueries.leftpredicate[i],
                                                           rangeQueries.rightpredicate[i], estimated_delta);
             if (estimated_time > interactivity_threshold) {
@@ -393,7 +400,7 @@ void progressive_quicksort_cost_model(Column& column, RangeQuery& rangeQueries, 
         end = chrono::system_clock::now();
         double time = chrono::duration<double>(end - start).count();
         if (sum != answers[i]) {
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,answers[i], sum );
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, answers[i], sum);
         }
         // now interpolate the real delta
         double cost_per_delta = (time - base_time) / estimated_delta;
@@ -402,24 +409,24 @@ void progressive_quicksort_cost_model(Column& column, RangeQuery& rangeQueries, 
         times[i] += chrono::duration<double>(end - start).count();
         if (!converged && column.converged) {
             converged = true;
-            T = (BulkBPTree*) fullIndex(column.final_data, column.data.size());
+            T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
         }
-        if(!converged)
+        if (!converged)
             deltas[i] += real_delta;
     }
     column.Clear();
 }
 
-void generate_updates(vector<int64_t>& updates){
+void generate_updates(vector<int64_t> &updates) {
     Random r(140384);
-    for (int i=0; i<FREQUENCY*NUM_UPDATES; i++){
+    for (int i = 0; i < FREQUENCY * NUM_UPDATES; i++) {
         updates[i] = abs(r.nextInt());
     }
 }
 
-void cracking_merge_complete(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers,
-                             vector<double>& times) {
-    vector<int64_t> to_do_updates(NUM_UPDATES*FREQUENCY);
+void cracking_merge_complete(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
+                             vector<double> &times) {
+    vector<int64_t> to_do_updates(NUM_UPDATES * FREQUENCY);
     generate_updates(to_do_updates);
     chrono::time_point<chrono::system_clock> start, end;
     chrono::duration<double> elapsed_seconds;
@@ -452,7 +459,8 @@ void cracking_merge_complete(Column& column, RangeQuery& rangeQueries, vector<in
             updates->data.clear();
             update_index = std::min(update_index + update_count, to_do_updates.size());
         }
-        T = standardCracking(crackercolumn, COLUMN_SIZE_DUMMY, T, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i] + 1);
+        T = standardCracking(crackercolumn, COLUMN_SIZE_DUMMY, T, rangeQueries.leftpredicate[i],
+                             rangeQueries.rightpredicate[i] + 1);
         //Querying
         IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[i], (AvlTree) T, COLUMN_SIZE_DUMMY - 1);
         IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[i] + 1, (AvlTree) T, COLUMN_SIZE_DUMMY - 1);
@@ -470,16 +478,17 @@ void cracking_merge_complete(Column& column, RangeQuery& rangeQueries, vector<in
             correct_answer += element * matching;
         }
         if (sum != correct_answer) {
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,correct_answer, sum);
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, correct_answer,
+                    sum);
         }
     }
     free(crackercolumn);
     updates->Clear();
 }
 
-void cracking_merge_gradually(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers,
-                             vector<double>& times) {
-    vector<int64_t> to_do_updates(NUM_UPDATES*FREQUENCY);
+void cracking_merge_gradually(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
+                              vector<double> &times) {
+    vector<int64_t> to_do_updates(NUM_UPDATES * FREQUENCY);
     generate_updates(to_do_updates);
     chrono::time_point<chrono::system_clock> start, end;
     chrono::duration<double> elapsed_seconds;
@@ -510,24 +519,27 @@ void cracking_merge_gradually(Column& column, RangeQuery& rangeQueries, vector<i
             }
             update_index = std::min(update_index + update_count, to_do_updates.size());
         }
-        if(updates->data.size()){
+        if (updates->data.size()) {
             int64_t initial_offset = 0;
             int64_t final_offset = 0;
             if (!updates_is_sorted) {
                 sort(begin(updates->data), std::end(updates->data));
                 updates_is_sorted = true;
             }
-            initial_offset = binary_search_gte(&updates->data[0],rangeQueries.leftpredicate[i],0,updates->data.size()-1);
+            initial_offset = binary_search_gte(&updates->data[0], rangeQueries.leftpredicate[i], 0,
+                                               updates->data.size() - 1);
             if (initial_offset > 0)
                 initial_offset--;
-            final_offset = binary_search_gte(&updates->data[0],rangeQueries.rightpredicate[i],0,updates->data.size()-1);
-            if (final_offset < updates->data.size()-1)
+            final_offset = binary_search_gte(&updates->data[0], rangeQueries.rightpredicate[i], 0,
+                                             updates->data.size() - 1);
+            if (final_offset < updates->data.size() - 1)
                 final_offset++;
             merge(crackercolumn, capacity, T, *updates, initial_offset, final_offset);
-            updates->data.erase(updates->data.begin()+initial_offset,updates->data.begin()+final_offset+1);
+            updates->data.erase(updates->data.begin() + initial_offset, updates->data.begin() + final_offset + 1);
 
         }
-        T = standardCracking(crackercolumn, COLUMN_SIZE_DUMMY, T, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i] + 1);
+        T = standardCracking(crackercolumn, COLUMN_SIZE_DUMMY, T, rangeQueries.leftpredicate[i],
+                             rangeQueries.rightpredicate[i] + 1);
         //Querying
         IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[i], (AvlTree) T, COLUMN_SIZE_DUMMY - 1);
         IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[i] + 1, (AvlTree) T, COLUMN_SIZE_DUMMY - 1);
@@ -545,16 +557,17 @@ void cracking_merge_gradually(Column& column, RangeQuery& rangeQueries, vector<i
             correct_answer += element * matching;
         }
         if (sum != correct_answer) {
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,correct_answer, sum);
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, correct_answer,
+                    sum);
         }
     }
     free(crackercolumn);
     updates->Clear();
 }
 
-void cracking_merge_ripple(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers,
-                              vector<double>& times) {
-    vector<int64_t> to_do_updates(NUM_UPDATES*FREQUENCY);
+void cracking_merge_ripple(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
+                           vector<double> &times) {
+    vector<int64_t> to_do_updates(NUM_UPDATES * FREQUENCY);
     generate_updates(to_do_updates);
     chrono::time_point<chrono::system_clock> start, end;
     chrono::duration<double> elapsed_seconds;
@@ -585,24 +598,30 @@ void cracking_merge_ripple(Column& column, RangeQuery& rangeQueries, vector<int6
             }
             update_index = std::min(update_index + update_count, to_do_updates.size());
         }
-        if(updates->data.size()){
+        if (updates->data.size()) {
             int64_t initial_offset = 0;
             int64_t final_offset = 0;
             sort(begin(updates->data), std::end(updates->data));
-            initial_offset = binary_search_gte(&updates->data[0],rangeQueries.leftpredicate[i] ,0,updates->data.size()-1);
-            final_offset = binary_search_gte(&updates->data[0],rangeQueries.rightpredicate[i],0,updates->data.size()-1);
+            initial_offset = binary_search_gte(&updates->data[0], rangeQueries.leftpredicate[i], 0,
+                                               updates->data.size() - 1);
+            final_offset = binary_search_gte(&updates->data[0], rangeQueries.rightpredicate[i], 0,
+                                             updates->data.size() - 1);
             if (initial_offset < final_offset) {
-                while(final_offset < updates->data.size() && updates->data[final_offset] <= rangeQueries.rightpredicate[i]) {
+                while (final_offset < updates->data.size() &&
+                       updates->data[final_offset] <= rangeQueries.rightpredicate[i]) {
                     final_offset++;
                 }
-                merge_ripple(crackercolumn, capacity, T, *updates, initial_offset, final_offset - 1, rangeQueries.leftpredicate[i] , rangeQueries.rightpredicate[i]);
-            }
-            else if (final_offset == updates->data.size()-1 && initial_offset == updates->data.size()-1
-                     && updates->data[final_offset] >= rangeQueries.leftpredicate[i]  && updates->data[final_offset] <= rangeQueries.rightpredicate[i])
-                merge_ripple(crackercolumn, capacity, T, *updates, initial_offset, final_offset, rangeQueries.leftpredicate[i] , rangeQueries.rightpredicate[i]);
+                merge_ripple(crackercolumn, capacity, T, *updates, initial_offset, final_offset - 1,
+                             rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]);
+            } else if (final_offset == updates->data.size() - 1 && initial_offset == updates->data.size() - 1
+                       && updates->data[final_offset] >= rangeQueries.leftpredicate[i] &&
+                       updates->data[final_offset] <= rangeQueries.rightpredicate[i])
+                merge_ripple(crackercolumn, capacity, T, *updates, initial_offset, final_offset,
+                             rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i]);
 
         }
-        T = standardCracking(crackercolumn, COLUMN_SIZE_DUMMY, T, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i] + 1);
+        T = standardCracking(crackercolumn, COLUMN_SIZE_DUMMY, T, rangeQueries.leftpredicate[i],
+                             rangeQueries.rightpredicate[i] + 1);
         //Querying
         IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[i], (AvlTree) T, COLUMN_SIZE_DUMMY - 1);
         IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[i] + 1, (AvlTree) T, COLUMN_SIZE_DUMMY - 1);
@@ -620,7 +639,8 @@ void cracking_merge_ripple(Column& column, RangeQuery& rangeQueries, vector<int6
             correct_answer += element * matching;
         }
         if (sum != correct_answer) {
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,correct_answer, sum);
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, correct_answer,
+                    sum);
         }
     }
     free(crackercolumn);
@@ -628,10 +648,10 @@ void cracking_merge_ripple(Column& column, RangeQuery& rangeQueries, vector<int6
 }
 
 void
-progressive_mergesort(Column& column, RangeQuery& rangeQueries, vector<int64_t> &answers,
-                      vector<double>& times) {
+progressive_mergesort(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
+                      vector<double> &times) {
     chrono::time_point<chrono::system_clock> start, end;
-    vector<int64_t> to_do_updates(NUM_UPDATES*FREQUENCY);
+    vector<int64_t> to_do_updates(NUM_UPDATES * FREQUENCY);
     generate_updates(to_do_updates);
     bool converged = false;
     Column *updates = new Column();
@@ -659,7 +679,8 @@ progressive_mergesort(Column& column, RangeQuery& rangeQueries, vector<int64_t> 
         ResultStruct results;
 
         double original_delta = unsorted_column_count == 0 ? 0 : DELTA / unsorted_column_count;
-        results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], original_delta);
+        results = range_query_incremental_quicksort(column, rangeQueries.leftpredicate[i],
+                                                    rangeQueries.rightpredicate[i], original_delta);
         if (!converged && column.converged) {
             converged = true;
             unsorted_column_count--;
@@ -667,7 +688,8 @@ progressive_mergesort(Column& column, RangeQuery& rangeQueries, vector<int64_t> 
         for (size_t j = 0; j < sort_chunks.size(); j++) {
             auto &chunk = sort_chunks[j];
             double sort_chunk_delta = original_delta * ((double) column.data.size() / (double) chunk->data.size());
-            results.merge(range_query_incremental_quicksort(*chunk, rangeQueries.leftpredicate[i], rangeQueries.rightpredicate[i], sort_chunk_delta));
+            results.merge(range_query_incremental_quicksort(*chunk, rangeQueries.leftpredicate[i],
+                                                            rangeQueries.rightpredicate[i], sort_chunk_delta));
             if (!has_converged[j] && chunk->converged) {
                 has_converged[j] = true;
                 unsorted_column_count--;
@@ -718,7 +740,8 @@ progressive_mergesort(Column& column, RangeQuery& rangeQueries, vector<int64_t> 
             correct_answer += element * matching;
         }
         if (results.sum != correct_answer) {
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i,correct_answer, results.sum);
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", i, correct_answer,
+                    results.sum);
         }
 
         times[i] += chrono::duration<double>(end - start).count();
@@ -735,7 +758,7 @@ progressive_mergesort(Column& column, RangeQuery& rangeQueries, vector<int64_t> 
 }
 
 
-void print_help(int argc, char** argv) {
+void print_help(int argc, char **argv) {
     fprintf(stderr, "Unrecognized command line option.\n");
     fprintf(stderr, "Usage: %s [args]\n", argv[0]);
     fprintf(stderr, "   --column-path\n");
@@ -751,12 +774,12 @@ void print_help(int argc, char** argv) {
     fprintf(stderr, "   --num-updates\n");
 }
 
-pair<string,string> split_once(string delimited, char delimiter) {
+pair<string, string> split_once(string delimited, char delimiter) {
     auto pos = delimited.find_first_of(delimiter);
-    return { delimited.substr(0, pos), delimited.substr(pos+1) };
+    return {delimited.substr(0, pos), delimited.substr(pos + 1)};
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "column";
     QUERIES_FILE_PATH = "query";
     ANSWER_FILE_PATH = "answer";
@@ -772,22 +795,23 @@ int main(int argc, char** argv) {
 
     int repetition = 1;
 
-    for(int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
-        if (arg.substr(0,2) != "--") {
+        if (arg.substr(0, 2) != "--") {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
         arg = arg.substr(2);
         auto p = split_once(arg, '=');
-        auto& arg_name = p.first; auto& arg_value = p.second;
+        auto &arg_name = p.first;
+        auto &arg_value = p.second;
         if (arg_name == "column-path") {
             COLUMN_FILE_PATH = arg_value;
         } else if (arg_name == "query-path") {
             QUERIES_FILE_PATH = arg_value;
-        }else if (arg_name == "answer-path") {
+        } else if (arg_name == "answer-path") {
             ANSWER_FILE_PATH = arg_value;
-        }  else if (arg_name == "num-queries") {
+        } else if (arg_name == "num-queries") {
             NUM_QUERIES = atoi(arg_value.c_str());
         } else if (arg_name == "column-size") {
             COLUMN_SIZE = atoi(arg_value.c_str());
@@ -809,16 +833,16 @@ int main(int argc, char** argv) {
         }
     }
 
-        int total;
+    int total;
 
     RangeQuery rangequeries;
-    load_queries(&rangequeries,QUERIES_FILE_PATH,NUM_QUERIES);
+    load_queries(&rangequeries, QUERIES_FILE_PATH, NUM_QUERIES);
     Column c;
     c.data = vector<int64_t>(COLUMN_SIZE);
-    load_column(&c,COLUMN_FILE_PATH,COLUMN_SIZE);
+    load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
 
     vector<int64_t> answers;
-    load_answers(&answers,ANSWER_FILE_PATH,NUM_QUERIES);
+    load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
 
     if (!RUN_CORRECTNESS)
         repetition = 5;
@@ -826,8 +850,8 @@ int main(int argc, char** argv) {
     vector<double> times(NUM_QUERIES);
     vector<double> deltas(NUM_QUERIES);
 
-    for (size_t i = 0; i < repetition; i ++){
-        switch(ALGORITHM){
+    for (size_t i = 0; i < repetition; i++) {
+        switch (ALGORITHM) {
             case 0:
                 full_scan(c, rangequeries, answers, times);
                 break;
@@ -847,12 +871,12 @@ int main(int argc, char** argv) {
                 coarse_granular_index(c, rangequeries, answers, times);
                 break;
             case 6:
-                progressive_quicksort(c, rangequeries, answers, times,deltas);
+                progressive_quicksort(c, rangequeries, answers, times, deltas);
                 break;
             case 7:
-                progressive_quicksort_cost_model(c, rangequeries, answers, times,deltas);
+                progressive_quicksort_cost_model(c, rangequeries, answers, times, deltas);
                 break;
-            // In the following cases the algorithms are executed with Updates
+                // In the following cases the algorithms are executed with Updates
             case 8:
                 cracking_merge_complete(c, rangequeries, answers, times);
                 break;
@@ -868,7 +892,7 @@ int main(int argc, char** argv) {
         }
     }
     if (!RUN_CORRECTNESS)
-        for (size_t i = 0; i < NUM_QUERIES; i ++){
-                cout << deltas[i]/repetition << ";" << times[i]/repetition << "\n";
-            }
+        for (size_t i = 0; i < NUM_QUERIES; i++) {
+            cout << deltas[i] / repetition << ";" << times[i] / repetition << "\n";
+        }
 }
