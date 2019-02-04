@@ -1,4 +1,5 @@
 #include "../include/cracking/cracking_updates.h"
+#include <cassert>
 
 extern int64_t COLUMN_SIZE_DUMMY;
 

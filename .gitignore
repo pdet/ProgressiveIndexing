@@ -47,4 +47,5 @@ main
 measure
 *DS_Store*
 ResultsCSV/
-constants.h
+src/include/progressive/constants.h
+plots/

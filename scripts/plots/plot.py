@@ -1,9 +1,9 @@
 import os
 import sys
-import inspect
 
-SCRIPT_PATH =  os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) # script directory
+BASE_PATH =os.getcwd()
 
+COLUMN_SIZE_LIST = [100000000,1000000000]
 def combine_results(directory, base,output):
 	global first_file
 	current_directory = os.path.join(base, directory)
@@ -18,11 +18,11 @@ def combine_results(directory, base,output):
 				for line in new_file:
 					if line[-1] != '\n':
 						continue
-					if line.count(';') == 10:
+					if line.count(';') == 3:
 						splits = line.split(';')
 						splits.insert(len(splits)-1, '')
 						line = ';'.join(splits)
-					if line.count(';') != 11:
+					if line.count(';') != 4:
 						continue
 					try:
 						float(line.split(';')[-1])
@@ -32,21 +32,20 @@ def combine_results(directory, base,output):
 			output.flush()
 
 def run(directory,base):
-	output = open('output'+base+'.csv', 'w+')
-	output.write("algorithm;repetition;query_selectivity;query_number;query_pattern;point_query;column_size;column_pattern;allowed_swap;delta;converged;query_time\n")
-
-	if len(sys.argv) > 1:
-		os.chdir(sys.argv[1])
+	output = open(base+'.csv', 'w+')
+	output.write("algorithm;query_number;query_pattern;delta;query_time\n")
 	combine_results(directory,base,output)
 
-def plot(experiment_directory,experiment_base,final_folder):
+def plot_queries(experiment_directory,experiment_base):
+	final_folder = "plots/"+experiment_base
+	os.system("mkdir -p "+ final_folder)
 	run(experiment_directory,experiment_base)
-	os.system("mv output"+experiment_base+".csv "+final_folder+"/output.csv")
-	os.system("cp plot.r "+final_folder+"/")
-	os.chdir(os.path.join(SCRIPT_PATH,final_folder))
-	os.system('Rscript plot.r')
-	os.system('rm plot.r')
-	os.chdir(os.path.join(SCRIPT_PATH))
+	os.system("mv "+experiment_base+".csv "+final_folder+"/output.csv")
+	os.system("cp scripts/plots/plot_queries.R "+final_folder+"/")
+	os.chdir(os.path.join(BASE_PATH,final_folder))
+	os.system('Rscript plot_queries.R')
+	os.system('rm plot_queries.R')
+	os.chdir(os.path.join(BASE_PATH))
 
 def deltaplot(experiment_directory,experiment_base,final_folder):
 	run(experiment_directory,experiment_base)
@@ -55,8 +54,12 @@ def deltaplot(experiment_directory,experiment_base,final_folder):
 	os.system('Rscript plot.r')
 	os.chdir(os.path.join(SCRIPT_PATH))
 
-BASE_PATH ='/Users/holanda/ResultsCSV/'
-print("test")
+os.system("rm -r " + BASE_PATH + "/plots/")
+for column_size in COLUMN_SIZE_LIST:
+	for workload in range(0,17):
+		if os.path.exists(BASE_PATH+ "/ResultsCSV/"+str(column_size)+"_"+str(workload)):		
+			plot_queries(BASE_PATH+ "/ResultsCSV/"+str(column_size)+"_"+str(workload),str(column_size)+"_"+str(workload))
+
 # if os.path.exists(BASE_PATH+"1_1_0"):
 # 	plot(BASE_PATH+'1_1_0','1_1_0',"RandomQueries")
 # if os.path.exists(BASE_PATH+"1_1_1"):

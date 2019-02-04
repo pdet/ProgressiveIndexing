@@ -216,11 +216,20 @@ def run_updates():
         for column_size in COLUMN_SIZE_LIST:
             run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,0)
 
+def download_results():
+    codestr = "rm -r -f ResultsCSV"
+    os.system(codestr)
+    FROM = "stones01:/export/scratch1/home/holanda/pi/ResultsCSV"
+    TO = SCRIPT_PATH
+    codestr = "scp -r " + FROM + " " + TO
+    os.system(codestr)
+
 def plots():
-    execfile(SCRIPT_PATH+"/scripts/plots/plot.py")
+    os.system("python "+SCRIPT_PATH+"/scripts/plots/plot.py")
 
 # test_correctness()
 # test_correctness_updates()
 # run()
 # run_updates()
+download_results()
 plots()
