@@ -31,8 +31,8 @@ void load_column(Column *c, string COLUMN_FILE_PATH, int64_t COLUMN_SIZE) {
         printf("Cannot open file.\n");
         return;
     }
-    int64_t *temp_data = (int64_t *) malloc(sizeof(int64_t) * COLUMN_SIZE);
-    fread(temp_data, sizeof(int64_t), COLUMN_SIZE, f);
+    int *temp_data = (int *) malloc(sizeof(int) * COLUMN_SIZE);
+    fread(temp_data, sizeof(int), COLUMN_SIZE, f);
     c->data = vector<int64_t>(COLUMN_SIZE);
     for (size_t i = 0; i < COLUMN_SIZE; i++) {
 

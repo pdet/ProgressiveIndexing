@@ -14,4 +14,5 @@ void load_answers(vector<int64_t> *answers, string QUERIES_ANSWERS_PATH, int64_t
 
 bool file_exists(const string &name);
 
+
 #endif

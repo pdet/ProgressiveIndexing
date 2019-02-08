@@ -57,7 +57,8 @@ struct Column {
     int64_t *final_data = nullptr;
 
     void Clear() {
-        data.clear();
+//        if(updates)
+//            data.clear();
         converged = false;
         final_data = nullptr;
         qs_index.clear();

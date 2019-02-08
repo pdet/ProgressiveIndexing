@@ -16,7 +16,7 @@ class Workload {
     int N;    // the number of elements in arr
     int W;    // the selected workload to be generated
     int S;    // the selectivity (unused for some workloads)
-    int I;    // the I'th query (internal use only)
+    int I = 0;    // the I'th query (internal use only)
     int a, b; // the last query range [a,b]
     Random r; // Pseudo Random Generator
 
@@ -24,8 +24,8 @@ class Workload {
     bool skyserver_w() {
         static FILE *in = NULL;
         if (I == 0) {
-            in = fopen("data/skyserver.queries", "r");
-            if (!in) fprintf(stderr, "Fail loading file data/skyserver.queries\n");
+            in = fopen("real_data/skyserver/skyserver.queries", "r");
+            if (!in) fprintf(stderr, "Fail loading file real_data/skyserver/skyserver.queries\n");
         }
         if (!in) return false;
         double x, y;
@@ -348,6 +348,20 @@ public :
     }
 };
 
+int64_t check_answer(int64_t low, int64_t high){
+    int64_t answer;
+    size_t size;
+    if (low == 0)
+        size = high - low;
+    else
+        size = high - low + 1;
+    if (size % 2 == 0)
+        answer = (high + low) * size/2;
+    else
+        answer = (high + low) * (size/2) + ((high + low)/2);
+    return answer;
+}
+
 void print_help(int argc, char **argv) {
     fprintf(stderr, "Unrecognized command line option.\n");
     fprintf(stderr, "Usage: %s [args]\n", argv[0]);
@@ -379,7 +393,6 @@ int main(int argc, char **argv) {
     vector<int64_t> leftQuery;
     vector<int64_t> rightQuery;
     vector<int64_t> queryAnswer;
-
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
         if (arg.substr(0, 2) != "--") {
@@ -413,17 +426,24 @@ int main(int argc, char **argv) {
         Column c;
         c.data = vector<int64_t>(COLUMN_SIZE);
         load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
-        Workload W(COLUMN_SIZE, QUERIES_PATTERN, (int) SELECTIVITY_PERCENTAGE);
+        Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
         int64_t a, b;
         for (size_t i = 0; i < NUM_QUERIES; i++) {
             W.query(a, b);
             leftQuery.push_back(a);
             rightQuery.push_back(b);
-            int64_t sum = 0;
-            for (size_t j = 0; j < COLUMN_SIZE; j++)
-                if (c.data[j] >= a && c.data[j] <= b)
-                    sum += c.data[j];
-            queryAnswer.push_back(sum);
+            // The skyserver workload doesn'' follow the same column distribution as other queries
+            // Hence a scan is performed to generate the query answers
+            if (QUERIES_PATTERN == 0){
+                int64_t sum = 0;
+                for (size_t j = 0; j < COLUMN_SIZE; j++)
+                    if (c.data[j] >= a && c.data[j] <= b)
+                        sum += c.data[j];
+                queryAnswer.push_back(sum);
+            }
+            else{
+                queryAnswer.push_back(check_answer(a,b));
+            }
         }
         FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");
         fwrite(&leftQuery[0], sizeof(int64_t), NUM_QUERIES, f);

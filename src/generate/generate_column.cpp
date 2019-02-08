@@ -11,17 +11,17 @@ int COLUMN_SIZE;
 string COLUMN_FILE_PATH;
 
 int generate_column(int N) {
-    Random r(140384);
-    int64_t *arr = new int64_t[N];
-    for (int i = 0; i < N; i++) {
-        arr[i] = abs(r.nextInt());
+    vector<int> data;
+    for (int i = 0; i < N ; i ++){
+        data.push_back(i);
     }
-
-    FILE *out = fopen(COLUMN_FILE_PATH.c_str(), "wb");
-    int nw = fwrite(arr, sizeof(int64_t), N, out);
-    assert(nw == N);
-    fclose(out);
+    random_shuffle(data.begin(), data.end());
+    FILE *f = fopen(COLUMN_FILE_PATH.c_str(), "w+");
+    fwrite(&data[0], sizeof(int), N, f);
+    fclose(f);
 }
+
+
 
 
 void print_help(int argc, char **argv) {
@@ -38,7 +38,7 @@ pair<string, string> split_once(string delimited, char delimiter) {
 
 int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "column";
-    COLUMN_SIZE = 100000000;
+    COLUMN_SIZE = 1000000000;
 
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
