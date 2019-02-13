@@ -371,6 +371,8 @@ void print_help(int argc, char **argv) {
     fprintf(stderr, "   --selectiviy\n");
     fprintf(stderr, "   --num-queries\n");
     fprintf(stderr, "   --queries-pattern\n");
+    fprintf(stderr, "   --print-mode\n");
+
 }
 
 pair<string, string> split_once(string delimited, char delimiter) {
@@ -393,6 +395,7 @@ int main(int argc, char **argv) {
     vector<int64_t> leftQuery;
     vector<int64_t> rightQuery;
     vector<int64_t> queryAnswer;
+    bool print_mode = 1;
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
         if (arg.substr(0, 2) != "--") {
@@ -417,12 +420,14 @@ int main(int argc, char **argv) {
             COLUMN_SIZE = atoi(arg_value.c_str());
         } else if (arg_name == "queries-pattern") {
             QUERIES_PATTERN = atoi(arg_value.c_str());
+        } else if (arg_name == "print-mode") {
+            print_mode = atoi(arg_value.c_str());
         } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
     }
-    if (!file_exists(QUERIES_FILE_PATH)) {
+    if(print_mode){
         Column c;
         c.data = vector<int64_t>(COLUMN_SIZE);
         load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
@@ -432,28 +437,44 @@ int main(int argc, char **argv) {
             W.query(a, b);
             leftQuery.push_back(a);
             rightQuery.push_back(b);
-            // The skyserver workload doesn'' follow the same column distribution as other queries
-            // Hence a scan is performed to generate the query answers
-            if (QUERIES_PATTERN == 0){
-                int64_t sum = 0;
-                for (size_t j = 0; j < COLUMN_SIZE; j++)
-                    if (c.data[j] >= a && c.data[j] <= b)
-                        sum += c.data[j];
-                queryAnswer.push_back(sum);
-            }
-            else{
-                queryAnswer.push_back(check_answer(a,b));
-            }
+            cout << i+1 << ";" << a << ";"<< b <<"\n";
         }
-        FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");
-        fwrite(&leftQuery[0], sizeof(int64_t), NUM_QUERIES, f);
-        fwrite(&rightQuery[0], sizeof(int64_t), NUM_QUERIES, f);
-        fclose(f);
-        FILE *f_2 = fopen(ANSWER_FILE_PATH.c_str(), "w+");
-        fwrite(&queryAnswer[0], sizeof(int64_t), NUM_QUERIES, f_2);
-        fclose(f_2);
-
-    } else {
-        fprintf(stderr, "File already exists, delete it first if you want to generate it again.\n");
     }
+    else{
+        if (!file_exists(QUERIES_FILE_PATH)) {
+            Column c;
+            c.data = vector<int64_t>(COLUMN_SIZE);
+            load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
+            Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
+            int64_t a, b;
+            for (size_t i = 0; i < NUM_QUERIES; i++) {
+                W.query(a, b);
+                leftQuery.push_back(a);
+                rightQuery.push_back(b);
+                // The skyserver workload doesn'' follow the same column distribution as other queries
+                // Hence a scan is performed to generate the query answers
+                if (QUERIES_PATTERN == 0){
+                    int64_t sum = 0;
+                    for (size_t j = 0; j < COLUMN_SIZE; j++)
+                        if (c.data[j] >= a && c.data[j] <= b)
+                            sum += c.data[j];
+                    queryAnswer.push_back(sum);
+                }
+                else{
+                    queryAnswer.push_back(check_answer(a,b));
+                }
+            }
+            FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");
+            fwrite(&leftQuery[0], sizeof(int64_t), NUM_QUERIES, f);
+            fwrite(&rightQuery[0], sizeof(int64_t), NUM_QUERIES, f);
+            fclose(f);
+            FILE *f_2 = fopen(ANSWER_FILE_PATH.c_str(), "w+");
+            fwrite(&queryAnswer[0], sizeof(int64_t), NUM_QUERIES, f_2);
+            fclose(f_2);
+
+        } else {
+            fprintf(stderr, "File already exists, delete it first if you want to generate it again.\n");
+        }
+    }
+
 }

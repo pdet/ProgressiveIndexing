@@ -1,8 +1,9 @@
 # Progressive Indexing
-This project is a stand-alone implementation of all the experiments presented in the **Progressive Index: Indexing Without Prejudice** paper.
+This project is a stand-alone implementation of all the current progressive indexing implementations.
 
 # Requirements
-[CMake](https://cmake.org) to be installed and a `C++11` compliant compiler. Python 2.7 is necessary to run all the setup scripts. R ("dplyr", "ggplot2", "ggthemes", "ggrepel", "data.table", "RColorBrewer") is used to plot the results to the figures referenced in the paper.
+[CMake](https://cmake.org) to be installed and a `C++11` compliant compiler. Python 2.7 is necessary to run all the setup scripts.
+R ("dplyr", "ggplot2", "ggthemes", "ggrepel", "data.table", "RColorBrewer") is used to plot the results to the figures referenced in all the paper.
 
 ## Available Indexing Algorithms
 * [Standard Cracking](https://stratos.seas.harvard.edu/files/IKM_CIDR07.pdf)
@@ -12,13 +13,12 @@ This project is a stand-alone implementation of all the experiments presented in
 * [Full Index (B+ Tree)](https://www.nowpublishers.com/article/Details/DBS-028)
 * Progressive Quicksort Fixed Delta
 * Progressive Quicksort Self-Adjusting Delta
-
-
-## Available Index Update Algorithms
-* [Merge Complete](https://stratos.seas.harvard.edu/publications/updating-cracked-database)
-* [Merge Partial](https://stratos.seas.harvard.edu/publications/updating-cracked-database)
-* [Merge Ripple](https://stratos.seas.harvard.edu/publications/updating-cracked-database)
-* Progressive Mergesort
+* Progressive Radixsort (MSD) Fixed Delta
+* Progressive Radixsort (MSD) Self-Adjusting Delta
+* Progressive Radixsort (LSD) Fixed Delta
+* Progressive Radixsort (LSD) Self-Adjusting Delta
+* Progressive Bucketsort (Equi-Height) Fixed Delta
+* Progressive Bucketsort (Equi-Height) Self-Adjusting Delta
 
 ## Available Workloads
 
@@ -31,7 +31,12 @@ python run.py
 ```
 
 ## Manually Running Experiments
+Edit run.py template_run() method to execute specific parameters (e.g., indexing techniques, column size, workload, selectivity, ...)
 
 ## Third Party Code
 * www.github.com/felix-halim/scrack
 * www.bigdata.uni-saarland.de/publications/uncracked_pieces_sourcecode.zip
+
+## Papers
+* [Progressive Indexing : Indexing without prejudice (Arxiv)](https://www.nowpublishers.com/article/Details/DBS-028)
+* [Progressive Indices : Indexing without prejudice (PhD Worskhop@VLDB)](http://ceur-ws.org/Vol-2175/paper11.pdf)

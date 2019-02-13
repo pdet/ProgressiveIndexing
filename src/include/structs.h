@@ -14,6 +14,50 @@
 #include <climits>
 #include <algorithm>
 
+#define MAXIMUM_BUCKET_ENTRY_SIZE 1024
+#define INCREMENTAL_RADIX_BASE 256
+
+typedef int bucket_type;
+struct Column;
+
+struct ResultStruct {
+    int64_t sum = 0;
+
+    void reserve(size_t capacity) {
+        (void) capacity;
+    }
+
+    size_t size() { return 1; }
+
+    int64_t *begin() { return &sum; }
+
+    int64_t *end() { return &sum + 1; }
+
+    inline void push_back(int64_t value) {
+        sum += value;
+    }
+
+    inline void maybe_push_back(int64_t value, int maybe) {
+        sum += maybe * value;
+    }
+
+    inline void merge(ResultStruct other) {
+        sum += other.sum;
+    }
+
+    int64_t &operator[](const size_t index) {
+        return sum;
+    }
+
+    const int64_t operator[](const size_t index) const {
+        return sum;
+    }
+
+
+    ResultStruct() : sum(0) {}
+};
+
+
 struct QuicksortNode {
     int64_t pivot;
     int64_t min = INT_MIN;
@@ -50,18 +94,200 @@ struct IncrementalQuicksortIndex {
     void clear();
 };
 
+struct BucketEntry {
+    size_t size = 0;
+    size_t indices[MAXIMUM_BUCKET_ENTRY_SIZE];
+    int64_t data[MAXIMUM_BUCKET_ENTRY_SIZE];
+    BucketEntry* next = nullptr;
+    size_t sort_index = 0;
+
+    BucketEntry* Copy() {
+        auto ret = ActualCopy();
+        RecursiveCopy(ret, next);
+        return ret;
+    }
+
+    BucketEntry() : size(0), next(nullptr) { }
+private:
+    void RecursiveCopy(BucketEntry *ret, BucketEntry *entry) {
+        if (!entry) {
+            return;
+        }
+        while (entry) {
+            auto new_entry = entry->ActualCopy();
+            ret->next = new_entry;
+
+            ret = ret->next;
+            entry = entry->next;
+        }
+    }
+
+    BucketEntry* ActualCopy() {
+        BucketEntry* ret = new BucketEntry();
+        ret->size = size;
+        ret->sort_index = sort_index;
+        ret->next = nullptr;
+        memcpy(ret->indices, indices, MAXIMUM_BUCKET_ENTRY_SIZE * sizeof(size_t));
+        memcpy(ret->data, data, MAXIMUM_BUCKET_ENTRY_SIZE * sizeof(int64_t));
+        return ret;
+    }
+};
+struct BucketRoot {
+    BucketEntry* head = nullptr;
+    BucketEntry* tail = nullptr;
+
+    BucketEntry* sort_entry = nullptr;
+    size_t count = 0;
+
+    BucketRoot() : head(nullptr), tail(nullptr), sort_entry(nullptr), count(0) { }
+    ~BucketRoot() {
+        while(head) {
+            BucketEntry* next = head->next;
+            delete head;
+            head = next;
+        }
+    }
+
+    void Copy(BucketRoot& other) {
+        other.count = count;
+        other.head = nullptr;
+        other.tail = nullptr;
+        other.sort_entry = nullptr;
+        if (head) {
+            other.head = head->Copy();
+            other.tail = other.head;
+            while(other.tail->next) {
+                other.tail = other.tail->next;
+            }
+
+            if (sort_entry) {
+                other.sort_entry = other.head;
+                auto entry = head;
+
+                while(entry != sort_entry) {
+                    other.sort_entry = other.sort_entry->next;
+                    entry = entry->next;
+                }
+            }
+        }
+    }
+
+    inline void AddElement(size_t index, int64_t value) {
+        if (!tail) {
+            tail = new BucketEntry();
+            head = tail;
+        }
+        if (tail->size >= MAXIMUM_BUCKET_ENTRY_SIZE) {
+            tail->next = new BucketEntry();
+            tail = tail->next;
+        }
+        count++;
+        tail->data[tail->size] = value;
+        tail->indices[tail->size++] = index;
+    }
+
+    inline void AddAllElements(ResultStruct& results) {
+        BucketEntry* head = this->head;
+        while(head) {
+            for(size_t i = 0; i < head->size; i++) {
+                results.push_back(head->data[i]);
+            }
+            head = head->next;
+        }
+    }
+
+    inline void RangeQuery(int64_t low, int64_t high, ResultStruct& results) {
+        BucketEntry* head = this->head;
+        while(head) {
+            for(size_t i = 0; i < head->size; i++) {
+                int matching = head->data[i] >= low && head->data[i] <= high;
+                results.maybe_push_back(head->data[i], matching);
+            }
+            head = head->next;
+        }
+    }
+
+    inline void PointQuery(int64_t point, ResultStruct& results) {
+        BucketEntry* head = this->head;
+        while(head) {
+            for(size_t i = 0; i < head->size; i++) {
+                int matching = head->data[i] == point;
+                results.maybe_push_back(head->data[i], matching);
+            }
+            head = head->next;
+        }
+    }
+};
+
+
+
+struct RadixSortBuckets {
+    BucketRoot buckets[INCREMENTAL_RADIX_BASE];
+
+    RadixSortBuckets *Copy() {
+        auto ret = new RadixSortBuckets();
+        for(size_t i = 0; i < INCREMENTAL_RADIX_BASE; i++) {
+            buckets[i].Copy(ret->buckets[i]);
+        }
+        return ret;
+    }
+};
+
+struct IncrementalRadixIndex {
+    RadixSortBuckets* current_buckets = nullptr;
+    RadixSortBuckets* prev_buckets = nullptr;
+
+    RadixSortBuckets* final_buckets = nullptr;
+    size_t current_bucket_index;
+    size_t current_bucket;
+    BucketEntry* current_entry = nullptr;
+    int64_t current_power;
+
+    std::vector<int64_t> final_index;
+
+    IncrementalRadixIndex() : current_power(1), current_bucket_index(0) { }
+
+    void Copy(IncrementalRadixIndex& target);
+    void clear();
+};
+
+struct IncrementalBucketSortIndex {
+    int64_t min_value = INT_MAX;
+    int64_t max_value = INT_MIN;
+    size_t index_position = 0;
+    size_t unsorted_bucket = 0;
+    std::vector<int64_t> bounds;
+
+
+    std::vector<BucketRoot> buckets;
+
+    size_t final_index_entries = 0;
+    int64_t* final_index = nullptr;
+
+    IncrementalBucketSortIndex() : final_index(nullptr) { }
+    void clear();
+    void Copy(Column& c, IncrementalBucketSortIndex& target);
+};
+
+
 struct Column {
     std::vector<int64_t> data;
+    std::vector<size_t> sortindex;
+    IncrementalBucketSortIndex bucket_index;
+
     IncrementalQuicksortIndex qs_index;
+    IncrementalRadixIndex radix_index;
+
     bool converged = false;
     int64_t *final_data = nullptr;
 
     void Clear() {
-//        if(updates)
-//            data.clear();
         converged = false;
         final_data = nullptr;
         qs_index.clear();
+        sortindex.clear();
+        radix_index.clear();
+        bucket_index.clear();
     };
 
 
@@ -147,42 +373,7 @@ struct QueryOutput {
     int64_t view_size2;            // stores the size of the view of the upper part
 };
 
-struct ResultStruct {
-    int64_t sum = 0;
 
-    void reserve(size_t capacity) {
-        (void) capacity;
-    }
-
-    size_t size() { return 1; }
-
-    int64_t *begin() { return &sum; }
-
-    int64_t *end() { return &sum + 1; }
-
-    inline void push_back(int64_t value) {
-        sum += value;
-    }
-
-    inline void maybe_push_back(int64_t value, int maybe) {
-        sum += maybe * value;
-    }
-
-    inline void merge(ResultStruct other) {
-        sum += other.sum;
-    }
-
-    int64_t &operator[](const size_t index) {
-        return sum;
-    }
-
-    const int64_t operator[](const size_t index) const {
-        return sum;
-    }
-
-
-    ResultStruct() : sum(0) {}
-};
 
 
 #endif

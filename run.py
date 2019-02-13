@@ -35,12 +35,12 @@ ProgressiveStochasticCracking=4
 CoarseGranularIndex=5
 ProgressiveQuicksort=6
 ProgressiveQuicksortCostModel=7
-
-#Setting Values For Update Algorithms
-MergeComplete = 8
-MergeGradually = 9
-MergeRipple = 10
-ProgressiveMergesort = 11
+ProgressiveBucketsortEquiheight=8
+ProgressiveBucketsortEquiheightCostModel=9
+ProgressiveRadixsortLSD=10
+ProgressiveRadixsortLSDCostModel=11
+ProgressiveRadixsortMSD=12
+ProgressiveRadixsortMSDCostModel=13
 
 COLUMN_SIZE_LIST = [100000000,1000000000,10000000000]
 
@@ -70,14 +70,6 @@ def translate_alg(alg):
         return 'pqs'
     if alg == ProgressiveQuicksortCostModel:
         return 'pqscm'
-    if alg == MergeComplete:
-        return 'mc'
-    if alg == MergeGradually:
-        return 'mg'
-    if alg == MergeRipple:
-        return 'mr'
-    if alg == ProgressiveMergesort:
-        return 'pms'
     return alg
 
 def column_path(COLUMN_SIZE):
@@ -115,39 +107,49 @@ def getFolderToSaveExperiments(algorithm,folder=""):
     os.system('mkdir -p ' + PATH)
 
 #Output is a csv file with:
-# ""algorithm;query_pattern;query_number;delta;query_time"
+# ""algorithm;query_number;query_pattern;delta;query_time"
 def generate_output(file,query_result,QUERY_PATTERN,algorithm):
     query_result = query_result.split("\n")
-    for query in range(0, len(query_result)/2 -1):
+    for query in range(0, len(query_result)):
         file.write(translate_alg(algorithm) + ";" + str(query) + ";" + str(QUERY_PATTERN) + ';' + query_result[query])
         file.write('\n')
     file.close()
 
 # Saving Experiments
 def create_output():
-    header = "algorithm;query_pattern;query_number;delta;query_time"
+    header = "algorithm;query_number;query_pattern;delta;query_time"
     file = open(PATH + "results.csv", "w")
     file.write(header)
     file.write('\n')
     return file
 
-def setup():
-    print("Generating Cost Model Constants")
-    os.system("python scripts/cost_model/generate_constants.py")
+def compile():
     print("Compiling")
     os.environ['OPT'] = 'true'
     if os.system('cmake -DCMAKE_BUILD_TYPE=Release && make') != 0:
         print("Make Failed")
         exit()
+
+def generate_column(column_size):
+    experiment_path = column_path(column_size)
+    generate_column(column_size,experiment_path + "column")
+
+def generate_workload(column_size,query,selectivity):
+    experiment_path = column_path(column_size)
+    q_path = query_path(experiment_path,selectivity,query)
+    a_path = answer_path(experiment_path,selectivity,query)
+    generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,selectivity,query)
+
+def setup():
+    print("Generating Cost Model Constants")
+    os.system("python scripts/cost_model/generate_constants.py")
+    compile()
     for column_size in COLUMN_SIZE_LIST:
-        experiment_path = column_path(column_size)
-        generate_column(column_size,experiment_path + "column")
+        generate_column(column_size)
     for column_size in COLUMN_SIZE_LIST:
         for query in ALL_WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
-                q_path = query_path(experiment_path,selectivity,query)
-                a_path = answer_path(experiment_path,selectivity,query)
-                generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,selectivity,query)
+                generate_workload(column_size,query,selectivity)
 
 def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS=0):
     COLUMN_PATH = column_path(COLUMN_SIZE)
@@ -177,7 +179,6 @@ def run_all_workloads(ALGORITHM,CORRECTNESS=0):
 def test_correctness():
     setup()
     ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
-    # ALGORITHM_LIST = []
     for algorithm in ALGORITHM_LIST:
         run_all_workloads(algorithm,1)
 
@@ -188,7 +189,7 @@ def downloadSkyServer():
 
 def run_skyserver():
     setup()
-    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
+    ALGORITHM_LIST = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel]
     COLUMN_PATH = "real_data/skyserver/skyserver.data"
     QUERY_PATH = "real_data/skyserver/query"
     ANSWER_PATH = "real_data/skyserver/answer"
@@ -224,27 +225,10 @@ def run():
     for algorithm in ALGORITHM_LIST:
         run_all_workloads(algorithm)
 
-def test_correctness_updates():
-    QUERY_SELECTIVITY = 0.001
-    setup()
-    ALGORITHM_LIST = [MergeComplete,MergeGradually,MergeRipple,ProgressiveMergesort]
-    # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
-    for algorithm in ALGORITHM_LIST:
-        for column_size in COLUMN_SIZE_LIST:
-            run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,1)
-
-def run_updates():
-    QUERY_SELECTIVITY = 0.001
-    setup()
-    ALGORITHM_LIST = [MergeComplete,MergeGradually,MergeRipple,ProgressiveMergesort]
-    for algorithm in ALGORITHM_LIST:
-        for column_size in COLUMN_SIZE_LIST:
-            run_experiment(column_size,Random,QUERY_SELECTIVITY,algorithm,0)
-
 def download_results():
     codestr = "rm -r -f ResultsCSV"
     os.system(codestr)
-    FROM = "stones01:/export/scratch1/home/holanda/pi/ResultsCSV"
+    FROM = "stones04:/export/scratch1/home/holanda/ProgressiveIndexing/ResultsCSV"
     TO = SCRIPT_PATH
     codestr = "scp -r " + FROM + " " + TO
     os.system(codestr)
@@ -252,10 +236,66 @@ def download_results():
 def plots():
     os.system("python "+SCRIPT_PATH+"/scripts/plots/plot.py")
 
+def generate_workload_csvs():
+    compile()
+    COLUMN_SIZE = 100000000
+    ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
+                         ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+    NUM_QUERIES = 10000
+    SELECTIVITY_PERCENTAGE = 0.001
+    os.system('rm -r '+ SCRIPT_PATH + "/worload_plots" )
+    os.system('mkdir -p '+ SCRIPT_PATH + "/worload_plots")
+    for workload in ALL_WORKLOAD_LIST:
+        COLUMN_PATH = column_path(COLUMN_SIZE)
+        QUERY_PATH = query_path(COLUMN_PATH,SELECTIVITY_PERCENTAGE,workload)
+        ANSWER_PATH = answer_path(COLUMN_PATH,SELECTIVITY_PERCENTAGE,workload)
+        codestr = "./generate_workload --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE)  \
+                  + " --column-path=" + str(COLUMN_PATH)+ "column" + " --query-path=" + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --selectivity=" \
+                  + str(SELECTIVITY_PERCENTAGE) + " --queries-pattern=" +  str(workload)
+        result = os.popen(codestr).read()
+        file = open(SCRIPT_PATH + "/worload_plots/" +str(workload) + ".csv", "w")
+        file.write(result)
+        file.close()
+
+def template_correctness():
+    ALGORITHM_LIST = [ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
+                      ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
+                      ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
+    COLUMN_SIZE_LIST = [100000000]
+    ALL_WORKLOAD_LIST = [Random]
+    QUERY_SELECTIVITY_LIST = [0.001]
+    compile()
+    for column_size in COLUMN_SIZE_LIST:
+        generate_column(column_size)
+        for query in ALL_WORKLOAD_LIST:
+            for selectivity in QUERY_SELECTIVITY_LIST:
+                generate_workload(column_size,query.selectivity)
+                for algorithm in ALGORITHM_LIST:
+                    run_experiment(column_size,query,selectivity,algorithm,1)
+
+def template_run():
+    ALGORITHM_LIST = [ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
+                      ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
+                      ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
+    COLUMN_SIZE_LIST = [100000000]
+    ALL_WORKLOAD_LIST = [Random]
+    QUERY_SELECTIVITY_LIST = [0.001]
+    compile()
+    for column_size in COLUMN_SIZE_LIST:
+        generate_column(column_size)
+        for query in ALL_WORKLOAD_LIST:
+            for selectivity in QUERY_SELECTIVITY_LIST:
+                generate_workload(column_size,query.selectivity)
+                for algorithm in ALGORITHM_LIST:
+                    run_experiment(column_size,query,selectivity,algorithm,0)
+
 # test_correctness()
 # test_correctness_updates()
-run()
+# run()
 # run_updates()
 # run_skyserver()
 # download_results()
 # plots()
+# generate_workload_csvs()
+
+template_correctness()
