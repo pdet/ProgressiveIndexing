@@ -382,6 +382,6 @@ int main() {
     end = std::chrono::system_clock::now();
 
     s = std::chrono::duration<double>(end - start).count();
-    fprintf(stderr, "LSD Radix Transfer Buckets: %lfs\n", (s*1000)/PAGES_TO_WRITE);
+
 
 }

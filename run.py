@@ -70,18 +70,24 @@ def translate_alg(alg):
         return 'pqs'
     if alg == ProgressiveQuicksortCostModel:
         return 'pqscm'
+    if alg == ProgressiveBucketsortEquiheight:
+        return 'pbs'
+    if alg == ProgressiveBucketsortEquiheightCostModel:
+        return 'pbscm'
+    if alg == ProgressiveRadixsortLSD:
+        return 'prlsd'
+    if alg == ProgressiveRadixsortLSDCostModel:
+        return 'prlsdcm'
+    if alg == ProgressiveRadixsortMSD:
+        return 'prmsd'
+    if alg == ProgressiveRadixsortMSDCostModel:
+        return 'prmsdcm'
     return alg
 
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
     os.system('mkdir -p '+ path)
     return path+ "/"
-
-def generate_column(COLUMN_SIZE,COLUMN_PATH):
-    print("Generating Column")
-    codestr = "./generate_column --column-size=" + str(COLUMN_SIZE) + " --column-path=" + str(COLUMN_PATH)
-    print (codestr)
-    os.system(codestr)
 
 
 def query_path(EXPERIMENT_PATH, SELECTIVITY_PERCENTAGE,QUERIES_PATTERN):
@@ -90,13 +96,26 @@ def query_path(EXPERIMENT_PATH, SELECTIVITY_PERCENTAGE,QUERIES_PATTERN):
 def answer_path(EXPERIMENT_PATH, SELECTIVITY_PERCENTAGE,QUERIES_PATTERN):
     return EXPERIMENT_PATH + "answer_" + str(SELECTIVITY_PERCENTAGE) + "_" + str(QUERIES_PATTERN)
 
-def generate_query(NUM_QUERIES,COLUMN_SIZE, COLUMN_PATH, QUERY_PATH,ANSWER_PATH, SELECTIVITY_PERCENTAGE,QUERIES_PATTERN):
-    print("Generating Queries")
-    codestr = "./generate_workload --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE)  \
-              + " --column-path=" + str(COLUMN_PATH)+ "column" + " --query-path=" + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --selectivity=" \
-              + str(SELECTIVITY_PERCENTAGE) + " --queries-pattern=" +  str(QUERIES_PATTERN)
+def generate_column(column_size):
+    COLUMN_PATH = column_path(column_size)+'column'
+    print("Generating Column")
+    codestr = "./generate_column --column-size=" + str(column_size) + " --column-path=" + str(COLUMN_PATH)
     print (codestr)
     os.system(codestr)
+
+def generate_workload(num_queries,column_size,query,selectivity):
+    COLUMN_PATH = column_path(column_size)
+    QUERY_PATH = query_path(COLUMN_PATH,selectivity,query)
+    ANSWER_PATH = answer_path(COLUMN_PATH,selectivity,query)
+    print("Generating Queries")
+    codestr = "./generate_workload --num-queries=" + str(num_queries) + " --column-size=" + str(column_size)  \
+              + " --column-path=" + str(COLUMN_PATH)+ "column" + " --query-path=" + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --selectivity=" \
+              + str(selectivity) + " --queries-pattern=" +  str(query)
+    print (codestr)
+    os.system(codestr)
+
+def clean_generated_data():
+    os.system ('rm -r generated_data')
 
 def getFolderToSaveExperiments(algorithm,folder=""):
     global PATH
@@ -130,28 +149,21 @@ def compile():
         print("Make Failed")
         exit()
 
-def generate_column(column_size):
-    experiment_path = column_path(column_size)
-    generate_column(column_size,experiment_path + "column")
-
-def generate_workload(column_size,query,selectivity):
-    experiment_path = column_path(column_size)
-    q_path = query_path(experiment_path,selectivity,query)
-    a_path = answer_path(experiment_path,selectivity,query)
-    generate_query(NUM_QUERIES,column_size,experiment_path,q_path,a_path,selectivity,query)
+def generate_cost_model():
+    print("Generating Cost Model Constants")
+    os.system("python scripts/cost_model/generate_constants.py")  
 
 def setup():
-    print("Generating Cost Model Constants")
-    os.system("python scripts/cost_model/generate_constants.py")
+    generate_cost_model()
     compile()
     for column_size in COLUMN_SIZE_LIST:
         generate_column(column_size)
     for column_size in COLUMN_SIZE_LIST:
         for query in ALL_WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
-                generate_workload(column_size,query,selectivity)
+                generate_workload(NUM_QUERIES,column_size,query,selectivity)
 
-def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,CORRECTNESS=0):
+def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,CORRECTNESS=0):
     COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
@@ -173,7 +185,7 @@ def run_all_workloads(ALGORITHM,CORRECTNESS=0):
     for column_size in COLUMN_SIZE_LIST:
         for query in ALL_WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
-                run_experiment(column_size,query,selectivity,ALGORITHM,CORRECTNESS)
+                run_experiment(column_size,query,selectivity,ALGORITHM,NUM_QUERIES,CORRECTNESS)
 
 
 def test_correctness():
@@ -264,14 +276,17 @@ def template_correctness():
     COLUMN_SIZE_LIST = [100000000]
     ALL_WORKLOAD_LIST = [Random]
     QUERY_SELECTIVITY_LIST = [0.001]
+    num_queries = 10000
+    clean_generated_data()
+    generate_cost_model()
     compile()
     for column_size in COLUMN_SIZE_LIST:
         generate_column(column_size)
         for query in ALL_WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
-                generate_workload(column_size,query.selectivity)
+                generate_workload(num_queries,column_size,query,selectivity)
                 for algorithm in ALGORITHM_LIST:
-                    run_experiment(column_size,query,selectivity,algorithm,1)
+                    run_experiment(column_size,query,selectivity,algorithm,num_queries,1)
 
 def template_run():
     ALGORITHM_LIST = [ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
@@ -280,14 +295,17 @@ def template_run():
     COLUMN_SIZE_LIST = [100000000]
     ALL_WORKLOAD_LIST = [Random]
     QUERY_SELECTIVITY_LIST = [0.001]
+    num_queries = 10000
+    clean_generated_data()
+    generate_cost_model()
     compile()
     for column_size in COLUMN_SIZE_LIST:
         generate_column(column_size)
         for query in ALL_WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
-                generate_workload(column_size,query.selectivity)
+                generate_workload(num_queries,column_size,query,selectivity)
                 for algorithm in ALGORITHM_LIST:
-                    run_experiment(column_size,query,selectivity,algorithm,0)
+                    run_experiment(column_size,query,selectivity,algorithm,num_queries,0)
 
 # test_correctness()
 # test_correctness_updates()
@@ -298,4 +316,4 @@ def template_run():
 # plots()
 # generate_workload_csvs()
 
-template_correctness()
+template_run()

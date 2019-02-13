@@ -333,6 +333,24 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
     BulkBPTree *T;
     int64_t sum = 0;
     bool converged = false;
+    if (function == range_query_incremental_bucketsort_equiheight) {
+        // create the initial buckets for bucketsort without counting the time
+        // we do this because it throws off our benchmarking otherwise
+        // otherwise we spent one iteration on determining min,max of the column
+        // which is unrelated to the delta of the algorithm or anything else
+        // we assume the database knows these from statistics in the paper
+        // so we just run a "warm up run" to determine these here prior to benchmarking
+        function(column, rangeQueries.leftpredicate[0], rangeQueries.rightpredicate[0], DELTA);
+    }
+
+    if (function == range_query_incremental_radixsort_msd ||
+        function == range_query_incremental_bucketsort_equiheight) {
+        // initialize the sort index
+        column.sortindex.resize(column.data.size());
+        column.bucket_index.final_index = new int64_t[column.data.size()];
+        column.bucket_index.final_index_entries = 0;
+    }
+
     for (int i = 0; i < NUM_QUERIES; i++) {
         start = chrono::system_clock::now();
         ResultStruct results;
@@ -367,6 +385,23 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
     BulkBPTree *T;
     int64_t sum = 0;
     bool converged = false;
+    if (function == range_query_incremental_bucketsort_equiheight) {
+        // create the initial buckets for bucketsort without counting the time
+        // we do this because it throws off our benchmarking otherwise
+        // otherwise we spent one iteration on determining min,max of the column
+        // which is unrelated to the delta of the algorithm or anything else
+        // we assume the database knows these from statistics in the paper
+        // so we just run a "warm up run" to determine these here prior to benchmarking
+        function(column, rangeQueries.leftpredicate[0], rangeQueries.rightpredicate[0], DELTA);
+    }
+
+    if (function == range_query_incremental_radixsort_msd ||
+        function == range_query_incremental_bucketsort_equiheight) {
+        // initialize the sort index
+        column.sortindex.resize(column.data.size());
+        column.bucket_index.final_index = new int64_t[column.data.size()];
+        column.bucket_index.final_index_entries = 0;
+    }
     // 0.5s
     double interactivity_threshold = 0.5;
     // Run Dummy Full Scan to check if its higher or lower than the interactivity threshold

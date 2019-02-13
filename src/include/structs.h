@@ -13,6 +13,7 @@
 #include <queue>
 #include <climits>
 #include <algorithm>
+#include <cstring>
 
 #define MAXIMUM_BUCKET_ENTRY_SIZE 1024
 #define INCREMENTAL_RADIX_BASE 256
