@@ -12,7 +12,8 @@
 // total amount of relevant bytes in the data set
 // this is ceil(log2(MAX_VALUE)) of the data set
 // since our max value is 10^8, ceil(log2(10^8)) = 27
-#define RADIXSORT_TOTAL_BYTES 27
+//#define RADIXSORT_TOTAL_BYTES 27
+int RADIXSORT_TOTAL_BYTES;
 #define MAXIMUM_BUCKET_ENTRY_SIZE 1024
 
 #define PAGESIZE 4096
@@ -118,12 +119,16 @@ inline unsigned get_radix_bucket(int64_t value, int64_t power) {
     return (unsigned) ((value / power) % INCREMENTAL_RADIX_BASE);
 }
 
-int main() {
+int main(int argc, char **argv) {
 	int64_t *base_column = new int64_t[PAGES_TO_WRITE * ELEMENTS_PER_PAGE];
 	int64_t *values = new int64_t[PAGES_TO_WRITE * ELEMENTS_PER_PAGE];
 	size_t *index = new size_t[ELEMENT_COUNT];
 	ssize_t remaining_swaps;
-	
+	int COLUMN_SIZE;
+    if ( argc > 1 ) {
+        COLUMN_SIZE = atoi( argv[1] );
+    }
+    RADIXSORT_TOTAL_BYTES = ceil(log2(COLUMN_SIZE));
 	struct {
 		size_t current_start;
 		size_t current_end;

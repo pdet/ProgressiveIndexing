@@ -51,3 +51,4 @@ src/include/progressive/constants.h
 plots/
 real_data/
 column
+results.db

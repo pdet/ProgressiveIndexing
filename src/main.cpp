@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <queue>
+#include <math.h>
 #include "include/structs.h"
 #include "include/util/file_manager.h"
 #include "include/util/binary_search.h"
@@ -30,10 +31,10 @@
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
 int64_t COLUMN_SIZE, NUM_QUERIES, L2_SIZE, COLUMN_SIZE_DUMMY;
-int ALGORITHM, RUN_CORRECTNESS, NUM_UPDATES, FREQUENCY;
+int ALGORITHM, RUN_CORRECTNESS, NUM_UPDATES, FREQUENCY, RADIXSORT_TOTAL_BYTES;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
-double DELTA;
+double DELTA, INTERACTIVITY_THRESHOLD;
 
 
 typedef ResultStruct (*progressive_function)(Column& c, int64_t low, int64_t high, double delta);
@@ -403,7 +404,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
         column.bucket_index.final_index_entries = 0;
     }
     // 0.5s
-    double interactivity_threshold = 0.5;
+    double interactivity_threshold = INTERACTIVITY_THRESHOLD;
     // Run Dummy Full Scan to check if its higher or lower than the interactivity threshold
     double full_scan_time;
     start = chrono::system_clock::now();
@@ -509,6 +510,8 @@ void print_help(int argc, char **argv) {
     fprintf(stderr, "   --correctness\n");
     fprintf(stderr, "   --freq-updates\n");
     fprintf(stderr, "   --num-updates\n");
+    fprintf(stderr, "   --interactivity-threshold\n");
+
 }
 
 pair<string, string> split_once(string delimited, char delimiter) {
@@ -529,6 +532,7 @@ int main(int argc, char **argv) {
     RUN_CORRECTNESS = 0; // By Default run regular runs
     NUM_UPDATES = 1000;
     FREQUENCY = 10;
+    INTERACTIVITY_THRESHOLD = 0.5;
 
     int repetition = 1;
 
@@ -564,12 +568,14 @@ int main(int argc, char **argv) {
             NUM_UPDATES = atoi(arg_value.c_str());
         } else if (arg_name == "freq-updates") {
             FREQUENCY = atoi(arg_value.c_str());
+        } else if (arg_name == "interactivity-threshold") {
+            FREQUENCY = atoi(arg_value.c_str());
         } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
     }
-
+    RADIXSORT_TOTAL_BYTES = ceil(log2(COLUMN_SIZE));
     RangeQuery rangequeries;
     load_queries(&rangequeries, QUERIES_FILE_PATH, NUM_QUERIES);
     Column c;
@@ -586,49 +592,49 @@ int main(int argc, char **argv) {
 
     for (size_t i = 0; i < repetition; i++) {
         switch (ALGORITHM) {
-            case 0:
+            case 1:
                 full_scan(c, rangequeries, answers, times);
                 break;
-            case 1:
+            case 2:
                 full_index(c, rangequeries, answers, times);
                 break;
-            case 2:
+            case 3:
                 standard_cracking(c, rangequeries, answers, times);
                 break;
-            case 3:
+            case 4:
                 stochastic_cracking(c, rangequeries, answers, times);
                 break;
-            case 4:
+            case 5:
                 progressive_stochastic_cracking(c, rangequeries, answers, times);
                 break;
-            case 5:
+            case 6:
                 coarse_granular_index(c, rangequeries, answers, times);
                 break;
-            case 6:
+            case 7:
                 progressive_indexing(c, rangequeries, answers, times, deltas,range_query_incremental_quicksort);
                 break;
-            case 7:
+            case 8:
                 progressive_indexing_cost_model(c, rangequeries, answers, times, deltas,
                         range_query_incremental_quicksort,get_estimated_time_quicksort);
                 break;
-            case 8:
+            case 9:
                 progressive_indexing(c, rangequeries, answers, times, deltas,range_query_incremental_bucketsort_equiheight);
                 break;
-            case 9:
+            case 10:
                 progressive_indexing_cost_model(c, rangequeries, answers, times, deltas,
                                                 range_query_incremental_bucketsort_equiheight,get_estimated_time_bucketsort);
                 break;
-            case 10:
+            case 11:
                 progressive_indexing(c, rangequeries, answers, times, deltas,range_query_incremental_radixsort_lsd);
                 break;
-            case 11:
+            case 12:
                 progressive_indexing_cost_model(c, rangequeries, answers, times, deltas,
                                                 range_query_incremental_radixsort_lsd,get_estimated_time_radixsort_lsd);
                 break;
-            case 12:
+            case 13:
                 progressive_indexing(c, rangequeries, answers, times, deltas,range_query_incremental_radixsort_msd);
                 break;
-            case 13:
+            case 14:
                 progressive_indexing_cost_model(c, rangequeries, answers, times, deltas,
                                                 range_query_incremental_radixsort_msd,get_estimated_time_radixsort_msd);
                 break;
