@@ -7,7 +7,8 @@ using namespace std;
 
 extern int64_t L2_SIZE, COLUMN_SIZE;
 extern double ALLOWED_SWAPS_PERCENTAGE;
-
+//extern size_t current_query;
+//extern TotalTime query_times;
 
 map<int64_t, pair<int64_t, pair<int64_t, int64_t> > > partial_crack;
 
@@ -177,13 +178,17 @@ IntPair mdd1rp_find(IndexEntry *&c, int64_t L, int64_t R, int64_t a, int64_t b, 
 
 AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey,
                                       QueryOutput *qo) {
+//    std::chrono::time_point<std::chrono::system_clock> start, end;
+//    start = std::chrono::system_clock::now();
     IntPair p1, p2;
 
     p1 = FindNeighborsLT(lowKey, T, dataSize - 1);
     p2 = FindNeighborsLT(highKey, T, dataSize - 1);
 
     IntPair pivot_pair = NULL;
-
+//    end = std::chrono::system_clock::now();
+//    query_times.idx_time[current_query].index_lookup += std::chrono::duration<double>(end - start).count();
+//    start = std::chrono::system_clock::now();
     if (p1->first == p2->first && p1->second == p2->second) {
         pivot_pair = mdd1rp_find(c, p1->first, p1->second, lowKey, highKey, COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE,
                                  qo->view1, qo->view_size1); // a = L b = R N = Column_size p = swap_percentage
@@ -195,8 +200,8 @@ AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree 
         }
     } else {
         pivot_pair = (IntPair) malloc(sizeof(struct int_pair));
-        pivot_pair->first = NULL;
-        pivot_pair->second = NULL;
+        pivot_pair->first = 0;
+        pivot_pair->second = 0;
         IntPair pivot_pair1 = mdd1rp_find(c, p1->first, p1->second, lowKey, highKey,
                                           COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE, qo->view1, qo->view_size1);
         qo->middlePart = &c[p1->second + 1];
@@ -227,6 +232,9 @@ AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree 
         free(pivot_pair1);
         free(pivot_pair2);
     }
+//    end = std::chrono::system_clock::now();
+//    query_times.idx_time[current_query].sort += std::chrono::duration<double>(end - start).count();
+//    start = std::chrono::system_clock::now();
     if (pivot_pair) {
         if (pivot_pair->first) {
             T = Insert(pivot_pair->first, lowKey, T);
@@ -239,15 +247,16 @@ AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree 
 //        free(pivot_pair);
 
         }
-        pivot_pair->first = NULL;
-        pivot_pair->second = NULL;
+        pivot_pair->first = 0;
+        pivot_pair->second = 0;
         pivot_pair = NULL;
     }
 
 
     free(p1);
     free(p2);
-
+//    end = std::chrono::system_clock::now();
+//    query_times.idx_time[current_query].index_update += std::chrono::duration<double>(end - start).count();
     return T;
 
 }

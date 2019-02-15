@@ -1,4 +1,3 @@
-#pragma once
 #include "../include/progressive/incremental.h"
 #include "../include/util/binary_search.h"
 #include "../include/full_index/hybrid_radix_insert_sort.h"

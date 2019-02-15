@@ -183,8 +183,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
 def template_run_baseline(ALGORITHM_LIST,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,NUM_QUERIES=10000):
     compile()
     if COLUMN_SIZE_LIST == 0:
-        # COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
-        COLUMN_SIZE_LIST = [10000000]
+        COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
         WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
                  ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
@@ -195,7 +194,7 @@ def template_run_baseline(ALGORITHM_LIST,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUER
             QUERY_SELECTIVITY_LIST = []
             i=10
             while column_size/i >= 1:
-                QUERY_SELECTIVITY_LIST.append(100/i)
+                QUERY_SELECTIVITY_LIST.append(100.0/i)
                 i = i * 10
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
@@ -227,7 +226,7 @@ def template_run_progressive(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORK
             QUERY_SELECTIVITY_LIST = []
             i=10
             while column_size/i >= 1:
-                QUERY_SELECTIVITY_LIST.append(100/i)
+                QUERY_SELECTIVITY_LIST.append(100.0/i)
                 i = i * 10
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
@@ -260,7 +259,7 @@ def template_run_progressive_cost_model(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_
             QUERY_SELECTIVITY_LIST = []
             i=10
             while column_size/i >= 1:
-                QUERY_SELECTIVITY_LIST.append(100/i)
+                QUERY_SELECTIVITY_LIST.append(100.0/i)
                 i = i * 10
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
@@ -312,6 +311,6 @@ def run():
     QUERY_SELECTIVITY_LIST=[]
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
-    
+
 run_baseline()
 db.close()

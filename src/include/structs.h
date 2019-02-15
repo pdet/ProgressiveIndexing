@@ -374,7 +374,30 @@ struct QueryOutput {
     int64_t view_size2;            // stores the size of the view of the upper part
 };
 
+struct IndexingTime{
+//    double sort = 0;
+//    double index_lookup = 0;
+//    double index_update = 0;
+//    double data_copy = 0;
+    double index_creation = 0;
+};
 
+struct QueryingTime{
+//    double index_lookup = 0;
+//    double filtering = 0;
+    double query_processing = 0;
+};
+
+struct TotalTime{
+
+    std::vector<IndexingTime> idx_time;
+    std::vector<QueryingTime> q_time;
+
+    void Initialize(size_t query_number) {
+        idx_time = std::vector<IndexingTime>(query_number);
+        q_time = std::vector<QueryingTime>(query_number);
+    };
+};
 
 
 #endif

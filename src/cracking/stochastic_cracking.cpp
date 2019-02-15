@@ -1,5 +1,8 @@
 #include "../include/cracking/stochastic_cracking.h"
+#include <chrono>
 
+//extern size_t current_query;
+//extern TotalTime query_times;
 
 int64_t randomNumber(int64_t max) {
     return 1 + (int64_t) (max * (double) rand() / (RAND_MAX + 1.0));
@@ -46,12 +49,17 @@ IntPair crackInTwoMDD1R(IndexEntry *&c, int64_t posL, int64_t posH, int64_t low,
 
 AvlTree
 stochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey, QueryOutput *qo) {
+//    std::chrono::time_point<std::chrono::system_clock> start, end;
+//    start = std::chrono::system_clock::now();
     IntPair p1, p2;
 
     p1 = FindNeighborsLT(lowKey, T, dataSize - 1);
     p2 = FindNeighborsLT(highKey, T, dataSize - 1);
 
     IntPair pivot_pair = NULL;
+//    end = std::chrono::system_clock::now();
+////    query_times.idx_time[current_query].index_lookup += std::chrono::duration<double>(end - start).count();
+//    start = std::chrono::system_clock::now();
 
     if (p1->first == p2->first && p1->second == p2->second) {
         pivot_pair = crackInTwoMDD1R(c, p1->first, p1->second, lowKey, highKey, qo->view1, qo->view_size1);
@@ -76,7 +84,9 @@ stochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, 
         free(pivot_pair1);
         free(pivot_pair2);
     }
-
+//    end = std::chrono::system_clock::now();
+//    query_times.idx_time[current_query].sort += std::chrono::duration<double>(end - start).count();
+//    start = std::chrono::system_clock::now();
     T = Insert(pivot_pair->first, lowKey, T);
     T = Insert(pivot_pair->second, highKey, T);
 
@@ -86,7 +96,8 @@ stochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, 
         free(pivot_pair);
         pivot_pair = NULL;
     }
-
+//    end = std::chrono::system_clock::now();
+//    query_times.idx_time[current_query].index_update += std::chrono::duration<double>(end - start).count();
     return T;
 }
 
