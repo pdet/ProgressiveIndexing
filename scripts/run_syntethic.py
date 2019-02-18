@@ -2,6 +2,8 @@ import os
 import inspect
 import sqlite3
 
+os.system("rm results.db")
+os.system("python scripts/sqlite.py")
 db = sqlite3.connect('results.db')
 cursor = db.cursor()
 
@@ -185,17 +187,17 @@ def template_run_baseline(ALGORITHM_LIST,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUER
     if COLUMN_SIZE_LIST == 0:
         COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
-        WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-                 ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+        WORKLOAD_LIST = [Random,SeqOver,Skew,Mixed]
     for column_size in COLUMN_SIZE_LIST:
         generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
         generate_column(column_size)
         if QUERY_SELECTIVITY_LIST == 0:
-            QUERY_SELECTIVITY_LIST = []
-            i=10
-            while column_size/i >= 1:
-                QUERY_SELECTIVITY_LIST.append(100.0/i)
-                i = i * 10
+            if column_size == 10000000:
+                QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
+            if column_size == 100000000:
+                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+            if column_size == 100000000:
+                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
                 generate_workload(NUM_QUERIES,column_size,query,selectivity)
@@ -213,21 +215,19 @@ def template_run_progressive(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORK
     if COLUMN_SIZE_LIST == 0:
         COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
-        WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-                 ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+        WORKLOAD_LIST = [Random,SeqOver,Skew,Mixed]
     if DELTA_LIST == 0:
         DELTA_LIST = [0.005,0.01,0.05,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-                 ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
     for column_size in COLUMN_SIZE_LIST:
         generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
         generate_column(column_size)
         if QUERY_SELECTIVITY_LIST == 0:
-            QUERY_SELECTIVITY_LIST = []
-            i=10
-            while column_size/i >= 1:
-                QUERY_SELECTIVITY_LIST.append(100.0/i)
-                i = i * 10
+            if column_size == 10000000:
+                QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
+            if column_size == 100000000:
+                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+            if column_size == 100000000:
+                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
                 generate_workload(NUM_QUERIES,column_size,query,selectivity)
@@ -246,21 +246,19 @@ def template_run_progressive_cost_model(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_
     if COLUMN_SIZE_LIST == 0:
         COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
-        WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-                 ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+        WORKLOAD_LIST = [Random,SeqOver,Skew,Mixed]
     if INTERACTIVITY_THRESHOLD_LIST == 0:
-        INTERACTIVITY_THRESHOLD_LIST = [0.005,0.01,0.05,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-                 ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+        INTERACTIVITY_THRESHOLD_LIST = [0.8, 1.2, 1.5,2]
     for column_size in COLUMN_SIZE_LIST:
         generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
         generate_column(column_size)
         if QUERY_SELECTIVITY_LIST == 0:
-            QUERY_SELECTIVITY_LIST = []
-            i=10
-            while column_size/i >= 1:
-                QUERY_SELECTIVITY_LIST.append(100.0/i)
-                i = i * 10
+            if column_size == 10000000:
+                QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
+            if column_size == 100000000:
+                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+            if column_size == 100000000:
+                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
                 generate_workload(NUM_QUERIES,column_size,query,selectivity)
@@ -293,7 +291,7 @@ def run_progressive():
     # NUM_QUERIES=0
     template_run_progressive(ALGORITHM_LIST)
 
-def template_run_progressive_cost_model():
+def run_progressive_cost_model():
     ALGORITHM_LIST = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel,ProgressiveRadixsortLSDCostModel,ProgressiveBucketsortEquiheightCostModel]
     # COLUMN_SIZE_LIST=[]
     # WORKLOAD_LIST=[]
@@ -312,5 +310,7 @@ def run():
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
 
-run_baseline()
+# run_baseline()
+# run_progressive()
+run_progressive_cost_model()
 db.close()

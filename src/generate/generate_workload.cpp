@@ -453,7 +453,7 @@ int main(int argc, char **argv) {
                 rightQuery.push_back(b);
                 // The skyserver workload doesn'' follow the same column distribution as other queries
                 // Hence a scan is performed to generate the query answers
-                if (QUERIES_PATTERN == 0){
+                if (QUERIES_PATTERN == 1){
                     int64_t sum = 0;
                     for (size_t j = 0; j < COLUMN_SIZE; j++)
                         if (c.data[j] >= a && c.data[j] <= b)
