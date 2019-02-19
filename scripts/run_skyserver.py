@@ -27,7 +27,7 @@ def run_skyserver():
     COLUMN_SIZE = 585624220
     CORRECTNESS = 0
     QUERY_PATTERN = SkyServer
-    QUERY_SELECTIVITY_LIST = [0.0000002,0.001,10,50]
+    QUERY_SELECTIVITY_LIST = [0.0000002,0.00001,0.001,0.1,1]
     for query_sel in QUERY_SELECTIVITY_LIST:
         codestr = "./generate_workload --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE)  \
                   + " --column-path=" + str(COLUMN_PATH) + " --query-path=" + str(QUERY_PATH)+"_"+str(query_sel) + " --answer-path=" + str(ANSWER_PATH)+"_"+str(query_sel) + " --selectivity=" \

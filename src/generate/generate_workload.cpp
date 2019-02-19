@@ -7,7 +7,8 @@
 #include "../include/generate/random.h"
 #include "../include/util/file_manager.h"
 #include "../include/structs.h"
-
+#include "../include/full_index/hybrid_radix_insert_sort.h"
+#include "../include/full_index/bulkloading_bp_tree.h"
 
 using namespace std;
 
@@ -239,6 +240,19 @@ pair<string, string> split_once(string delimited, char delimiter) {
     auto pos = delimited.find_first_of(delimiter);
     return {delimited.substr(0, pos), delimited.substr(pos + 1)};
 }
+void *fullIndex(IndexEntry *c) {
+    hybrid_radixsort_insert(c, COLUMN_SIZE);
+    void *I = build_bptree_bulk(c, COLUMN_SIZE);
+    return I;
+}
+int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
+    int64_t sum = 0;
+    for (int64_t i = from; i <= to; i++) {
+        sum += c[i].m_key;
+    }
+
+    return sum;
+}
 
 int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "column";
@@ -295,6 +309,19 @@ int main(int argc, char **argv) {
         if (!file_exists(QUERIES_FILE_PATH)) {
             Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
             int64_t a, b;
+            Column c;
+            IndexEntry *data;
+            BulkBPTree *T;
+            if (QUERIES_PATTERN == 1) {
+                c.data = vector<int64_t>(COLUMN_SIZE);
+                load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
+                data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+                for (size_t i = 0; i < COLUMN_SIZE; i++) {
+                    data[i].m_key = c.data[i];
+                    data[i].m_rowId = i;
+                }
+                T = (BulkBPTree *) fullIndex(data);
+            }
             for (size_t i = 0; i < NUM_QUERIES; i++) {
                 W.query(a, b);
                 leftQuery.push_back(a);
@@ -302,13 +329,9 @@ int main(int argc, char **argv) {
                 // The skyserver workload doesn'' follow the same column distribution as other queries
                 // Hence a scan is performed to generate the query answers
                 if (QUERIES_PATTERN == 1){
-                    Column c;
-                    c.data = vector<int64_t>(COLUMN_SIZE);
-                    load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
-                    int64_t sum = 0;
-                    for (size_t j = 0; j < COLUMN_SIZE; j++)
-                        if (c.data[j] >= a && c.data[j] <= b)
-                            sum += c.data[j];
+                    int64_t offset1 = (T)->gte(a);
+                    int64_t offset2 = (T)->lte(b);
+                    int64_t sum = scanQuery(data, offset1, offset2);
                     queryAnswer.push_back(sum);
                 }
                 else{
