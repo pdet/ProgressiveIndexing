@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     vector<int64_t> leftQuery;
     vector<int64_t> rightQuery;
     vector<int64_t> queryAnswer;
-    bool print_mode = 1;
+    bool print_mode = 0;
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
         if (arg.substr(0, 2) != "--") {

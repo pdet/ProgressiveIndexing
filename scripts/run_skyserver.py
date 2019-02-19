@@ -32,10 +32,8 @@ def run_skyserver():
         codestr = "./generate_workload --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE)  \
                   + " --column-path=" + str(COLUMN_PATH) + " --query-path=" + str(QUERY_PATH)+"_"+str(query_sel) + " --answer-path=" + str(ANSWER_PATH)+"_"+str(query_sel) + " --selectivity=" \
                   + str(query_sel) + " --queries-pattern=" +  str(QUERY_PATTERN)
-    print (codestr)
-    if os.system(codestr) != 0:
-        print("Generating Queries Failed")
-        exit()
+        print (codestr)
+        os.system(codestr)
     # for algorithm in ALGORITHM_LIST:
     #     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
     #          " --algorithm="+str(algorithm)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
