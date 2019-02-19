@@ -700,6 +700,6 @@ int main(int argc, char **argv) {
 //            total_indexing = query_times.idx_time[i].index_lookup + query_times.idx_time[i].sort + query_times.idx_time[i].index_update + query_times.idx_time[i].data_copy;
 //            total_querying = query_times.q_time[i].index_lookup + query_times.q_time[i].filtering;
             total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
-            cout << deltas[i] / repetition << ";"  << query_times.idx_time[i].index_creation / repetition << ";"  << query_times.q_time[i].query_processing / repetition <<  ";" << total_time / repetition  << "\n";
+            cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition  << "\n";
         }
 }
