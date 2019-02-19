@@ -15,20 +15,13 @@ os.chdir("..")
 SkyServer=1
 Random=2
 SeqOver=3
-SeqInv=4
-SeqRand=5
-SeqNoOver=6
-SeqAlt=7
-ConsRandom=8
-ZoomIn=9
-ZoomOut=10
-SeqZoomIn=11
-SeqZoomOut=12
-Skew=13
-ZoomOutAlt=14
-SkewZoomOutAlt=15
-Periodic=16
-Mixed=17
+SeqRand=3
+ZoomIn=5
+SeqZoomIn=6
+Skew=7
+ZoomOutAlt=8
+Periodic=9
+ZoomInAlt=10
 
 #Setting Values For Different Algorithms
 FullScan = 1
@@ -49,7 +42,7 @@ ProgressiveRadixsortMSDCostModel=14
 baseline_list = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
-
+syntethical_workload_lost = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
     os.system('mkdir -p '+ path)
@@ -192,7 +185,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
     if COLUMN_SIZE_LIST == 0:
         COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
-        WORKLOAD_LIST = [Random,SeqOver,Skew,Mixed]
+        WORKLOAD_LIST = syntethical_workload_lost
     if INTERACTIVITY_THRESHOLD_LIST == 0:
         INTERACTIVITY_THRESHOLD_LIST = [0.8, 1.2, 1.5,2]
     if DELTA_LIST == 0:
@@ -205,7 +198,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
                 QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
             if column_size == 100000000:
                 QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
-            if column_size == 100000000:
+            if column_size == 1000000000:
                 QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
             else:
                 QUERY_SELECTIVITY_LIST = [0.001]
@@ -278,7 +271,7 @@ def run():
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
 
-# run_baseline()
+run_baseline()
 # run_progressive()
-run_progressive_cost_model()
+# run_progressive_cost_model()
 db.close()

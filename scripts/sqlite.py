@@ -39,8 +39,8 @@ cursor.execute('''
 
 algorithms = [('FullScan',),('FullIndex',),('StandardCracking',),('StochasticCracking',),('ProgressiveStochasticCracking',),('CoarseGranularIndex',), ('ProgressiveQuicksort',),('ProgressiveQuicksortCostModel',),('ProgressiveBucketsortEquiheight',),('ProgressiveBucketsortEquiheightCostModel',) ,('ProgressiveRadixsortLSD',),('ProgressiveRadixsortLSDCostModel',),('ProgressiveRadixsortMSD',),('ProgressiveRadixsortMSDCostModel',)]
 cursor.executemany(''' INSERT INTO algorithm(name) VALUES(?)''', algorithms)
-workload = [('SkyServer',),('Random',),('SeqOver',),('SeqInv',),('SeqRand',),('SeqNoOver',), ('SeqAlt',),('ConsRandom',),('ZoomIn',),('ZoomOut',) ,('SeqZoomIn',),('SeqZoomOut',),('Skew',)
-,('ZoomOutAlt',),('SkewZoomOutAlt',),('Periodic',),('Mixed',)]
+
+workload = [('SkyServer',),('Random',),('SeqOver',),('SeqRand',),('ZoomIn',),('SeqZoomIn',), ('Skew',),('ZoomOutAlt',),('Periodic',),('ZoomInAlt',)]
 cursor.executemany(''' INSERT INTO workload(name) VALUES(?)''', workload)
 
 db.commit()

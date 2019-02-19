@@ -11,13 +11,16 @@
 
 using namespace std;
 
+string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
+float SELECTIVITY_PERCENTAGE;
+int NUM_QUERIES, COLUMN_SIZE, QUERIES_PATTERN;
 
 class Workload {
     int N;    // the number of elements in arr
     int W;    // the selected workload to be generated
     int S;    // the selectivity (unused for some workloads)
     int I = 0;    // the I'th query (internal use only)
-    int a, b; // the last query range [a,b]
+    int64_t a, b; // the last query range [a,b]
     Random r; // Pseudo Random Generator
 
     // based on the predefined queries from file
@@ -43,86 +46,32 @@ class Workload {
 
     // a and b is selected uniformly at random and a < b
     bool random_w() {
-        if (S == 0) { // random selectivity
-            do {
-                a = r.nextInt(N);
-                b = r.nextInt(N);
-                if (a > b) swap(a, b);
-            } while (a == b);
-        } else {
-            a = r.nextInt(N - S + 1);
-            b = max(a + 1, a + S);
-        }
+        a = rand() % (N-S);
+        b = a + S;
         return true;
     }
 
     // a will be incremented by 10 every subsequent query
     // the range may overlap with the next queries
     bool seq_over_w() {
-        a = 10 + I * 20;
-        if (a + 5 > N) return false;
-        if (S == 0) {
-            b = a + r.nextInt(N - a) + 1;
-        } else {
-            b = a + S;
-        }
+        int j  = N/NUM_QUERIES;
+        a = I * j;
+        b = a + S;
         return b <= N;
     }
 
-    // the opposit direction from the seq_over_w
-    bool seq_inv_w() {
-        if (!seq_over_w()) return false;
-        a = N - a;
-        b = N - b;
-        swap(a, b);
-        return true;
-    }
 
     // half the time is seq_over half the time is random_w
     bool seq_rand_w() {
-        if (I & 1) {
-            return seq_over_w();
-        } else {
-            return random_w();
-        }
-    }
-
-    // sequential with no overlap with the subsequent query ranges
-    bool seq_no_over_w() {
-        static int prevB;
-        if (!I) prevB = 0;
-        a = prevB + 10;
-        if (a + 5 > N) return false;
-        if (S == 0) {
-            b = a + r.nextInt(N - a) + 1;
-        } else {
-            b = a + S;
-        }
-        prevB = b;
-        return b <= N;
-    }
-
-    // sequential alternate at the beginning and end
-    bool seq_alt_w() {
-        if (I & 1) {
-            return seq_over_w();
-        } else {
-            return seq_inv_w();
-        }
-    }
-
-    // pick 1000 integers and produce range queries with endpoints
-    // using the 1000 picked integers
-    bool cons_rand_w() {
-        static int R[1000];
-        if (!I) for (int i = 0; i < 1000; i++) R[i] = r.nextInt(N);
-        do {
-            a = R[r.nextInt(1000)];
-            b = R[r.nextInt(1000)];
-        } while (a == b);
-        if (a > b) swap(a, b);
+        int j  = N/NUM_QUERIES;
+        a = I * j;
+        b = a + rand()%(N-I*j);
         return true;
     }
+
+
+
+
 
     // start at the [middle - 100500, middle + 100500),
     // then zoom in by making the query range smaller by 100 on each query
@@ -133,26 +82,13 @@ class Workload {
         if (!I) R = 2 * N / 3;
         if (L >= R || L < 0 || R > N) return false;
         a = L;
-        L += 100;  // make the range smaller
+        L += N/100000;  // make the range smaller
         b = R;
-        R -= 100;
+        R -= N/100000;
         return true;
     }
 
-    // start at the [middle - 500, middle + 500),
-    // then zoom out by making the query range larger by 100 each query
-    bool zoom_out_w() {
-        static int L;
-        if (!I) L = N / 2 - 500;
-        static int R;
-        if (!I) R = N / 2 + 500;
-        if (L < 1 || R > N) return false;
-        a = L;
-        L -= 100;  // make the range bigger
-        b = R;
-        R += 100;
-        return true;
-    }
+
 
     // after zooming in on one region, move to next unexplored region to the right
     bool seq_zoom_in() {
@@ -170,21 +106,6 @@ class Workload {
         return true;
     }
 
-    // after zooming out on one ragion, move to the next unexplored region on the right
-    bool seq_zoom_out() {
-        static int G = 100000;
-        static int L;
-        if (!I) L = G / 2 + 1000;
-        static int R;
-        if (!I) R = L + 10;
-        if (R > L + G) L = R + G / 2 + 1000, R = L + 10;
-        if (R > N) return false;
-        a = L;
-        L -= 100;
-        b = R;
-        R += 100;
-        return true;
-    }
 
     //where 80 percent of the queries falls within 20 percent of the value range and
     //20 percent of the queries falls within the 80 percent of the value range
@@ -225,58 +146,18 @@ class Workload {
         return true;
     }
 
-    // start at the [middle - 500, middle + 500),
-    // then zoom out by making the query range larger by 100 each query
-    bool skew_zoom_out_alt_w() {
-        static int L;
-        if (!I) L = N - 355000;
-        static int R;
-        if (!I) R = N - 350000;
-        if (L < 1 || R > N) return false;
-        if (I & 1) {
-            b = R;
-            R += 20;
-            a = b - 10;
-        } else {
-            a = L;
-            L -= 20;  // make the range bigger
-            b = a + 10;
-        }
-        return true;
-    }
-
     bool periodic_w() {
-        static long long jump = 1000001;
-        a = (I * jump) % N;
-        b = a + 10;
+        static long long jump = N/100;
+        a = (I * jump) % (N-S);
+        b = a + S;
         return true;
     }
 
-    bool mixed_w() {
-        static int work = 0;
-        static int base = 0;
-        if (I % 1000 == 0) {
-            work = r.nextInt(15) + 1;
-            base = r.nextInt(20);
-        }
-        int tW = W;
-        W = work;
-        int tI = I;
-        I %= 1000;
-        int tN = N;
-        N /= 20;
-        int64_t ta, tb;
-        bool ok = query(ta, tb);
-        W = tW;
-        I = tI;
-        if (!ok) {
-            N = tN;
-            work = r.nextInt(15) + 1;
-            return mixed_w();
-        }
-        a = ta + base * N;
-        b = tb + base * N;
-        N = tN;
+    bool zoom_in_alt_w() {
+        int x = pow(-1,I);
+        int j  = N/NUM_QUERIES;
+        a =  x * I *j + (N-S)*(1-x)/2;
+        b = a + S;
         return true;
     }
 
@@ -297,46 +178,25 @@ public :
                 if (!seq_over_w()) return false;
                 break;
             case 4 :
-                if (!seq_inv_w()) return false;
-                break;
-            case 5 :
                 if (!seq_rand_w()) return false;
                 break;
-            case 6 :
-                if (!seq_no_over_w()) return false;
-                break;
-            case 7 :
-                if (!seq_alt_w()) return false;
-                break;
-            case 8 :
-                if (!cons_rand_w()) return false;
-                break;
-            case 9 :
+            case 5 :
                 if (!zoom_in_w()) return false;
                 break;
-            case 10 :
-                if (!zoom_out_w()) return false;
-                break;
-            case 11 :
+            case 6 :
                 if (!seq_zoom_in()) return false;
                 break;
-            case 12 :
-                if (!seq_zoom_out()) return false;
-                break;
-            case 13 :
+            case 7 :
                 if (!skew_w()) return false;
                 break;
-            case 14 :
+            case 8 :
                 if (!zoom_out_alt_w()) return false;
                 break;
-            case 15 :
-                if (!skew_zoom_out_alt_w()) return false;
-                break;
-            case 16 :
+            case 9 :
                 if (!periodic_w()) return false;
                 break;
-            case 17 :
-                if (!mixed_w()) return false;
+            case 10 :
+                if (!zoom_in_alt_w()) return false;
                 break;
             default :
                 assert(0);
@@ -381,14 +241,10 @@ pair<string, string> split_once(string delimited, char delimiter) {
 }
 
 int main(int argc, char **argv) {
-    string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
-    float SELECTIVITY_PERCENTAGE;
-    int NUM_QUERIES, COLUMN_SIZE, QUERIES_PATTERN;
-
     COLUMN_FILE_PATH = "column";
     QUERIES_FILE_PATH = "query";
     ANSWER_FILE_PATH = "answer";
-    SELECTIVITY_PERCENTAGE = 5;
+    SELECTIVITY_PERCENTAGE = 1;
     NUM_QUERIES = 20;
     COLUMN_SIZE = 100000000;
     QUERIES_PATTERN = 2;
@@ -432,8 +288,6 @@ int main(int argc, char **argv) {
         int64_t a, b;
         for (size_t i = 0; i < NUM_QUERIES; i++) {
             W.query(a, b);
-            leftQuery.push_back(a);
-            rightQuery.push_back(b);
             cout << i+1 << ";" << a << ";"<< b <<"\n";
         }
     }
