@@ -287,55 +287,55 @@ public :
 
     bool query(int64_t &na, int64_t &nb) {
         switch (W) {
-            case 0 :
+            case 1 :
                 if (!skyserver_w()) return false;
                 break;
-            case 1 :
+            case 2 :
                 if (!random_w()) return false;
                 break;
-            case 2 :
+            case 3 :
                 if (!seq_over_w()) return false;
                 break;
-            case 3 :
+            case 4 :
                 if (!seq_inv_w()) return false;
                 break;
-            case 4 :
+            case 5 :
                 if (!seq_rand_w()) return false;
                 break;
-            case 5 :
+            case 6 :
                 if (!seq_no_over_w()) return false;
                 break;
-            case 6 :
+            case 7 :
                 if (!seq_alt_w()) return false;
                 break;
-            case 7 :
+            case 8 :
                 if (!cons_rand_w()) return false;
                 break;
-            case 8 :
+            case 9 :
                 if (!zoom_in_w()) return false;
                 break;
-            case 9 :
+            case 10 :
                 if (!zoom_out_w()) return false;
                 break;
-            case 10 :
+            case 11 :
                 if (!seq_zoom_in()) return false;
                 break;
-            case 11 :
+            case 12 :
                 if (!seq_zoom_out()) return false;
                 break;
-            case 12 :
+            case 13 :
                 if (!skew_w()) return false;
                 break;
-            case 13 :
+            case 14 :
                 if (!zoom_out_alt_w()) return false;
                 break;
-            case 14 :
+            case 15 :
                 if (!skew_zoom_out_alt_w()) return false;
                 break;
-            case 15 :
+            case 16 :
                 if (!periodic_w()) return false;
                 break;
-            case 16 :
+            case 17 :
                 if (!mixed_w()) return false;
                 break;
             default :
@@ -388,14 +388,14 @@ int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "column";
     QUERIES_FILE_PATH = "query";
     ANSWER_FILE_PATH = "answer";
-    SELECTIVITY_PERCENTAGE = 0.01;
-    NUM_QUERIES = 150;
+    SELECTIVITY_PERCENTAGE = 5;
+    NUM_QUERIES = 20;
     COLUMN_SIZE = 100000000;
-    QUERIES_PATTERN = 1;
+    QUERIES_PATTERN = 2;
     vector<int64_t> leftQuery;
     vector<int64_t> rightQuery;
     vector<int64_t> queryAnswer;
-    bool print_mode = 0;
+    bool print_mode = 1;
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
         if (arg.substr(0, 2) != "--") {
@@ -428,9 +428,6 @@ int main(int argc, char **argv) {
         }
     }
     if(print_mode){
-        Column c;
-        c.data = vector<int64_t>(COLUMN_SIZE);
-        load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
         Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
         int64_t a, b;
         for (size_t i = 0; i < NUM_QUERIES; i++) {
@@ -442,9 +439,6 @@ int main(int argc, char **argv) {
     }
     else{
         if (!file_exists(QUERIES_FILE_PATH)) {
-            Column c;
-            c.data = vector<int64_t>(COLUMN_SIZE);
-            load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
             Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
             int64_t a, b;
             for (size_t i = 0; i < NUM_QUERIES; i++) {
@@ -454,6 +448,9 @@ int main(int argc, char **argv) {
                 // The skyserver workload doesn'' follow the same column distribution as other queries
                 // Hence a scan is performed to generate the query answers
                 if (QUERIES_PATTERN == 1){
+                    Column c;
+                    c.data = vector<int64_t>(COLUMN_SIZE);
+                    load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
                     int64_t sum = 0;
                     for (size_t j = 0; j < COLUMN_SIZE; j++)
                         if (c.data[j] >= a && c.data[j] <= b)

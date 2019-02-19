@@ -190,7 +190,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
 def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=10000):
     compile()
     if COLUMN_SIZE_LIST == 0:
-        COLUMN_SIZE_LIST = [100000]
+        COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
         WORKLOAD_LIST = [Random,SeqOver,Skew,Mixed]
     if INTERACTIVITY_THRESHOLD_LIST == 0:
@@ -278,7 +278,7 @@ def run():
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
 
-run_baseline()
-run_progressive()
+# run_baseline()
+# run_progressive()
 run_progressive_cost_model()
 db.close()
