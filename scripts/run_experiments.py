@@ -15,7 +15,7 @@ os.chdir("..")
 SkyServer=1
 Random=2
 SeqOver=3
-SeqRand=3
+SeqRand=4
 ZoomIn=5
 SeqZoomIn=6
 Skew=7
@@ -42,7 +42,7 @@ ProgressiveRadixsortMSDCostModel=14
 baseline_list = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
-syntethical_workload_lost = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
+syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
     os.system('mkdir -p '+ path)
@@ -114,6 +114,10 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
     COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    if QUERY_PATTERN == skyserver:
+        COLUMN_PATH = "real_data/skyserver/skyserver.data"
+        QUERY_PATH = "real_data/skyserver/query"
+        ANSWER_PATH = "real_data/skyserver/answer"
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --correctness=" + str(0)
@@ -137,6 +141,10 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
     COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    if QUERY_PATTERN == skyserver:
+        COLUMN_PATH = "real_data/skyserver/skyserver.data"
+        QUERY_PATH = "real_data/skyserver/query"
+        ANSWER_PATH = "real_data/skyserver/answer"
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) + " --correctness=" + str(0)
@@ -160,6 +168,10 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
     COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    if QUERY_PATTERN == skyserver:
+        COLUMN_PATH = "real_data/skyserver/skyserver.data"
+        QUERY_PATH = "real_data/skyserver/query"
+        ANSWER_PATH = "real_data/skyserver/answer"
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) + " --correctness=" + str(0)
@@ -185,7 +197,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
     if COLUMN_SIZE_LIST == 0:
         COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
     if WORKLOAD_LIST == 0:
-        WORKLOAD_LIST = syntethical_workload_lost
+        WORKLOAD_LIST = syntethical_workload_list
     if INTERACTIVITY_THRESHOLD_LIST == 0:
         INTERACTIVITY_THRESHOLD_LIST = [0.8, 1.2, 1.5,2]
     if DELTA_LIST == 0:
@@ -232,6 +244,56 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
                             if experiment_exists is None:
                                 run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold)
                             db.commit()
+
+def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0):
+    compile()
+    COLUMN_PATH = "real_data/skyserver/skyserver.data"
+    QUERY_PATH = "real_data/skyserver/query"
+    ANSWER_PATH = "real_data/skyserver/answer"
+    NUM_QUERIES = 158325
+    column_size = 585624220
+    CORRECTNESS = 0
+    query = SkyServer
+    QUERY_SELECTIVITY_LIST = [0.0000002,0.00001,0.001,0.1,1]
+    for query_sel in QUERY_SELECTIVITY_LIST:
+        codestr = "./generate_workload --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(column_size)  \
+                  + " --column-path=" + str(COLUMN_PATH) + " --query-path=" + str(QUERY_PATH)+"_"+str(query_sel) + " --answer-path=" + str(ANSWER_PATH)+"_"+str(query_sel) + " --selectivity=" \
+                  + str(query_sel) + " --queries-pattern=" +  str(query)
+        print (codestr)
+        os.system(codestr)
+    if INTERACTIVITY_THRESHOLD_LIST == 0:
+        INTERACTIVITY_THRESHOLD_LIST = [0.8, 1.2, 1.5,2]
+    if DELTA_LIST == 0:
+        DELTA_LIST = [0.005,0.01,0.05,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
+    for selectivity in QUERY_SELECTIVITY_LIST:
+        for algorithm in ALGORITHM_LIST:
+            if algorithm in baseline_list:
+                cursor.execute('''
+                   SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?)
+                ''', (algorithm,query,column_size,selectivity))
+                experiment_exists = cursor.fetchone()
+                if experiment_exists is None:
+                    run_experiment_baseline(column_size,query,selectivity,algorithm,NUM_QUERIES)
+                db.commit()
+            if algorithm in progressive_list:
+                for delta in DELTA_LIST:
+                    cursor.execute('''
+                       SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_delta=(?)
+                    ''', (algorithm,query,column_size,selectivity,delta))
+                    experiment_exists = cursor.fetchone()
+                    if experiment_exists is None:
+                        run_experiment_progressive(column_size,query,selectivity,algorithm,NUM_QUERIES,delta)
+                    db.commit()
+            if algorithm in progressive_cm_list:
+                for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
+                    cursor.execute('''
+                       SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
+                    ''', (algorithm,query,column_size,selectivity,interactivity_threshold))
+                    experiment_exists = cursor.fetchone()
+                    if experiment_exists is None:
+                        run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold)
+                    db.commit()
 def run_baseline():
     ALGORITHM_LIST = baseline_list
     # COLUMN_SIZE_LIST=[1000000]
@@ -262,6 +324,36 @@ def run_progressive_cost_model():
     # NUM_QUERIES=10
     template_run(ALGORITHM_LIST)
 
+def run_skyserver_baseline():
+    ALGORITHM_LIST = baseline_list
+    # COLUMN_SIZE_LIST=[1000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
+    # INTERACTIVITY_THRESHOLD_LIST=[]
+    # NUM_QUERIES=10
+    run_skyserver(ALGORITHM_LIST)
+
+def run_skyserver_progressive():
+    ALGORITHM_LIST = progressive_list
+    # COLUMN_SIZE_LIST=[1000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
+    # INTERACTIVITY_THRESHOLD_LIST=[]
+    # NUM_QUERIES=10
+    run_skyserver(ALGORITHM_LIST)
+
+def run_skyserver_progressive_cost_model():
+    ALGORITHM_LIST = progressive_cm_list
+    # COLUMN_SIZE_LIST=[1000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
+    # INTERACTIVITY_THRESHOLD_LIST=[]
+    # NUM_QUERIES=10
+    run_skyserver(ALGORITHM_LIST)
+
 def run():
     ALGORITHM_LIST=[]
     COLUMN_SIZE_LIST=[]
@@ -274,4 +366,8 @@ def run():
 run_baseline()
 # run_progressive()
 # run_progressive_cost_model()
+# run_skyserver_baseline()
+# run_skyserver_progressive()
+# run_skyserver_progressive_cost_model()
+
 db.close()

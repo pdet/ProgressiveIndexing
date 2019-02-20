@@ -13,20 +13,13 @@ os.chdir("..")
 SkyServer=1
 Random=2
 SeqOver=3
-SeqInv=4
-SeqRand=5
-SeqNoOver=6
-SeqAlt=7
-ConsRandom=8
-ZoomIn=9
-ZoomOut=10
-SeqZoomIn=11
-SeqZoomOut=12
-Skew=13
-ZoomOutAlt=14
-SkewZoomOutAlt=15
-Periodic=16
-Mixed=17
+SeqRand=3
+ZoomIn=5
+SeqZoomIn=6
+Skew=7
+ZoomOutAlt=8
+Periodic=9
+ZoomInAlt=10
 
 #Setting Values For Different Algorithms
 FullScan = 1
