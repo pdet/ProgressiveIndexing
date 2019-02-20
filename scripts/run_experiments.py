@@ -111,15 +111,15 @@ def run_experiment_print(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,N
     print(result)
 
 def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES):
-    COLUMN_PATH = column_path(COLUMN_SIZE)
+    COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
-    if QUERY_PATTERN == skyserver:
+    if QUERY_PATTERN == SkyServer:
         COLUMN_PATH = "real_data/skyserver/skyserver.data"
-        QUERY_PATH = "real_data/skyserver/query"
-        ANSWER_PATH = "real_data/skyserver/answer"
+        QUERY_PATH = "real_data/skyserver/query_"+str(QUERY_SELECTIVITY)
+        ANSWER_PATH = "real_data/skyserver/answer_"+str(QUERY_SELECTIVITY)
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
-             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
+             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --correctness=" + str(0)
     print(codestr)
     result = os.popen(codestr).read()
@@ -138,15 +138,15 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
               {'experiment_id':experiment_id, 'query_number':query_number, 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3]})
 
 def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,FIXED_DELTA):
-    COLUMN_PATH = column_path(COLUMN_SIZE)
+    COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
-    if QUERY_PATTERN == skyserver:
+    if QUERY_PATTERN == SkyServer:
         COLUMN_PATH = "real_data/skyserver/skyserver.data"
-        QUERY_PATH = "real_data/skyserver/query"
-        ANSWER_PATH = "real_data/skyserver/answer"
+        QUERY_PATH = "real_data/skyserver/query_"+str(QUERY_SELECTIVITY)
+        ANSWER_PATH = "real_data/skyserver/answer_"+str(QUERY_SELECTIVITY)
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
-             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
+             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) + " --correctness=" + str(0)
     print(codestr)
     result = os.popen(codestr).read()
@@ -165,15 +165,15 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
               {'experiment_id':experiment_id, 'query_number':query_number, 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3]})
 # query_time REAL NOT NULL,indexing_time REAL NOT NULL,total_time 
 def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,FIXED_INTERACTIVITY_THRESHOLD):
-    COLUMN_PATH = column_path(COLUMN_SIZE)
+    COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
-    if QUERY_PATTERN == skyserver:
+    if QUERY_PATTERN == SkyServer:
         COLUMN_PATH = "real_data/skyserver/skyserver.data"
-        QUERY_PATH = "real_data/skyserver/query"
-        ANSWER_PATH = "real_data/skyserver/answer"
+        QUERY_PATH = "real_data/skyserver/query_"+str(QUERY_SELECTIVITY)
+        ANSWER_PATH = "real_data/skyserver/answer_"+str(QUERY_SELECTIVITY)
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
-             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH + "column") + " --query-path=" \
+             " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) + " --correctness=" + str(0)
     print(codestr)
     result = os.popen(codestr).read()
@@ -363,11 +363,11 @@ def run():
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
 
-run_baseline()
+# run_baseline()
 # run_progressive()
 # run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
-# run_skyserver_progressive_cost_model()
+run_skyserver_progressive_cost_model()
 
 db.close()
