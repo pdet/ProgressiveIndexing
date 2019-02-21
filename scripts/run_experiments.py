@@ -45,7 +45,7 @@ progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRad
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
 
-if not (os.path.isdir("/real_data")):
+if (os.path.isdir("./real_data") == False):
     print("Downloading SkyServer Data")
     os.system("mkdir -p real_data/skyserver")
     urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer?download=1", "real_data/skyserver/answer")
@@ -226,15 +226,14 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
     for column_size in COLUMN_SIZE_LIST:
         generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
         generate_column(column_size)
-        if QUERY_SELECTIVITY_LIST == 0:
-            if column_size == 10000000:
-                QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
-            if column_size == 100000000:
-                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
-            if column_size == 1000000000:
-                QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
-            else:
-                QUERY_SELECTIVITY_LIST = [0.001]
+        if column_size == 10000000:
+            QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
+        elif column_size == 100000000:
+            QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+        elif column_size == 1000000000:
+            QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+        else:
+            QUERY_SELECTIVITY_LIST = [0.001]
         for query in WORKLOAD_LIST:
             for selectivity in QUERY_SELECTIVITY_LIST:
                 generate_workload(NUM_QUERIES,column_size,query,selectivity)
@@ -389,7 +388,7 @@ def run():
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
 
-# run_baseline()
+run_baseline()
 # run_progressive()
 # run_progressive_cost_model()
 # run_skyserver_baseline()
