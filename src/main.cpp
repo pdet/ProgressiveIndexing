@@ -637,7 +637,8 @@ int main(int argc, char **argv) {
 
     vector<int64_t> answers;
     load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
-
+    if(ALGORITHM==1)
+        NUM_QUERIES = 1;
     if (!RUN_CORRECTNESS)
         repetition = 1;
     query_times.Initialize(NUM_QUERIES);

@@ -1,6 +1,7 @@
 import os
 import inspect
 import sqlite3
+import urllib
 
 os.system("rm results.db")
 os.system("python scripts/sqlite.py")
@@ -39,10 +40,29 @@ ProgressiveRadixsortLSDCostModel=12
 ProgressiveRadixsortMSD=13
 ProgressiveRadixsortMSDCostModel=14
 
-baseline_list = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
+baseline_list = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
+
+if not (os.path.isdir("/real_data")):
+    print("Downloading SkyServer Data")
+    os.system("mkdir -p real_data/skyserver")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer?download=1", "real_data/skyserver/answer")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer_0.001?download=1", "real_data/skyserver/answer_0.001")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer_0.1?download=1", "real_data/skyserver/answer_0.1")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer_1?download=1", "real_data/skyserver/answer_1")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer_1e-05?download=1", "real_data/skyserver/answer_1e-05")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/answer_2e-07?download=1", "real_data/skyserver/answer_2e-07")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/query?download=1", "real_data/skyserver/query")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/query_0.001?download=1", "real_data/skyserver/query_0.001")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/query_0.1?download=1", "real_data/skyserver/query_0.1")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/query_1?download=1", "real_data/skyserver/query_1")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/query_1e-05?download=1", "real_data/skyserver/query_1e-05")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/query_2e-07?download=1", "real_data/skyserver/query_2e-07")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/skyserver.data?download=1", "real_data/skyserver/skyserver.data")
+    urllib.urlretrieve ("https://zenodo.org/record/2557531/files/skyserver.queries?download=1", "real_data/skyserver/skyserver.queries")
+
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
     os.system('mkdir -p '+ path)
@@ -193,6 +213,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
 
 
 def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=10000):
+    generate_cost_model(100000000) #Mock Gen
     compile()
     if COLUMN_SIZE_LIST == 0:
         COLUMN_SIZE_LIST = [10000000,100000000,1000000000]
@@ -245,12 +266,12 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
                                 run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold)
                             db.commit()
 
-def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0):
+def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES = 158325):
+    generate_cost_model(100000000) #Mock Gen
     compile()
     COLUMN_PATH = "real_data/skyserver/skyserver.data"
     QUERY_PATH = "real_data/skyserver/query"
     ANSWER_PATH = "real_data/skyserver/answer"
-    NUM_QUERIES = 158325
     column_size = 585624220
     CORRECTNESS = 0
     query = SkyServer
@@ -352,6 +373,11 @@ def run_skyserver_progressive_cost_model():
     # QUERY_SELECTIVITY_LIST=[]
     # INTERACTIVITY_THRESHOLD_LIST=[]
     # NUM_QUERIES=10
+
+# Only running first query of full scan
+def run_fullscan_all():
+    ALGORITHM_LIST = [FullScan]
+    template_run(ALGORITHM_LIST)
     run_skyserver(ALGORITHM_LIST)
 
 def run():
@@ -368,6 +394,7 @@ def run():
 # run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
-run_skyserver_progressive_cost_model()
+# run_skyserver_progressive_cost_model()
+# run_fullscan_all()
 
 db.close()
