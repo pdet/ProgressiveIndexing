@@ -373,6 +373,8 @@ def run_skyserver_progressive_cost_model():
     # QUERY_SELECTIVITY_LIST=[]
     # INTERACTIVITY_THRESHOLD_LIST=[]
     # NUM_QUERIES=10
+    run_skyserver(ALGORITHM_LIST)
+
 
 # Only running first query of full scan
 def run_fullscan_all():
@@ -389,12 +391,12 @@ def run():
     INTERACTIVITY_THRESHOLD_LIST=[]
     NUM_QUERIES=[]
 
-run_baseline()
+# run_baseline()
 # run_progressive()
 # run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
-# run_skyserver_progressive_cost_model()
+run_skyserver_progressive_cost_model()
 # run_fullscan_all()
 
 db.close()
