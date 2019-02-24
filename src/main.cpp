@@ -428,6 +428,7 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
 }
 
 
+
 void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
                                        vector<double> &deltas,progressive_function function
                                       , estimate_function estimate) {
@@ -453,7 +454,6 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
         column.bucket_index.final_index_entries = 0;
     }
     // 0.5s
-    double interactivity_threshold = INTERACTIVITY_THRESHOLD;
     // Run Dummy Full Scan to check if its higher or lower than the interactivity threshold
     double full_scan_time;
     start = chrono::system_clock::now();
@@ -462,23 +462,36 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             sum += column.data[j];
     end = chrono::system_clock::now();
     full_scan_time = chrono::duration<double>(end - start).count();
+    INTERACTIVITY_THRESHOLD = INTERACTIVITY_THRESHOLD * full_scan_time;
+    double interactivity_threshold = INTERACTIVITY_THRESHOLD;
+    double best_convergence_delta = 0.2;
     if (sum != answers[0])
         fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", 0, answers[0], sum);
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
         ResultStruct results;
         if (full_scan_time > interactivity_threshold) {
-            double best_convergence_delta = 0.22; // FIXME: This is algorithm dependent
+            // first get the base time with delta = 0
+            start = chrono::system_clock::now();
+            results = function(column, rangeQueries.leftpredicate[current_query],
+                               rangeQueries.rightpredicate[current_query], 0);
+            end = chrono::system_clock::now();
+            if (results.sum != answers[current_query]) {
+                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+            }
+            double base_time = chrono::duration<double>(end - start).count();
+            query_times.q_time[current_query].query_processing += base_time;
+            interactivity_threshold = base_time;
 
             start = chrono::system_clock::now();
             results = function(column, rangeQueries.leftpredicate[current_query],
                                                         rangeQueries.rightpredicate[current_query], best_convergence_delta);
             sum = results.sum;
+            end = chrono::system_clock::now();
+
             if (sum != answers[current_query]) {
                 fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
             }
-            end = chrono::system_clock::now();
-            full_scan_time = chrono::duration<double>(end - start).count();
-            interactivity_threshold = full_scan_time;
+            query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
             deltas[current_query] += best_convergence_delta;
         } else {
             double estimated_time = 0;
@@ -488,7 +501,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             for (size_t j = 0; j < ITERATIONS; j++) {
                 estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
                                                               rangeQueries.rightpredicate[current_query], estimated_delta);
-                if (estimated_time > interactivity_threshold) {
+                if (estimated_time > INTERACTIVITY_THRESHOLD) {
                     estimated_delta -= offset;
                 } else {
                     estimated_delta += offset;
@@ -501,7 +514,9 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             results = function(column, rangeQueries.leftpredicate[current_query],
                                                         rangeQueries.rightpredicate[current_query], 0);
             end = chrono::system_clock::now();
-
+            if (results.sum != answers[current_query]) {
+                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+            }
             double base_time = chrono::duration<double>(end - start).count();
             query_times.q_time[current_query].query_processing += base_time;
 

@@ -131,9 +131,10 @@ def run_experiment_print(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,N
     print(result)
 
 def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES):
-    COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
+    COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    COLUMN_PATH = COLUMN_PATH + 'column'
     if QUERY_PATTERN == SkyServer:
         COLUMN_PATH = "real_data/skyserver/skyserver.data"
         QUERY_PATH = "real_data/skyserver/query_"+str(QUERY_SELECTIVITY)
