@@ -326,10 +326,10 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM
                     cursor.execute('''
                            SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
                         ''', (algorithm,query,column_size,selectivity,1.2))
-                        experiment_exists = cursor.fetchone()
-                        if experiment_exists is None:
-                            run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,INTERACTIVITY_IS_PERCENTAGE)
-                        db.commit()
+                    experiment_exists = cursor.fetchone()
+                    if experiment_exists is None:
+                        run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,1.2,INTERACTIVITY_IS_PERCENTAGE,QUERY_DECAY)
+                    db.commit()
                 if INTERACTIVITY_IS_PERCENTAGE == 0:
                     # Query DB
                     cursor.execute('''
