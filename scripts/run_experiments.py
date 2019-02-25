@@ -184,8 +184,8 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
         cursor.execute('''INSERT INTO queries(experiment_id, query_number, query_time,indexing_time,total_time)
               VALUES(:experiment_id,:query_number, :query_time, :indexing_time, :total_time)''',
               {'experiment_id':experiment_id, 'query_number':query_number, 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3]})
-# query_time REAL NOT NULL,indexing_time REAL NOT NULL,total_time 
-def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,FIXED_INTERACTIVITY_THRESHOLD):
+
+def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,FIXED_INTERACTIVITY_THRESHOLD, INTERACTIVITY_IS_PERCENTAGE=1,QUERY_DECAY = 0):
     COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
@@ -195,7 +195,8 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
         ANSWER_PATH = "real_data/skyserver/answer_"+str(QUERY_SELECTIVITY)
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
-             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) + " --correctness=" + str(0)
+             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) \
+             + " --correctness=" + str(0) + " --interactivity-is-percentage="+str(INTERACTIVITY_IS_PERCENTAGE) + " --decay-queries="+str(QUERY_DECAY)
     print(codestr)
     result = os.popen(codestr).read()
     cursor.execute('''INSERT INTO experiment(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold)
@@ -257,16 +258,30 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
                                 run_experiment_progressive(column_size,query,selectivity,algorithm,NUM_QUERIES,delta)
                             db.commit()
                     if algorithm in progressive_cm_list:
-                        for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
+                        if INTERACTIVITY_IS_PERCENTAGE == 0:
+                            # Query DB
+                            cursor.execute('''
+                               SELECT min(total_time) from queries inner join experiment on (experiment.id = queries.experiment_id) where algorithm_id in (2,3,4,5,6) and column_size = (?) and workload_id = (?) and query_selectivity = (?) and query_number == 0
+                            ''', (column_size,query,selectivity))
+                            interactivity_threshold = cursor.fetchone()
                             cursor.execute('''
                                SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
-                            ''', (algorithm,query,column_size,selectivity,interactivity_threshold))
+                            ''', (algorithm,query,column_size,selectivity,interactivity_threshold[0]))
                             experiment_exists = cursor.fetchone()
                             if experiment_exists is None:
-                                run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold)
+                                run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold[0],INTERACTIVITY_IS_PERCENTAGE)
                             db.commit()
+                        else:
+                            for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
+                                cursor.execute('''
+                                   SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
+                                ''', (algorithm,query,column_size,selectivity,interactivity_threshold))
+                                experiment_exists = cursor.fetchone()
+                                if experiment_exists is None:
+                                    run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,INTERACTIVITY_IS_PERCENTAGE)
+                                db.commit()
 
-def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES = 158325):
+def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES = 158325, INTERACTIVITY_IS_PERCENTAGE=1, QUERY_DECAY=0):
     generate_cost_model(100000000) #Mock Gen
     compile()
     COLUMN_PATH = "real_data/skyserver/skyserver.data"
@@ -307,14 +322,36 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM
                         run_experiment_progressive(column_size,query,selectivity,algorithm,NUM_QUERIES,delta)
                     db.commit()
             if algorithm in progressive_cm_list:
-                for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
+                if QUERY_DECAY != 0:
+                    cursor.execute('''
+                           SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
+                        ''', (algorithm,query,column_size,selectivity,1.2))
+                        experiment_exists = cursor.fetchone()
+                        if experiment_exists is None:
+                            run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,INTERACTIVITY_IS_PERCENTAGE)
+                        db.commit()
+                if INTERACTIVITY_IS_PERCENTAGE == 0:
+                    # Query DB
+                    cursor.execute('''
+                       SELECT min(total_time) from queries inner join experiment on (experiment.id = queries.experiment_id) where algorithm_id in (2,3,4,5,6) and column_size = (?) and workload_id = (?) and query_selectivity = (?) and query_number == 0
+                    ''', (column_size,query,selectivity))
+                    interactivity_threshold = cursor.fetchone()
                     cursor.execute('''
                        SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
-                    ''', (algorithm,query,column_size,selectivity,interactivity_threshold))
+                    ''', (algorithm,query,column_size,selectivity,interactivity_threshold[0]))
                     experiment_exists = cursor.fetchone()
                     if experiment_exists is None:
-                        run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold)
+                        run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold[0],INTERACTIVITY_IS_PERCENTAGE)
                     db.commit()
+                else:
+                    for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
+                        cursor.execute('''
+                           SELECT id FROM experiment where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?)
+                        ''', (algorithm,query,column_size,selectivity,interactivity_threshold))
+                        experiment_exists = cursor.fetchone()
+                        if experiment_exists is None:
+                            run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,INTERACTIVITY_IS_PERCENTAGE)
+                        db.commit()
 def run_baseline():
     ALGORITHM_LIST = baseline_list
     # COLUMN_SIZE_LIST=[1000000]
@@ -375,6 +412,40 @@ def run_skyserver_progressive_cost_model():
     # NUM_QUERIES=10
     run_skyserver(ALGORITHM_LIST)
 
+# Threshold = cheapest first query of baseline
+# This experiment depends on run_skyserver_baseline
+def run_skyserver_progressive_cost_model_cracking_threshold():
+    ALGORITHM_LIST = progressive_cm_list
+    # COLUMN_SIZE_LIST=[1000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
+    # INTERACTIVITY_THRESHOLD_LIST=[]
+    # NUM_QUERIES=10
+    run_skyserver(ALGORITHM_LIST,INTERACTIVITY_IS_PERCENTAGE=0)
+
+# Threshold = cheapest first query of baseline
+# This experiment depends on run_baseline
+def run_progressive_cost_model_cracking_threshold():
+    ALGORITHM_LIST = progressive_cm_list
+    # COLUMN_SIZE_LIST=[1000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
+    # INTERACTIVITY_THRESHOLD_LIST=[]
+    # NUM_QUERIES=10
+    template_run(ALGORITHM_LIST,INTERACTIVITY_IS_PERCENTAGE=0)
+
+def run_skyserver_progressive_cost_model_query_decay():
+    ALGORITHM_LIST = progressive_cm_list
+    NUM_QUERY_DECAY=1000
+    # COLUMN_SIZE_LIST=[1000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
+    # INTERACTIVITY_THRESHOLD_LIST=[]
+    # NUM_QUERIES=10
+    run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY)
 
 # Only running first query of full scan
 def run_fullscan_all():
@@ -396,7 +467,9 @@ def run():
 # run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
-run_skyserver_progressive_cost_model()
+# run_skyserver_progressive_cost_model()
 # run_fullscan_all()
-
+# run_skyserver_progressive_cost_model_cracking_threshold()
+# run_progressive_cost_model_cracking_threshold()
+run_skyserver_progressive_cost_model_query_decay()
 db.close()

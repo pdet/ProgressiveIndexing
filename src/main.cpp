@@ -31,7 +31,7 @@
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
 int64_t COLUMN_SIZE, NUM_QUERIES, L2_SIZE, COLUMN_SIZE_DUMMY;
-int ALGORITHM, RUN_CORRECTNESS, NUM_UPDATES, FREQUENCY, RADIXSORT_TOTAL_BYTES;
+int ALGORITHM, RUN_CORRECTNESS, INTERACTIVITY_IS_PERCENTAGE, RADIXSORT_TOTAL_BYTES, DECAY_QUERIES;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
 double DELTA, INTERACTIVITY_THRESHOLD;
@@ -98,9 +98,6 @@ void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answe
         start = chrono::system_clock::now();
         int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[current_query]);
         int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[current_query]);
-//        end = chrono::system_clock::now();
-//        query_times.q_time[current_query].index_lookup += chrono::duration<double>(end - start).count();
-//        start = chrono::system_clock::now();
         int64_t sum = scanQuery(data, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
@@ -427,7 +424,13 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
     }
 }
 
+double calcute_current_interactivity_threshold(double initial_query_time,double ratio, size_t current_query){
+    return initial_query_time*pow((1 - ratio),current_query);
+}
 
+double calcute_decay_ratio(double full_scan_time, double full_index_time){
+    return pow(full_index_time/full_scan_time,1/DECAY_QUERIES) + 1;
+}
 
 void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
                                        vector<double> &deltas,progressive_function function
@@ -467,8 +470,10 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
     }
     double full_scan_time = chrono::duration<double>(end - start).count();
     double best_convergence_delta_time = 1.5*full_scan_time;
+    double ratio, initial_query_time, final_query_time;
 
-    INTERACTIVITY_THRESHOLD = INTERACTIVITY_THRESHOLD * full_scan_time;
+    if (INTERACTIVITY_IS_PERCENTAGE)
+        INTERACTIVITY_THRESHOLD = INTERACTIVITY_THRESHOLD * full_scan_time;
 //    fprintf(stderr, "Full Scan Time : %f \n", full_scan_time);
 //    fprintf(stderr, "Threshold Time : %f \n", INTERACTIVITY_THRESHOLD);
 //    fprintf(stderr, "Best Conv Time : %f \n", best_convergence_delta_time);
@@ -581,6 +586,29 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                     T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
                 }
                     deltas[current_query] += real_delta;
+                if (DECAY_QUERIES && current_query == 0){
+                    initial_query_time = time;
+                    // We need to calculate costs full index
+                    IndexEntry *data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+                    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+                        data[i].m_key = column.data[i];
+                        data[i].m_rowId = i;
+                    }
+                    BulkBPTree *T = (BulkBPTree *) fullIndex(data);
+                    start = chrono::system_clock::now();
+                    int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[0]);
+                    int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[0]);
+                    int64_t sum = scanQuery(data, offset1, offset2);
+                    end = chrono::system_clock::now();
+                    final_query_time = chrono::duration<double>(end - start).count();
+                    if (sum != answers[0])
+                        fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", 0, answers[0], sum);
+                    ratio = calcute_decay_ratio(initial_query_time,final_query_time);
+                    free(data);
+                    free(T);
+                }
+                if(DECAY_QUERIES)
+                    INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold(initial_query_time,ratio,current_query+1);
             }
 
         }
@@ -601,9 +629,10 @@ void print_help(int argc, char **argv) {
     fprintf(stderr, "   --progressive-cracking-swap\n");
     fprintf(stderr, "   --delta\n");
     fprintf(stderr, "   --correctness\n");
-    fprintf(stderr, "   --freq-updates\n");
-    fprintf(stderr, "   --num-updates\n");
     fprintf(stderr, "   --interactivity-threshold\n");
+    fprintf(stderr, "   --interactivity-is-percentage\n");
+    fprintf(stderr, "   --decay-queries\n");
+
 
 }
 
@@ -623,10 +652,9 @@ int main(int argc, char **argv) {
     ALGORITHM = 0;
     DELTA = 0.1;
     RUN_CORRECTNESS = 0; // By Default run regular runs
-    NUM_UPDATES = 1000;
-    FREQUENCY = 10;
+    INTERACTIVITY_IS_PERCENTAGE = 1; // By default interactivity is a percentage of FS time
     INTERACTIVITY_THRESHOLD = 0.5;
-
+    DECAY_QUERIES = 0;
     int repetition = 1;
 
     for (int i = 1; i < argc; i++) {
@@ -657,12 +685,12 @@ int main(int argc, char **argv) {
             DELTA = atof(arg_value.c_str());
         } else if (arg_name == "correctness") {
             RUN_CORRECTNESS = atoi(arg_value.c_str());
-        } else if (arg_name == "num-updates") {
-            NUM_UPDATES = atoi(arg_value.c_str());
-        } else if (arg_name == "freq-updates") {
-            FREQUENCY = atoi(arg_value.c_str());
+        } else if (arg_name == "interactivity-is-percentage") {
+            INTERACTIVITY_IS_PERCENTAGE = atoi(arg_value.c_str());
         } else if (arg_name == "interactivity-threshold") {
             INTERACTIVITY_THRESHOLD = atof(arg_value.c_str());
+        } else if (arg_name == "decay-queries") {
+            DECAY_QUERIES = atoi(arg_value.c_str());
         } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
