@@ -471,5 +471,5 @@ def run():
 # run_fullscan_all()
 # run_skyserver_progressive_cost_model_cracking_threshold()
 # run_progressive_cost_model_cracking_threshold()
-run_skyserver_progressive_cost_model_query_decay()
+run_skyserver_progressive_cost_model()
 db.close()

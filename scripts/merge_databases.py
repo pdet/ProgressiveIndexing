@@ -56,6 +56,6 @@ def generate_csvs():
 	print("generate")
 
 
-# download_databases()
-# create_new_db()
+download_databases()
+create_new_db()
 merge_databases()

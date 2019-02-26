@@ -539,7 +539,6 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             full_scan_time = chrono::duration<double>(end - start).count();
 //            fprintf(stderr, "Full Scan Time : %f \n", full_scan_time);
         } else {
-
             if (converged) {
                 start = chrono::system_clock::now();
                 int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[current_query]);
@@ -580,6 +579,8 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 query_times.idx_time[current_query].index_creation+= chrono::duration<double>(end - start).count() - base_time;
                 sum = results.sum;
                 double time = chrono::duration<double>(end - start).count();
+               fprintf(stderr, "%f\t%f\n", estimated_time,time);
+
                 if (sum != answers[current_query]) {
                     fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
                 }
@@ -608,12 +609,12 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                     // int64_t sum = scanQuery(data, offset1, offset2);
                     // end = chrono::system_clock::now();
                     // final_query_time = chrono::duration<double>(end - start).count();
-                    final_query_time = 0.002
+                    final_query_time = 0.002;
                     // if (sum != answers[0])
                     //     fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", 0, answers[0], sum);
                     ratio = calcute_decay_ratio(initial_query_time,final_query_time);
-                    free(data);
-                    free(Tree);
+                    // free(data);
+                    // free(Tree);
                 }
 
                 if(current_query < DECAY_QUERIES)
@@ -667,7 +668,6 @@ int main(int argc, char **argv) {
     INTERACTIVITY_THRESHOLD = 0.5;
     DECAY_QUERIES = 0;
     int repetition = 1;
-
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
         if (arg.substr(0, 2) != "--") {
@@ -712,71 +712,92 @@ int main(int argc, char **argv) {
     load_queries(&rangequeries, QUERIES_FILE_PATH, NUM_QUERIES);
     Column c;
     load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
-
-    vector<int64_t> answers;
-    load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
-    // if(ALGORITHM==1)
-//        NUM_QUERIES = 100;
-    if (!RUN_CORRECTNESS)
-        repetition = 1;
-    query_times.Initialize(NUM_QUERIES);
-    vector<double> times(NUM_QUERIES);
-    vector<double> deltas(NUM_QUERIES);
-    current_query = 0;
-    for (size_t i = 0; i < repetition; i++) {
-        switch (ALGORITHM) {
-            case 1:
-                full_scan(c, rangequeries, answers);
-                break;
-            case 2:
-                full_index(c, rangequeries, answers);
-                break;
-            case 3:
-                standard_cracking(c, rangequeries, answers);
-                break;
-            case 4:
-                stochastic_cracking(c, rangequeries, answers);
-                break;
-            case 5:
-                progressive_stochastic_cracking(c, rangequeries, answers);
-                break;
-            case 6:
-                coarse_granular_index(c, rangequeries, answers);
-                break;
-            case 7:
-                progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_quicksort);
-                break;
-            case 8:
-                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                        range_query_incremental_quicksort,get_estimated_time_quicksort);
-                break;
-            case 9:
-                progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_bucketsort_equiheight);
-                break;
-            case 10:
-                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                                                range_query_incremental_bucketsort_equiheight,get_estimated_time_bucketsort);
-                break;
-            case 11:
-                progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_radixsort_lsd);
-                break;
-            case 12:
-                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                                                range_query_incremental_radixsort_lsd,get_estimated_time_radixsort_lsd);
-                break;
-            case 13:
-                progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_radixsort_msd);
-                break;
-            case 14:
-                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                                                range_query_incremental_radixsort_msd,get_estimated_time_radixsort_msd);
-                break;
-        }
-    }
-    if (!RUN_CORRECTNESS)
-        for (size_t i = 0; i < NUM_QUERIES; i++) {
-            double total_time, total_indexing,total_querying;
-            total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
-            cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition  << "\n";
-        }
+//    if(true){
+//        for (size_t i = 0; i < NUM_QUERIES; i++) {
+//            cout << i+1 << ";" << rangequeries.leftpredicate[i] << ";"<< rangequeries.rightpredicate[i] <<"\n";
+//        }
+//    }
+//    if(true){
+//        int64_t highest = 0;
+//        for (size_t i = 0; i < COLUMN_SIZE; i++) {
+//            if(c.data[i]> highest)
+//                highest = c.data[i];
+//        }
+//        fprintf(stderr, " max:  %lld \n",highest);
+//    }
+// if(true){
+//     int64_t highest = 0;
+//     size_t random;
+//     for (size_t i = 0; i < COLUMN_SIZE/10000; i++) {
+//         random = rand()%((i+1)*10000-i*10000 + 1) + i*10000;
+//         if (i == 0)
+//             cout << i+1 << ";" << c.data[random] <<"\n";
+//         else
+//             cout << i*10000 << ";" << c.data[random] <<"\n";
+//     }
+// }
+   vector<int64_t> answers;
+   load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
+   if (!RUN_CORRECTNESS)
+       repetition = 1;
+   query_times.Initialize(NUM_QUERIES);
+   vector<double> times(NUM_QUERIES);
+   vector<double> deltas(NUM_QUERIES);
+   current_query = 0;
+   for (size_t i = 0; i < repetition; i++) {
+       switch (ALGORITHM) {
+           case 1:
+               full_scan(c, rangequeries, answers);
+               break;
+           case 2:
+               full_index(c, rangequeries, answers);
+               break;
+           case 3:
+               standard_cracking(c, rangequeries, answers);
+               break;
+           case 4:
+               stochastic_cracking(c, rangequeries, answers);
+               break;
+           case 5:
+               progressive_stochastic_cracking(c, rangequeries, answers);
+               break;
+           case 6:
+               coarse_granular_index(c, rangequeries, answers);
+               break;
+           case 7:
+               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_quicksort);
+               break;
+           case 8:
+               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                       range_query_incremental_quicksort,get_estimated_time_quicksort);
+               break;
+           case 9:
+               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_bucketsort_equiheight);
+               break;
+           case 10:
+               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                               range_query_incremental_bucketsort_equiheight,get_estimated_time_bucketsort);
+               break;
+           case 11:
+               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_radixsort_lsd);
+               break;
+           case 12:
+               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                               range_query_incremental_radixsort_lsd,get_estimated_time_radixsort_lsd);
+               break;
+           case 13:
+               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_radixsort_msd);
+               break;
+           case 14:
+               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                               range_query_incremental_radixsort_msd,get_estimated_time_radixsort_msd);
+               break;
+       }
+   }
+   if (!RUN_CORRECTNESS)
+       for (size_t i = 0; i < NUM_QUERIES; i++) {
+           double total_time, total_indexing,total_querying;
+           total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
+           cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition  << "\n";
+       }
 }
