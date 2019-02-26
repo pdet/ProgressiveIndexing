@@ -579,7 +579,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 query_times.idx_time[current_query].index_creation+= chrono::duration<double>(end - start).count() - base_time;
                 sum = results.sum;
                 double time = chrono::duration<double>(end - start).count();
-               fprintf(stderr, "%f\t%f\n", estimated_time,time);
+               // fprintf(stderr, "%f\t%f\n", estimated_time,time);
 
                 if (sum != answers[current_query]) {
                     fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);

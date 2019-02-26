@@ -159,9 +159,10 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
               {'experiment_id':experiment_id, 'query_number':query_number, 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3]})
 
 def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,FIXED_DELTA):
-    COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
+    COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    COLUMN_PATH = COLUMN_PATH + 'column'
     if QUERY_PATTERN == SkyServer:
         COLUMN_PATH = "real_data/skyserver/skyserver.data"
         QUERY_PATH = "real_data/skyserver/query_"+str(QUERY_SELECTIVITY)
@@ -186,9 +187,10 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
               {'experiment_id':experiment_id, 'query_number':query_number, 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3]})
 
 def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,FIXED_INTERACTIVITY_THRESHOLD, INTERACTIVITY_IS_PERCENTAGE=1,QUERY_DECAY = 0):
-    COLUMN_PATH = column_path(COLUMN_SIZE) + "column"
+    COLUMN_PATH = column_path(COLUMN_SIZE)
     QUERY_PATH = query_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
     ANSWER_PATH = answer_path(COLUMN_PATH,QUERY_SELECTIVITY,QUERY_PATTERN)
+    COLUMN_PATH = COLUMN_PATH + 'column'
     if QUERY_PATTERN == SkyServer:
         COLUMN_PATH = "real_data/skyserver/skyserver.data"
         QUERY_PATH = "real_data/skyserver/query_"+str(QUERY_SELECTIVITY)
@@ -214,7 +216,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
               {'experiment_id':experiment_id, 'query_number':query_number, 'delta':query_result[0], 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3]})
 
 
-def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=10000):
+def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=10000,INTERACTIVITY_IS_PERCENTAGE=1):
     generate_cost_model(100000000) #Mock Gen
     compile()
     if COLUMN_SIZE_LIST == 0:
@@ -222,18 +224,18 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
     if WORKLOAD_LIST == 0:
         WORKLOAD_LIST = syntethical_workload_list
     if INTERACTIVITY_THRESHOLD_LIST == 0:
-        INTERACTIVITY_THRESHOLD_LIST = [0.8, 1.2, 1.5,2]
+        INTERACTIVITY_THRESHOLD_LIST = [0.8,1.2,1.5]
     if DELTA_LIST == 0:
         DELTA_LIST = [0.005,0.01,0.05,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     for column_size in COLUMN_SIZE_LIST:
         generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
         generate_column(column_size)
         if column_size == 10000000:
-            QUERY_SELECTIVITY_LIST = [0.00001,0.01,10,50]
+            QUERY_SELECTIVITY_LIST = [0.00001,0.01,10]
         elif column_size == 100000000:
-            QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+            QUERY_SELECTIVITY_LIST = [0.000001,0.01,10]
         elif column_size == 1000000000:
-            QUERY_SELECTIVITY_LIST = [0.000001,0.01,10,50]
+            QUERY_SELECTIVITY_LIST = [0.000001,0.01,10]
         else:
             QUERY_SELECTIVITY_LIST = [0.001]
         for query in WORKLOAD_LIST:
@@ -373,7 +375,7 @@ def run_progressive():
     template_run(ALGORITHM_LIST)
 
 def run_progressive_cost_model():
-    ALGORITHM_LIST = progressive_cm_list
+    ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
     # COLUMN_SIZE_LIST=[1000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
@@ -464,12 +466,12 @@ def run():
 
 # run_baseline()
 # run_progressive()
-# run_progressive_cost_model()
+run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
 # run_skyserver_progressive_cost_model()
 # run_fullscan_all()
 # run_skyserver_progressive_cost_model_cracking_threshold()
 # run_progressive_cost_model_cracking_threshold()
-run_skyserver_progressive_cost_model()
+# run_skyserver_progressive_cost_model()
 db.close()
