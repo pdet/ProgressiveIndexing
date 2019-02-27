@@ -375,7 +375,7 @@ def run_progressive():
     template_run(ALGORITHM_LIST)
 
 def run_progressive_cost_model():
-    ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
+    ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
     # COLUMN_SIZE_LIST=[1000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
