@@ -43,14 +43,21 @@ typedef double (*estimate_function)(Column &c, int64_t low, int64_t high, double
 
 void full_scan(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
     chrono::time_point<chrono::system_clock> start, end;
+    double prefix_sum = 0;
+    double time = 0;
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
-        start = chrono::system_clock::now();
-        int64_t sum = 0;
-        for (size_t j = 0; j < COLUMN_SIZE; j++)
-            if (column.data[j] >= rangeQueries.leftpredicate[current_query] && column.data[j] <= rangeQueries.rightpredicate[current_query])
-                sum += column.data[j];
-        end = chrono::system_clock::now();
-        query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
+        if(current_query == 0){
+            start = chrono::system_clock::now();
+            int64_t sum = 0;
+            for (size_t j = 0; j < COLUMN_SIZE; j++)
+                if (column.data[j] >= rangeQueries.leftpredicate[current_query] && column.data[j] <= rangeQueries.rightpredicate[current_query])
+                    sum += column.data[j];
+            end = chrono::system_clock::now();
+            time = chrono::duration<double>(end - start).count()
+        }
+        query_times.q_time[current_query].query_processing += time;
+        prefix_sum+=time;
+        query_times.prefix_sum[current_query] += prefix_sum;
         if (sum != answers[current_query])
             fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], sum);
     }
@@ -478,6 +485,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
     double full_scan_time = chrono::duration<double>(end - start).count();
     double best_convergence_delta_time = 1.5*full_scan_time;
     double ratio, initial_query_time, final_query_time;
+    double prefix_sum = 0;
 
     if (INTERACTIVITY_IS_PERCENTAGE)
         INTERACTIVITY_THRESHOLD = INTERACTIVITY_THRESHOLD * full_scan_time;
@@ -518,6 +526,8 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             query_times.idx_time[current_query].index_creation+= chrono::duration<double>(end - start).count() - base_time;
             sum = results.sum;
             double time = chrono::duration<double>(end - start).count();
+            prefix_sum+=chrono::duration<double>(end - start).count();
+            query_times.prefix_sum[current_query] += prefix_sum;
             if (sum != answers[current_query]) {
                 fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
             }
@@ -546,6 +556,8 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 sum = scanQuery(column.final_data, offset1, offset2);
                 end = chrono::system_clock::now();
                 query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
+                prefix_sum+=chrono::duration<double>(end - start).count();
+                query_times.prefix_sum[current_query] += prefix_sum;
             } else {
                 double estimated_time = 0;
                 size_t ITERATIONS = 10;
@@ -579,6 +591,8 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 query_times.idx_time[current_query].index_creation+= chrono::duration<double>(end - start).count() - base_time;
                 sum = results.sum;
                 double time = chrono::duration<double>(end - start).count();
+                prefix_sum+=chrono::duration<double>(end - start).count();
+                query_times.prefix_sum[current_query] += prefix_sum;
                // fprintf(stderr, "%f\t%f\n", estimated_time,time);
 
                 if (sum != answers[current_query]) {
@@ -801,6 +815,6 @@ int main(int argc, char **argv) {
        for (size_t i = 0; i < NUM_QUERIES; i++) {
            double total_time, total_indexing,total_querying;
            total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
-           cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition  << "\n";
+           cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition << ";" << query_times.prefix_sum[i] / repetition << "\n";
        }
 }

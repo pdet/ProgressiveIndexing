@@ -392,10 +392,12 @@ struct TotalTime{
 
     std::vector<IndexingTime> idx_time;
     std::vector<QueryingTime> q_time;
+    std::vector<double> prefix_sum;
 
     void Initialize(size_t query_number) {
         idx_time = std::vector<IndexingTime>(query_number);
         q_time = std::vector<QueryingTime>(query_number);
+        prefix_sum = std::vector<double>(query_number);
     };
 };
 

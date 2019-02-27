@@ -13,7 +13,7 @@ cursor.execute('''
     , FOREIGN KEY (workload_id) REFERENCES workload(id), FOREIGN KEY (algorithm_id) REFERENCES algorithm(id))
 ''')
 cursor.execute('''
-    CREATE TABLE queries(experiment_id INTEGER , query_number INTEGER NOT NULL, delta REAL , query_time REAL NOT NULL,indexing_time REAL NOT NULL,total_time REAL NOT NULL, FOREIGN KEY (experiment_id) REFERENCES experiment(id),  PRIMARY KEY(experiment_id,query_number))
+    CREATE TABLE queries(experiment_id INTEGER , query_number INTEGER NOT NULL, delta REAL , query_time REAL NOT NULL,indexing_time REAL NOT NULL,total_time REAL NOT NULL,pref_sum_total_time REAL NOT NULL, FOREIGN KEY (experiment_id) REFERENCES experiment(id),  PRIMARY KEY(experiment_id,query_number))
 ''')
 
 algorithms = [('FullScan',),('FullIndex',),('StandardCracking',),('StochasticCracking',),('ProgressiveStochasticCracking',),('CoarseGranularIndex',), ('ProgressiveQuicksort',),('ProgressiveQuicksortCostModel',),('ProgressiveBucketsortEquiheight',),('ProgressiveBucketsortEquiheightCostModel',) ,('ProgressiveRadixsortLSD',),('ProgressiveRadixsortLSDCostModel',),('ProgressiveRadixsortMSD',),('ProgressiveRadixsortMSDCostModel',)]
