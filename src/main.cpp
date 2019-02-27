@@ -54,12 +54,13 @@ void full_scan(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answer
                     sum += column.data[j];
             end = chrono::system_clock::now();
             time = chrono::duration<double>(end - start).count();
+        if (sum != answers[current_query])
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], sum);
         }
         query_times.q_time[current_query].query_processing += time;
         prefix_sum+=time;
         query_times.prefix_sum[current_query] += prefix_sum;
-        if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], sum);
+
     }
 }
 
