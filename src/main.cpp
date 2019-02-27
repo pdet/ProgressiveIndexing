@@ -53,7 +53,7 @@ void full_scan(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answer
                 if (column.data[j] >= rangeQueries.leftpredicate[current_query] && column.data[j] <= rangeQueries.rightpredicate[current_query])
                     sum += column.data[j];
             end = chrono::system_clock::now();
-            time = chrono::duration<double>(end - start).count()
+            time = chrono::duration<double>(end - start).count();
         }
         query_times.q_time[current_query].query_processing += time;
         prefix_sum+=time;
