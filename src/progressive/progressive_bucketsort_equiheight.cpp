@@ -7,14 +7,38 @@ using namespace std;
 
 
 #define EQUIHEIGHT_BUCKET_COUNT 128
+#define EQUIHEIGHT_MID_POINT 64
+#define EQUIHEIGHT_75 96
+#define EQUIHEIGHT_25 32
 
-static inline bucket_type GetBucketIDEquiHeight(std::vector<int64_t>& bounds, int64_t point) {
-    size_t bucket = 0;
-    for(size_t i = 0; i < bounds.size(); i++) {
-        bucket += point > bounds[i];
+
+static inline int GetBucketIDEquiHeight(std::vector<int64_t>& bounds, int64_t point) {
+    int bucket = 0;
+    if (point > bounds[EQUIHEIGHT_MID_POINT]) {
+        if (point > bounds[EQUIHEIGHT_75]) {
+            for(size_t i = EQUIHEIGHT_75; i < bounds.size(); i++) {
+                bucket += point > bounds[i];
+            }
+            return bucket + EQUIHEIGHT_75;
+        } else {
+            for(size_t i = EQUIHEIGHT_MID_POINT; i < EQUIHEIGHT_75; i++) {
+                bucket += point > bounds[i];
+            }
+            return bucket + EQUIHEIGHT_MID_POINT;
+        }
+    } else {
+        if (point > bounds[EQUIHEIGHT_25]) {
+            for(size_t i = EQUIHEIGHT_25; i < EQUIHEIGHT_MID_POINT; i++) {
+                bucket += point > bounds[i];
+            }
+            return bucket + EQUIHEIGHT_25;
+        } else {
+            for(size_t i = 0; i < EQUIHEIGHT_25; i++) {
+                bucket += point > bounds[i];
+            }
+            return bucket;
+        }
     }
-    return bucket;
-
 }
 
 
