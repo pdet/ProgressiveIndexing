@@ -283,7 +283,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
                                     run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,INTERACTIVITY_IS_PERCENTAGE)
                                 db.commit()
 
-def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES = 158325, INTERACTIVITY_IS_PERCENTAGE=1, QUERY_DECAY=0):
+def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUERY_SELECTIVITY_LIST=0,NUM_QUERIES = 158325, INTERACTIVITY_IS_PERCENTAGE=1, QUERY_DECAY=0):
     generate_cost_model(100000000) #Mock Gen
     compile()
     COLUMN_PATH = "real_data/skyserver/skyserver.data"
@@ -292,7 +292,8 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM
     column_size = 585624220
     CORRECTNESS = 0
     query = SkyServer
-    QUERY_SELECTIVITY_LIST = [0.0000002,0.00001,0.001,0.1,1]
+    if QUERY_SELECTIVITY_LIST == 0:
+        QUERY_SELECTIVITY_LIST = [0.0000002,0.00001,0.001,0.1,1]
     for query_sel in QUERY_SELECTIVITY_LIST:
         codestr = "./generate_workload --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(column_size)  \
                   + " --column-path=" + str(COLUMN_PATH) + " --query-path=" + str(QUERY_PATH)+"_"+str(query_sel) + " --answer-path=" + str(ANSWER_PATH)+"_"+str(query_sel) + " --selectivity=" \
@@ -385,69 +386,44 @@ def run_progressive_cost_model():
     template_run(ALGORITHM_LIST)
 
 def run_skyserver_baseline():
-    ALGORITHM_LIST = baseline_list
-    # COLUMN_SIZE_LIST=[1000000]
-    # WORKLOAD_LIST=[]
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
-    run_skyserver(ALGORITHM_LIST)
+    ALGORITHM_LIST = [StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex]
+    QUERY_SELECTIVITY_LIST=[0.001]
+    run_skyserver(ALGORITHM_LIST,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST)
 
 def run_skyserver_progressive():
     ALGORITHM_LIST = progressive_list
-    # COLUMN_SIZE_LIST=[1000000]
-    # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
-    run_skyserver(ALGORITHM_LIST)
+    QUERY_SELECTIVITY_LIST=[0.001]
+    run_skyserver(ALGORITHM_LIST,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST)
 
 def run_skyserver_progressive_cost_model():
-    ALGORITHM_LIST = progressive_cm_list
-    # COLUMN_SIZE_LIST=[1000000]
-    # WORKLOAD_LIST=[]
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
-    run_skyserver(ALGORITHM_LIST)
+    ALGORITHM_LIST = [ProgressiveBucketsortEquiheightCostModel]
+    QUERY_SELECTIVITY_LIST=[0.001]
+    INTERACTIVITY_THRESHOLD_LIST=[1.2]
+    run_skyserver(ALGORITHM_LIST,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
 # Threshold = cheapest first query of baseline
 # This experiment depends on run_skyserver_baseline
 def run_skyserver_progressive_cost_model_cracking_threshold():
     ALGORITHM_LIST = progressive_cm_list
-    # COLUMN_SIZE_LIST=[1000000]
-    # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
     # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
     run_skyserver(ALGORITHM_LIST,INTERACTIVITY_IS_PERCENTAGE=0)
 
-# Threshold = cheapest first query of baseline
-# This experiment depends on run_baseline
 def run_progressive_cost_model_cracking_threshold():
     ALGORITHM_LIST = progressive_cm_list
-    # COLUMN_SIZE_LIST=[1000000]
-    # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
     # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
     template_run(ALGORITHM_LIST,INTERACTIVITY_IS_PERCENTAGE=0)
 
 def run_skyserver_progressive_cost_model_query_decay():
-    ALGORITHM_LIST = progressive_cm_list
-    NUM_QUERY_DECAY=1000
-    # COLUMN_SIZE_LIST=[1000000]
-    # WORKLOAD_LIST=[]
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
-    run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY)
+    ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
+    NUM_QUERY_DECAY=300
+    QUERY_SELECTIVITY_LIST=[0.001]
+    INTERACTIVITY_THRESHOLD_LIST=[1.2]
+    run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
 # Only running first query of full scan
 def run_fullscan_all():
@@ -466,12 +442,13 @@ def run():
 
 # run_baseline()
 # run_progressive()
-run_progressive_cost_model()
+# run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
-# run_skyserver_progressive_cost_model()
+run_skyserver_progressive_cost_model()
 # run_fullscan_all()
 # run_skyserver_progressive_cost_model_cracking_threshold()
 # run_progressive_cost_model_cracking_threshold()
+# run_skyserver_progressive_cost_model_query_decay()
 # run_skyserver_progressive_cost_model()
 db.close()

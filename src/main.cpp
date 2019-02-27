@@ -617,8 +617,11 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                     // free(Tree);
                 }
 
-                if(current_query < DECAY_QUERIES)
+                if(current_query < DECAY_QUERIES){
                     INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold(initial_query_time,ratio,current_query+1);
+                    fprintf(stderr, "%f\t%f\n", estimated_time,time);
+                }
+
                 // fprintf(stderr, "real Time : %f \n", time);
                 // fprintf(stderr, "estimated Time : %f \n", INTERACTIVITY_THRESHOLD);
             }
