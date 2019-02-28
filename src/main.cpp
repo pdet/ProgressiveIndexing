@@ -439,6 +439,13 @@ double calcute_current_interactivity_threshold(double initial_query_time,double 
     return initial_query_time*pow((1 - ratio),current_query);
 }
 
+double calcute_current_interactivity_threshold_linear(double initial_query_time,double ratio, size_t current_query){
+    // fprintf(stderr, "full scan : %f \n", initial_query_time);
+    // fprintf(stderr, "ratio: %f \n", ratio);
+    // fprintf(stderr, "result : %f \n", initial_query_time*pow((1 - ratio),current_query));
+    return initial_query_time - ratio * current_query;
+}
+
 double calcute_decay_ratio(double full_scan_time, double full_index_time){
     // fprintf(stderr, "full index : %f \n", full_index_time);
     // fprintf(stderr, "full scan : %f \n", full_scan_time);
@@ -446,6 +453,11 @@ double calcute_decay_ratio(double full_scan_time, double full_index_time){
     // fprintf(stderr, "result : %f \n", pow(full_index_time/full_scan_time,1.0/DECAY_QUERIES) + 1);
     return 1 - pow(full_index_time/full_scan_time,1.0/DECAY_QUERIES) ;
 }
+
+double calculate_linear_decay_ratio(double full_scan_time, double full_index_time){
+    return -((full_index_time - full_scan_time)/DECAY_QUERIES) ;
+}
+
 
 void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
                                        vector<double> &deltas,progressive_function function
@@ -611,29 +623,17 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                                         fprintf(stderr, "Current Query: %d \n", current_query);
 
                     initial_query_time = time;
-                    // We need to calculate costs full index
-                    // IndexEntry *data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
-                    // for (size_t i = 0; i < COLUMN_SIZE; i++) {
-                    //     data[i].m_key = column.data[i];
-                    //     data[i].m_rowId = i;
-                    // }
-                    // BulkBPTree *Tree = (BulkBPTree *) fullIndex(data);
-                    // start = chrono::system_clock::now();
-                    // int64_t offset1 = (Tree)->gte(rangeQueries.leftpredicate[0]);
-                    // int64_t offset2 = (Tree)->lte(rangeQueries.rightpredicate[0]);
-                    // int64_t sum = scanQuery(data, offset1, offset2);
-                    // end = chrono::system_clock::now();
-                    // final_query_time = chrono::duration<double>(end - start).count();
-                    final_query_time = 0.002;
-                    // if (sum != answers[0])
-                    //     fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", 0, answers[0], sum);
-                    ratio = calcute_decay_ratio(initial_query_time,final_query_time);
-                    // free(data);
-                    // free(Tree);
+
+                    final_query_time = 0.002; // Educated Guess
+
+                    // ratio = calcute_decay_ratio(initial_query_time,final_query_time);
+                    ratio = calculate_linear_decay_ratio(initial_query_time,final_query_time);
+
                 }
 
                 if(current_query < DECAY_QUERIES){
-                    INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold(initial_query_time,ratio,current_query+1);
+                    // INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold(initial_query_time,ratio,current_query+1);
+                    INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold_linear(initial_query_time,ratio,current_query+1);
                     fprintf(stderr, "%f\t%f\n", estimated_time,time);
                 }
 

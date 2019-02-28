@@ -123,7 +123,8 @@ class Workload {
                 b = N / 5 + r.nextInt((N * 4) / 5);
             } while (a == b);
         }
-        if (a > b) swap(a, b);
+        b = a + S;
+        // if (a > b) swap(a, b);
         return true;
     }
 
@@ -144,6 +145,7 @@ class Workload {
             R += 100;
             a = b - 10;
         }
+        b = a + S;
         return true;
     }
 
