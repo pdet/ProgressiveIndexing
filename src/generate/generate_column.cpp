@@ -20,7 +20,7 @@ int generate_column(int N) {
         int variance = rand()%10;
         if (variance == 0){
             min = 0;
-            max = N*0.49;
+            max = N*0.499;
             aux = rand()%(max-min + 1) + min; // 0 - 40
         }
         else if (variance == 9){
@@ -29,7 +29,7 @@ int generate_column(int N) {
             aux = rand()%(max-min + 1) + min;
         }
         else {//40 -50
-            min = N*0.49 ;
+            min = N*0.499 ;
             max = N*0.5;
             aux = rand()%(max-min + 1) + min;
         }
