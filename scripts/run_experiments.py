@@ -236,7 +236,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,WORKLOAD_LIST=0,
         elif column_size == 100000000:
             QUERY_SELECTIVITY_LIST = [0.000001,0.01,10]
         elif column_size == 1000000000:
-            QUERY_SELECTIVITY_LIST = [0.000001,0.01]
+            QUERY_SELECTIVITY_LIST = [0.01]
         else:
             QUERY_SELECTIVITY_LIST = [0.001]
         for query in WORKLOAD_LIST:
@@ -444,10 +444,10 @@ def run():
 
 # run_baseline()
 # run_progressive()
-# run_progressive_cost_model()
+run_progressive_cost_model()
 # run_skyserver_baseline()
 # run_skyserver_progressive()
-run_skyserver_progressive_cost_model()
+# run_skyserver_progressive_cost_model()
 # run_fullscan_all()
 # run_skyserver_progressive_cost_model_cracking_threshold()
 # run_progressive_cost_model_cracking_threshold()

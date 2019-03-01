@@ -10,10 +10,30 @@ using namespace std;
 int COLUMN_SIZE;
 string COLUMN_FILE_PATH;
 
+// int range = max - min + 1;
+// int num = rand() % range + min;
+
 int generate_column(int N) {
     vector<int> data;
     for (int i = 0; i < N ; i ++){
-        data.push_back(i);
+        int aux,min,max;
+        int variance = rand()%10;
+        if (variance == 0){
+            min = 0;
+            max = N*0.4;
+            aux = rand()%(max-min + 1) + min; // 0 - 40
+        }
+        else if (variance == 9){
+            min = N*0.5;
+            max = N;
+            aux = rand()%(max-min + 1) + min;
+        }
+        else {//40 -50
+            min = N*0.4 ;
+            max = N*0.5;
+            aux = rand()%(max-min + 1) + min;
+        }
+        data.push_back(aux);
     }
     random_shuffle(data.begin(), data.end());
     FILE *f = fopen(COLUMN_FILE_PATH.c_str(), "w+");
@@ -38,7 +58,7 @@ pair<string, string> split_once(string delimited, char delimiter) {
 
 int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "column";
-    COLUMN_SIZE = 1000000000;
+    COLUMN_SIZE = 100;
 
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
@@ -59,10 +79,10 @@ int main(int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
     }
-    if (!file_exists(COLUMN_FILE_PATH)) {
+//    if (!file_exists(COLUMN_FILE_PATH)) {
         generate_column(COLUMN_SIZE);
-    } else {
-        fprintf(stderr, "File already exists, delete it first if you want to generate it again.\n");
-    }
+//    } else {
+//        fprintf(stderr, "File already exists, delete it first if you want to generate it again.\n");
+//    }
 
 }
