@@ -3,17 +3,25 @@
 #include <cstdlib>
 #include <iostream>
 #include <algorithm>
-#include "../include/generate/random.h"
 #include "../include/util/file_manager.h"
 
 using namespace std;
 int COLUMN_SIZE;
 string COLUMN_FILE_PATH;
 
-// int range = max - min + 1;
-// int num = rand() % range + min;
-
 int generate_column(int N) {
+    vector<int> data;
+    for (int i = 0; i < N ; i ++){
+        data.push_back(i);
+    }
+    random_shuffle(data.begin(), data.end());
+    FILE *f = fopen(COLUMN_FILE_PATH.c_str(), "w+");
+    fwrite(&data[0], sizeof(int), N, f);
+    fclose(f);
+}
+
+
+int generate_column_skewed(int N) {
     vector<int> data;
     for (int i = 0; i < N ; i ++){
         int aux,min,max;
@@ -79,10 +87,5 @@ int main(int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
     }
-//    if (!file_exists(COLUMN_FILE_PATH)) {
         generate_column(COLUMN_SIZE);
-//    } else {
-//        fprintf(stderr, "File already exists, delete it first if you want to generate it again.\n");
-//    }
-
 }

@@ -6,8 +6,8 @@ SCRIPT_PATH =  os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfr
 os.chdir(SCRIPT_PATH)
 os.chdir("..")
 
-experiments = ["skyserver_baseline", "skyserver_progressive_indexing", "all_fullscan", "skyserver_progressive_indexing_cm"] 
-machines = ["stones07","stones08","stones09","stones10" ]
+experiments = ["stones01","skyserver_baseline", "skyserver_progressive_indexing", "all_fullscan"] 
+machines = ["stones03","stones07","stones08","stones09" ]
 
 def download_databases():
 	for i in range(0,len(experiments)):

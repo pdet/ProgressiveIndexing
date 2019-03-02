@@ -308,7 +308,6 @@ int main(int argc, char **argv) {
         }
     }
     else{
-        if (!file_exists(QUERIES_FILE_PATH)) {
             Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
             int64_t a, b;
             Column c;
@@ -348,8 +347,6 @@ int main(int argc, char **argv) {
             fwrite(&queryAnswer[0], sizeof(int64_t), NUM_QUERIES, f_2);
             fclose(f_2);
 
-        } else {
-            fprintf(stderr, "File already exists, delete it first if you want to generate it again.\n");
         }
     }
 

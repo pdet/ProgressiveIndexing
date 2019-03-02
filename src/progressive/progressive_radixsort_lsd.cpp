@@ -53,10 +53,7 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
     } else {
         l = get_radix_bucket(low, c.radix_index.current_power);
         r = get_radix_bucket(high, c.radix_index.current_power);
-        // unsigned total_buckets = r > l ? r - l : l + (INCREMENTAL_RADIX_BASE - r);
-        // if (total_buckets > INCREMENTAL_RADIX_BASE / 2) {
-        //     scan_original = true;
-        // }
+
     }
 
     if (!c.radix_index.prev_buckets) {

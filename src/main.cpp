@@ -24,7 +24,6 @@
 #include "include/cracking/progressive_stochastic_cracking.h"
 #include "include/progressive/incremental.h"
 #include "include/generate/random.h"
-#include "include/cracking/cracking_updates.h"
 
 
 #pragma clang diagnostic ignored "-Wformat"
@@ -76,15 +75,8 @@ int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
 }
 
 void *fullIndex(IndexEntry *c) {
-//    chrono::time_point<chrono::system_clock> start, end;
-//    start = chrono::system_clock::now();
     hybrid_radixsort_insert(c, COLUMN_SIZE);
-//    end = chrono::system_clock::now();
-//    query_times.idx_time[0].index_creation += chrono::duration<double>(end - start).count();
-//    start = chrono::system_clock::now();
     void *I = build_bptree_bulk(c, COLUMN_SIZE);
-//    end = chrono::system_clock::now();
-//    query_times.q_time[0].query_processing += chrono::duration<double>(end - start).count();
     return I;
 }
 
@@ -146,9 +138,6 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
         int offset2 = p2->second;
         free(p1);
         free(p2);
-//        end = chrono::system_clock::now();
-//        query_times.q_time[current_query].index_lookup += chrono::duration<double>(end - start).count();
-//        start = chrono::system_clock::now();
         int64_t sum = scanQuery(crackercolumn, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
@@ -311,7 +300,6 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
         crackercolumn[i].m_key = column.data[i];
         crackercolumn[i].m_rowId = i;
     }
-//    end = chrono::system_clock::now();
     //Initialitizing Cracker Index
     AvlTree T = NULL;
     // Running 1000 - equal sized partitions
@@ -340,9 +328,6 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
         int64_t offset2 = p2->second;
         free(p1);
         free(p2);
-//        end = chrono::system_clock::now();
-//        query_times.q_time[current_query].index_lookup += chrono::duration<double>(end - start).count();
-//        start = chrono::system_clock::now();
         int64_t sum = scanQuery(crackercolumn, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
@@ -433,24 +418,14 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
 }
 
 double calcute_current_interactivity_threshold(double initial_query_time,double ratio, size_t current_query){
-    // fprintf(stderr, "full scan : %f \n", initial_query_time);
-    // fprintf(stderr, "ratio: %f \n", ratio);
-    // fprintf(stderr, "result : %f \n", initial_query_time*pow((1 - ratio),current_query));
     return initial_query_time*pow((1 - ratio),current_query);
 }
 
 double calcute_current_interactivity_threshold_linear(double initial_query_time,double ratio, size_t current_query){
-    // fprintf(stderr, "full scan : %f \n", initial_query_time);
-    // fprintf(stderr, "ratio: %f \n", ratio);
-    // fprintf(stderr, "result : %f \n", initial_query_time*pow((1 - ratio),current_query));
     return initial_query_time - ratio * current_query;
 }
 
 double calcute_decay_ratio(double full_scan_time, double full_index_time){
-    // fprintf(stderr, "full index : %f \n", full_index_time);
-    // fprintf(stderr, "full scan : %f \n", full_scan_time);
-    // fprintf(stderr, "decay: %f \n", 1.0/DECAY_QUERIES);
-    // fprintf(stderr, "result : %f \n", pow(full_index_time/full_scan_time,1.0/DECAY_QUERIES) + 1);
     return 1 - pow(full_index_time/full_scan_time,1.0/DECAY_QUERIES) ;
 }
 
@@ -502,10 +477,6 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 
     if (INTERACTIVITY_IS_PERCENTAGE)
         INTERACTIVITY_THRESHOLD = INTERACTIVITY_THRESHOLD * full_scan_time;
-//    fprintf(stderr, "Full Scan Time : %f \n", full_scan_time);
-//    fprintf(stderr, "Threshold Time : %f \n", INTERACTIVITY_THRESHOLD);
-//    fprintf(stderr, "Best Conv Time : %f \n", best_convergence_delta_time);
-
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
         if (full_scan_time > INTERACTIVITY_THRESHOLD) {
             start = chrono::system_clock::now();
@@ -637,8 +608,6 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                     fprintf(stderr, "%f\t%f\n", estimated_time,time);
                 }
 
-                // fprintf(stderr, "real Time : %f \n", time);
-                // fprintf(stderr, "estimated Time : %f \n", INTERACTIVITY_THRESHOLD);
             }
 
         }
@@ -757,7 +726,7 @@ int main(int argc, char **argv) {
    vector<int64_t> answers;
    load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
    if (!RUN_CORRECTNESS)
-       repetition = 1;
+       repetition = 10;
    query_times.Initialize(NUM_QUERIES);
    vector<double> times(NUM_QUERIES);
    vector<double> deltas(NUM_QUERIES);
@@ -812,10 +781,10 @@ int main(int argc, char **argv) {
                break;
        }
    }
-   if (!RUN_CORRECTNESS)
-       for (size_t i = 0; i < NUM_QUERIES; i++) {
-           double total_time, total_indexing,total_querying;
-           total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
-           cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition << ";" << query_times.prefix_sum[i] / repetition << "\n";
-       }
+    if (!RUN_CORRECTNESS)
+        for (size_t i = 0; i < NUM_QUERIES; i++) {
+            double total_time, total_indexing,total_querying;
+            total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
+            cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition << ";" << query_times.prefix_sum[i] / repetition << "\n";
+        }
 }

@@ -98,9 +98,8 @@ def template_correctness():
                       ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
                       ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
     COLUMN_SIZE_LIST = [100000000]
-    # ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-    #                  ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
-    ALL_WORKLOAD_LIST = [Random]
+    ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
+                     ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
     QUERY_SELECTIVITY_LIST = [0.001]
     num_queries = 10000
     # clean_generated_data()

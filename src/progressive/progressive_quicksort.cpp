@@ -156,9 +156,6 @@ void range_query_incremental_quicksort_recursive(Column &c, QuicksortNode &node,
 
 
         // now we crack some pieces baby
-        // ssize_t elements_in_piece = node.current_end - node.current_start;
-        // ssize_t swaps_to_do = std::min((ssize_t) remaining_swaps, elements_in_piece);
-        // remaining_swaps -= swaps_to_do;
         Profiler::Start(PROFILE_INDEX_SWAP);
         while (node.current_start < node.current_end &&
                remaining_swaps > 0) {

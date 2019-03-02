@@ -3,21 +3,6 @@
 
 int numSwapps = 0;
 
-void *malloc_huge(size_t size) {
-    void *p = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (!p) {
-        printf("Out of memory\n");
-        exit(1);
-    }
-
-#ifndef __MACH__
-    madvise(p, size, MADV_HUGEPAGE);
-          madvise(p, size, MADV_SEQUENTIAL);
-#endif
-
-    return p;
-}
-
 void exchange(IndexEntry *&c, int64_t x1, int64_t x2) {
     IndexEntry tmp = *(c + x1);
     *(c + x1) = *(c + x2);

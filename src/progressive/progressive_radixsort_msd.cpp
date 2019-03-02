@@ -9,8 +9,6 @@ using namespace std;
 // total amount of relevant bytes in the data set
 // this is ceil(log2(MAX_VALUE)) of the data set
 // since our max value is 10^8, ceil(log2(10^8)) = 27
-//#define RADIXSORT_TOTAL_BYTES log2()
-//#define RADIXSORT_TOTAL_BYTES 20
 extern int RADIXSORT_TOTAL_BYTES;
 
 static inline bucket_type GetBucketIDRadixSort(int64_t point) {

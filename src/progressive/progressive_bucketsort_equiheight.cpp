@@ -46,10 +46,6 @@ ResultStruct range_query_incremental_bucketsort_equiheight(Column& c, int64_t lo
     ResultStruct results;
     results.reserve(c.data.size());
 
-    // assert(c.sortindex.size() == c.bucket_index.final_index.size());
-    // for(size_t i = 0; i < c.sortindex.size(); i++) {
-    // 	assert(c.data[c.sortindex[i]] == c.bucket_index.final_index[i]);
-    // }
 
     if (c.bucket_index.final_index_entries == c.data.size()) {
         c.converged = true;
