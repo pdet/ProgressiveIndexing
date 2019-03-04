@@ -94,7 +94,7 @@ def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUE
         print("Failed!")
 
 def template_correctness():
-    ALGORITHM_LIST = [ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
+    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
                       ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
                       ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
     COLUMN_SIZE_LIST = [100000000]
@@ -107,7 +107,7 @@ def template_correctness():
     compile()
     for column_size in COLUMN_SIZE_LIST:
         generate_column(column_size)
-        for query in ALL_WORKLOAD_LIST:
+        for query in syntethical_workload_list:
             for selectivity in QUERY_SELECTIVITY_LIST:
                 generate_workload(num_queries,column_size,query,selectivity)
                 for algorithm in ALGORITHM_LIST:

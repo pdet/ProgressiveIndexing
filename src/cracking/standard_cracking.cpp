@@ -1,7 +1,6 @@
 #include "../include/cracking/standard_cracking.h"
 
 AvlTree standardCracking(IndexEntry *&c, int dataSize, AvlTree T, int lowKey, int highKey) {
-    std::chrono::time_point<std::chrono::system_clock> start, end;
 
     IntPair p1, p2;
 

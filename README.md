@@ -1,9 +1,8 @@
 # Progressive Indexing
-This project is a stand-alone implementation of all the current progressive indexing implementations.
+This project is a stand-alone implementation of all the current progressive indexing algorithms.
 
 # Requirements
-[CMake](https://cmake.org) to be installed and a `C++11` compliant compiler. Python 2.7 (with the sqlite3 package) is necessary to run all the setup scripts.
-R ("dplyr", "ggplot2", "ggthemes", "ggrepel", "data.table", "RColorBrewer") is used to plot the results to the figures referenced in all the paper.
+[CMake](https://cmake.org) to be installed and a `C++11` compliant compiler. Python 2.7 (with sqlite3) is necessary to run all the setup scripts.
 
 # Available Indexing Algorithms
 * [Standard Cracking](https://stratos.seas.harvard.edu/files/IKM_CIDR07.pdf)
