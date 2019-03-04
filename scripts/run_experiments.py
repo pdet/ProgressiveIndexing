@@ -144,7 +144,7 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'column_distribution_id':COLUMN_DISTRIBUTION})
-    experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and column_distribution=(?)
+    experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and column_distribution_id=(?)
                     ''', (ALGORITHM,QUERY_PATTERN,COLUMN_SIZE,QUERY_SELECTIVITY,COLUMN_DISTRIBUTION))
     experiment_id = cursor.fetchone()
     experiment_id = experiment_id[0]
@@ -172,7 +172,7 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_delta,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_delta, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_delta':FIXED_DELTA, 'column_distribution_id':COLUMN_DISTRIBUTION})
-    experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_delta=(?) and column_distribution=(?)
+    experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_delta=(?) and column_distribution_id=(?)
                     ''', (ALGORITHM,QUERY_PATTERN,COLUMN_SIZE,QUERY_SELECTIVITY,FIXED_DELTA,COLUMN_DISTRIBUTION))
     experiment_id = cursor.fetchone()
     experiment_id = experiment_id[0]
@@ -201,7 +201,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_interactivity_threshold, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_interactivity_threshold':FIXED_INTERACTIVITY_THRESHOLD, 'column_distribution_id':COLUMN_DISTRIBUTION})
-    experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?) and column_distribution=(?)
+    experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?) and column_distribution_id=(?)
                     ''', (ALGORITHM,QUERY_PATTERN,COLUMN_SIZE,QUERY_SELECTIVITY,FIXED_INTERACTIVITY_THRESHOLD,COLUMN_DISTRIBUTION))
     experiment_id = cursor.fetchone()
     experiment_id = experiment_id[0]
@@ -224,7 +224,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=0,COLUMN_DISTRIBUT
         INTERACTIVITY_THRESHOLD_LIST = [0.8, 1.2, 1.5,2]
     if DELTA_LIST == 0:
         DELTA_LIST = [0.005,0.01,0.05,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    if COLUMN_DISTRIBUTION_LIST = 0:
+    if COLUMN_DISTRIBUTION_LIST == 0:
         COLUMN_DISTRIBUTION_LIST = [1,2]
     for column_dist in COLUMN_DISTRIBUTION_LIST:
         for column_size in COLUMN_SIZE_LIST:
@@ -358,7 +358,7 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
                         db.commit()
 def run_baseline():
     ALGORITHM_LIST = baseline_list
-    # COLUMN_SIZE_LIST=[]
+    # COLUMN_SIZE_LIST=[10000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
@@ -368,17 +368,17 @@ def run_baseline():
 
 def run_progressive():
     ALGORITHM_LIST = progressive_list
-    # COLUMN_SIZE_LIST=[1000]
-    # WORKLOAD_LIST=[Random]
-    # DELTA_LIST=[0.25]
-    # QUERY_SELECTIVITY_LIST=[1]
+    # COLUMN_SIZE_LIST=[10000000]
+    # WORKLOAD_LIST=[]
+    # DELTA_LIST=[]
+    # QUERY_SELECTIVITY_LIST=[]
     # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=100
+    # NUM_QUERIES=10
     template_run(ALGORITHM_LIST)
 
 def run_progressive_cost_model():
     ALGORITHM_LIST = progressive_cm_list
-    # COLUMN_SIZE_LIST=[1000]
+    # COLUMN_SIZE_LIST=[10000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
@@ -403,21 +403,6 @@ def run_skyserver_progressive_cost_model():
     # INTERACTIVITY_THRESHOLD_LIST=[1.2]
     run_skyserver(ALGORITHM_LIST)
 
-# Threshold = cheapest first query of baseline
-# This experiment depends on run_skyserver_baseline
-def run_skyserver_progressive_cost_model_cracking_threshold():
-    ALGORITHM_LIST = progressive_cm_list
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    run_skyserver(ALGORITHM_LIST,INTERACTIVITY_IS_PERCENTAGE=0)
-
-def run_progressive_cost_model_cracking_threshold():
-    ALGORITHM_LIST = progressive_cm_list
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    template_run(ALGORITHM_LIST,INTERACTIVITY_IS_PERCENTAGE=0)
 
 def run_skyserver_progressive_cost_model_query_decay():
     ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
@@ -427,13 +412,10 @@ def run_skyserver_progressive_cost_model_query_decay():
     run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
 run_baseline()
-# run_progressive()
-# run_progressive_cost_model()
-# run_skyserver_baseline()
-# run_skyserver_progressive()
-# run_skyserver_progressive_cost_model()
-# run_skyserver_progressive_cost_model_cracking_threshold()
-# run_progressive_cost_model_cracking_threshold()
-# run_skyserver_progressive_cost_model_query_decay()
-# run_skyserver_progressive_cost_model_query_decay()
+run_progressive()
+run_progressive_cost_model()
+run_skyserver_baseline()
+run_skyserver_progressive()
+run_skyserver_progressive_cost_model()
+run_skyserver_progressive_cost_model_query_decay()
 db.close()

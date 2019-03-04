@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
         } else if (arg_name == "column-size") {
             COLUMN_SIZE = atoi(arg_value.c_str());
         } else if (arg_name == "column-dist") {
-            COLUMN_SIZE = atoi(arg_value.c_str());
+            COLUMN_DISTRIBUTION = atoi(arg_value.c_str());
         } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
