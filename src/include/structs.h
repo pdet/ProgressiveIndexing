@@ -375,16 +375,10 @@ struct QueryOutput {
 };
 
 struct IndexingTime{
-//    double sort = 0;
-//    double index_lookup = 0;
-//    double index_update = 0;
-//    double data_copy = 0;
     double index_creation = 0;
 };
 
 struct QueryingTime{
-//    double index_lookup = 0;
-//    double filtering = 0;
     double query_processing = 0;
 };
 
@@ -393,11 +387,14 @@ struct TotalTime{
     std::vector<IndexingTime> idx_time;
     std::vector<QueryingTime> q_time;
     std::vector<double> prefix_sum;
+    std::vector<double> cost_model;
 
     void Initialize(size_t query_number) {
         idx_time = std::vector<IndexingTime>(query_number);
         q_time = std::vector<QueryingTime>(query_number);
         prefix_sum = std::vector<double>(query_number);
+        cost_model = std::vector<double>(query_number);
+
     };
 };
 

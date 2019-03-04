@@ -10,15 +10,15 @@ inline unsigned get_radix_bucket(int64_t value, int64_t power) {
     return (unsigned) ((value / power) % INCREMENTAL_RADIX_BASE);
 }
 
-void verify_buckets(Column& c) {
+void verify_buckets(Column &c) {
     assert(0);
     std::vector<int64_t> copy;
     copy.resize(c.data.size(), INT_MIN);
     if (c.radix_index.prev_buckets) {
-        for(size_t i = 0; i < INCREMENTAL_RADIX_BASE; i++) {
-            BucketEntry* head = c.radix_index.prev_buckets->buckets[i].head;
-            while(head) {
-                for(size_t j = 0; j < head->size; j++) {
+        for (size_t i = 0; i < INCREMENTAL_RADIX_BASE; i++) {
+            BucketEntry *head = c.radix_index.prev_buckets->buckets[i].head;
+            while (head) {
+                for (size_t j = 0; j < head->size; j++) {
                     assert(copy[head->indices[j]] == INT_MIN);
                     copy[head->indices[j]] = head->data[j];
                 }
@@ -29,7 +29,7 @@ void verify_buckets(Column& c) {
     }
 }
 
-ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64_t high, double delta){
+ResultStruct range_query_incremental_radixsort_lsd(Column &c, int64_t low, int64_t high, double delta) {
     ResultStruct results;
     results.reserve(c.data.size());
 
@@ -40,7 +40,8 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
     if (c.radix_index.final_index.size() == c.data.size()) {
         c.converged = true;
         c.final_data = &c.radix_index.final_index[0];
-        range_query_sorted_subsequent_value(&c.radix_index.final_index[0], c.radix_index.final_index.size(), low, high, results);
+        range_query_sorted_subsequent_value(&c.radix_index.final_index[0], c.radix_index.final_index.size(), low, high,
+                                            results);
         return results;
     }
 
@@ -59,19 +60,19 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
     if (!c.radix_index.prev_buckets) {
         if (!scan_original) {
             if (l > r) {
-                for(unsigned i = 0; i <= r; i++) {
+                for (unsigned i = 0; i <= r; i++) {
                     c.radix_index.current_buckets->buckets[i].RangeQuery(low, high, results);
                 }
-                for(unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
+                for (unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
                     c.radix_index.current_buckets->buckets[i].RangeQuery(low, high, results);
                 }
             } else {
-                for(unsigned i = l; i <= r; i++) {
+                for (unsigned i = l; i <= r; i++) {
                     c.radix_index.current_buckets->buckets[i].RangeQuery(low, high, results);
                 }
             }
         } else {
-            for(size_t i = 0; i < c.radix_index.current_bucket_index; i++) {
+            for (size_t i = 0; i < c.radix_index.current_bucket_index; i++) {
                 int matching = c.data[i] >= low && c.data[i] <= high;
                 results.maybe_push_back(c.data[i], matching);
 
@@ -79,8 +80,9 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
         }
 
         // insert entries from the original array
-        size_t next_index = std::min(c.radix_index.current_bucket_index +  (size_t) (c.data.size() * delta), c.data.size());
-        for(size_t i = c.radix_index.current_bucket_index; i < next_index; i++) {
+        size_t next_index = std::min(c.radix_index.current_bucket_index + (size_t) (c.data.size() * delta),
+                                     c.data.size());
+        for (size_t i = c.radix_index.current_bucket_index; i < next_index; i++) {
             unsigned bucket_number = get_radix_bucket(c.data[i], c.radix_index.current_power);
             c.radix_index.current_buckets->buckets[bucket_number].AddElement(i, c.data[i]);
             int matching = c.data[i] >= low && c.data[i] <= high;
@@ -88,7 +90,7 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
 
         }
         c.radix_index.current_bucket_index = next_index;
-        for(size_t i = next_index; i < c.data.size(); i++) {
+        for (size_t i = next_index; i < c.data.size(); i++) {
             int matching = c.data[i] >= low && c.data[i] <= high;
             results.maybe_push_back(c.data[i], matching);
         }
@@ -106,14 +108,14 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
         // first search the current set of buckets
         if (!scan_original) {
             if (l > r) {
-                for(unsigned i = 0; i <= r; i++) {
+                for (unsigned i = 0; i <= r; i++) {
                     c.radix_index.prev_buckets->buckets[i].RangeQuery(low, high, results);
                 }
-                for(unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
+                for (unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
                     c.radix_index.prev_buckets->buckets[i].RangeQuery(low, high, results);
                 }
             } else {
-                for(unsigned i = l; i <= r; i++) {
+                for (unsigned i = l; i <= r; i++) {
                     c.radix_index.prev_buckets->buckets[i].RangeQuery(low, high, results);
                 }
             }
@@ -121,9 +123,9 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
         size_t remaining_elements = (size_t) (c.data.size() * delta);
         if (c.radix_index.final_buckets) {
             // final sorted buckets, copy into ordered index
-            while(c.radix_index.current_bucket < INCREMENTAL_RADIX_BASE) {
+            while (c.radix_index.current_bucket < INCREMENTAL_RADIX_BASE) {
                 while (c.radix_index.current_entry) {
-                    for(size_t i = 0; i < c.radix_index.current_entry->size; i++) {
+                    for (size_t i = 0; i < c.radix_index.current_entry->size; i++) {
                         c.sortindex.push_back(c.radix_index.current_entry->indices[i]);
                         c.radix_index.final_index.push_back(c.radix_index.current_entry->data[i]);
                     }
@@ -151,11 +153,12 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
             }
         } else {
             // move elements from the current bucket to the next
-            while(c.radix_index.current_bucket < INCREMENTAL_RADIX_BASE) {
+            while (c.radix_index.current_bucket < INCREMENTAL_RADIX_BASE) {
                 while (c.radix_index.current_entry) {
-                    for(size_t i = 0; i < c.radix_index.current_entry->size; i++) {
+                    for (size_t i = 0; i < c.radix_index.current_entry->size; i++) {
                         unsigned bucket_number = get_radix_bucket(c.radix_index.current_entry->data[i], next_power);
-                        c.radix_index.current_buckets->buckets[bucket_number].AddElement(c.radix_index.current_entry->indices[i], c.radix_index.current_entry->data[i]);
+                        c.radix_index.current_buckets->buckets[bucket_number].AddElement(
+                                c.radix_index.current_entry->indices[i], c.radix_index.current_entry->data[i]);
                     }
 
                     if (c.radix_index.current_entry->size >= remaining_elements) {
@@ -180,7 +183,7 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
                 // delete c.radix_index.prev_buckets;
                 c.radix_index.prev_buckets = c.radix_index.current_buckets;
                 c.radix_index.current_entry = c.radix_index.prev_buckets->buckets[0].head;
-                if (next_power == 256LL*256*256) { // 256^3, we assume data is <2^32
+                if (next_power == 256LL * 256 * 256) { // 256^3, we assume data is <2^32
                     // finished with initial indexing
                     c.radix_index.final_buckets = c.radix_index.current_buckets;
                     c.radix_index.final_index.reserve(c.data.size());
@@ -194,7 +197,7 @@ ResultStruct range_query_incremental_radixsort_lsd(Column& c, int64_t low, int64
         }
 
         if (scan_original) {
-            for(size_t i = 0; i < c.data.size(); i++) {
+            for (size_t i = 0; i < c.data.size(); i++) {
                 int matching = c.data[i] >= low && c.data[i] <= high;
                 results.maybe_push_back(c.data[i], matching);
             }
@@ -223,7 +226,7 @@ double get_estimated_time_radixsort_lsd(Column &c, int64_t low, int64_t high, do
         l = get_radix_bucket(low, c.radix_index.current_power);
         r = get_radix_bucket(high, c.radix_index.current_power);
     }
-    double page_count = (c.data.size() / ELEMENTS_PER_PAGE) + (c.data.size() % ((int)ELEMENTS_PER_PAGE) != 0 ? 1 : 0);
+    double page_count = (c.data.size() / ELEMENTS_PER_PAGE) + (c.data.size() % ((int) ELEMENTS_PER_PAGE) != 0 ? 1 : 0);
     double cost = 0;
     if (scan_original) {
         // scan original cost
@@ -233,27 +236,27 @@ double get_estimated_time_radixsort_lsd(Column &c, int64_t low, int64_t high, do
         size_t elements = 0;
         if (!c.radix_index.prev_buckets) {
             if (l > r) {
-                for(unsigned i = 0; i <= r; i++) {
+                for (unsigned i = 0; i <= r; i++) {
                     elements += c.radix_index.current_buckets->buckets[i].count;
                 }
-                for(unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
+                for (unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
                     elements += c.radix_index.current_buckets->buckets[i].count;
                 }
             } else {
-                for(unsigned i = l; i <= r; i++) {
+                for (unsigned i = l; i <= r; i++) {
                     elements += c.radix_index.current_buckets->buckets[i].count;
                 }
             }
         } else {
             if (l > r) {
-                for(unsigned i = 0; i <= r; i++) {
+                for (unsigned i = 0; i <= r; i++) {
                     elements += c.radix_index.prev_buckets->buckets[i].count;
                 }
-                for(unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
+                for (unsigned i = l; i < INCREMENTAL_RADIX_BASE; i++) {
                     elements += c.radix_index.prev_buckets->buckets[i].count;
                 }
             } else {
-                for(unsigned i = l; i <= r; i++) {
+                for (unsigned i = l; i <= r; i++) {
                     elements += c.radix_index.prev_buckets->buckets[i].count;
                 }
             }
@@ -279,7 +282,7 @@ void IncrementalRadixIndex::clear() {
     final_index.clear();
 }
 
-void IncrementalRadixIndex::Copy(IncrementalRadixIndex& target) {
+void IncrementalRadixIndex::Copy(IncrementalRadixIndex &target) {
     target.current_buckets = current_buckets ? current_buckets->Copy() : nullptr;
     target.prev_buckets = prev_buckets ? prev_buckets->Copy() : nullptr;
     target.final_buckets = final_buckets ? final_buckets->Copy() : nullptr;
@@ -288,7 +291,7 @@ void IncrementalRadixIndex::Copy(IncrementalRadixIndex& target) {
         if (prev_buckets) {
             auto start = prev_buckets->buckets[current_bucket].head;
             target.current_entry = target.prev_buckets->buckets[current_bucket].head;
-            while(start != current_entry) {
+            while (start != current_entry) {
                 start = start->next;
                 target.current_entry = target.current_entry->next;
             }

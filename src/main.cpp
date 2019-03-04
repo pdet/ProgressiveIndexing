@@ -29,15 +29,16 @@
 #pragma clang diagnostic ignored "-Wformat"
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
-int64_t COLUMN_SIZE, NUM_QUERIES, L2_SIZE, COLUMN_SIZE_DUMMY;
-int ALGORITHM, RUN_CORRECTNESS, INTERACTIVITY_IS_PERCENTAGE, RADIXSORT_TOTAL_BYTES, DECAY_QUERIES;
+int64_t COLUMN_SIZE, NUM_QUERIES, L2_SIZE;
+int ALGORITHM, RUN_CORRECTNESS, INTERACTIVITY_IS_PERCENTAGE, RADIXSORT_TOTAL_BYTES, DECAY_QUERIES, DECAY_TYPE;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
 double DELTA, INTERACTIVITY_THRESHOLD;
 TotalTime query_times;
 size_t current_query;
 
-typedef ResultStruct (*progressive_function)(Column& c, int64_t low, int64_t high, double delta);
+typedef ResultStruct (*progressive_function)(Column &c, int64_t low, int64_t high, double delta);
+
 typedef double (*estimate_function)(Column &c, int64_t low, int64_t high, double delta);
 
 void full_scan(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
@@ -45,25 +46,25 @@ void full_scan(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answer
     double prefix_sum = 0;
     double time = 0;
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
-        if(current_query == 0){
+        if (current_query == 0) {
             start = chrono::system_clock::now();
             int64_t sum = 0;
             for (size_t j = 0; j < COLUMN_SIZE; j++)
-                if (column.data[j] >= rangeQueries.leftpredicate[current_query] && column.data[j] <= rangeQueries.rightpredicate[current_query])
+                if (column.data[j] >= rangeQueries.leftpredicate[current_query] &&
+                    column.data[j] <= rangeQueries.rightpredicate[current_query])
                     sum += column.data[j];
             end = chrono::system_clock::now();
             time = chrono::duration<double>(end - start).count();
-        if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], sum);
+            if (sum != answers[current_query])
+                fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
+                        answers[current_query], sum);
         }
         query_times.q_time[current_query].query_processing += time;
-        prefix_sum+=time;
+        prefix_sum += time;
         query_times.prefix_sum[current_query] += prefix_sum;
 
     }
 }
-
-
 
 int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
     int64_t sum = 0;
@@ -102,7 +103,8 @@ void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answe
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
         if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                    answers[current_query], sum);
     }
     free(data);
     free(T);
@@ -142,7 +144,8 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
         if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], sum);
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
+                    answers[current_query], sum);
     }
     free(crackercolumn);
 }
@@ -212,7 +215,8 @@ void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
 
         if (qo->sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], qo->sum);
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
+                    answers[current_query], qo->sum);
     }
     free(crackercolumn);
 }
@@ -270,7 +274,8 @@ void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, v
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
         if (qo->sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], qo->sum);
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
+                    answers[current_query], qo->sum);
 
     }
     free(crackercolumn);
@@ -332,7 +337,8 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
         if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query, answers[current_query], sum);
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
+                    answers[current_query], sum);
     }
     free(crackercolumn);
 }
@@ -352,7 +358,7 @@ void *fullIndex(int64_t *c, int n) {
 }
 
 void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
-                           vector<double> &deltas, progressive_function function) {
+                          vector<double> &deltas, progressive_function function) {
     chrono::time_point<chrono::system_clock> start, end;
     BulkBPTree *T;
     int64_t sum = 0;
@@ -379,7 +385,6 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
         ResultStruct results;
 
 
-
         if (column.converged) {
             start = chrono::system_clock::now();
             int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[current_query]);
@@ -395,19 +400,22 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
             double baseline = chrono::duration<double>(end - start).count();
             query_times.q_time[current_query].query_processing += baseline;
             if (results.sum != answers[current_query])
-                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                        answers[current_query], sum);
             start = chrono::system_clock::now();
 
             results = function(column, rangeQueries.leftpredicate[current_query],
-                                                        rangeQueries.rightpredicate[current_query], DELTA);
+                               rangeQueries.rightpredicate[current_query], DELTA);
             end = chrono::system_clock::now();
 
             sum = results.sum;
-            query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count() - baseline;
+            query_times.idx_time[current_query].index_creation +=
+                    chrono::duration<double>(end - start).count() - baseline;
         }
 
         if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                    answers[current_query], sum);
         if (!converged && column.converged) {
             converged = true;
             T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
@@ -417,26 +425,27 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
     }
 }
 
-double calcute_current_interactivity_threshold(double initial_query_time,double ratio, size_t current_query){
-    return initial_query_time*pow((1 - ratio),current_query);
+double calcute_current_interactivity_threshold_exponential(double initial_query_time, double ratio,
+                                                           size_t current_query) {
+    return initial_query_time * pow((1 - ratio), current_query);
 }
 
-double calcute_current_interactivity_threshold_linear(double initial_query_time,double ratio, size_t current_query){
+double calcute_current_interactivity_threshold_linear(double initial_query_time, double ratio, size_t current_query) {
     return initial_query_time - ratio * current_query;
 }
 
-double calcute_decay_ratio(double full_scan_time, double full_index_time){
-    return 1 - pow(full_index_time/full_scan_time,1.0/DECAY_QUERIES) ;
+double calcute_exponential_decay_ratio(double full_scan_time, double full_index_time) {
+    return 1 - pow(full_index_time / full_scan_time, 1.0 / DECAY_QUERIES);
 }
 
-double calculate_linear_decay_ratio(double full_scan_time, double full_index_time){
-    return -((full_index_time - full_scan_time)/DECAY_QUERIES) ;
+double calculate_linear_decay_ratio(double full_scan_time, double full_index_time) {
+    return -((full_index_time - full_scan_time) / DECAY_QUERIES);
 }
 
 
 void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers,
-                                       vector<double> &deltas,progressive_function function
-                                      , estimate_function estimate) {
+                                     vector<double> &deltas, progressive_function function,
+                                     estimate_function estimate) {
     chrono::time_point<chrono::system_clock> start, end;
     BulkBPTree *T;
     int64_t sum = 0;
@@ -471,7 +480,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
         fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", 0, answers[0], sum);
     }
     double full_scan_time = chrono::duration<double>(end - start).count();
-    double best_convergence_delta_time = 1.5*full_scan_time;
+    double best_convergence_delta_time = 1.5 * full_scan_time;
     double ratio, initial_query_time, final_query_time;
     double prefix_sum = 0;
 
@@ -484,7 +493,8 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                                rangeQueries.rightpredicate[current_query], 0);
             end = chrono::system_clock::now();
             if (results.sum != answers[current_query]) {
-                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                        answers[current_query], sum);
             }
             double base_time = chrono::duration<double>(end - start).count();
             query_times.q_time[current_query].query_processing += base_time;
@@ -502,36 +512,37 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 }
                 offset /= 2;
             }
-
             start = chrono::system_clock::now();
             results = function(column, rangeQueries.leftpredicate[current_query],
                                rangeQueries.rightpredicate[current_query], estimated_delta);
             end = chrono::system_clock::now();
-            query_times.idx_time[current_query].index_creation+= chrono::duration<double>(end - start).count() - base_time;
+            query_times.idx_time[current_query].index_creation +=
+                    chrono::duration<double>(end - start).count() - base_time;
             sum = results.sum;
             double time = chrono::duration<double>(end - start).count();
-            prefix_sum+=chrono::duration<double>(end - start).count();
+            prefix_sum += chrono::duration<double>(end - start).count();
             query_times.prefix_sum[current_query] += prefix_sum;
             if (sum != answers[current_query]) {
-                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                        answers[current_query], sum);
             }
             // now interpolate the real delta
-                double cost_per_delta = (time - base_time) / estimated_delta;
-                double real_delta = (best_convergence_delta_time - base_time) / cost_per_delta;
+            double cost_per_delta = (time - base_time) / estimated_delta;
+            double real_delta = (best_convergence_delta_time - base_time) / cost_per_delta;
             if (column.converged) {
                 converged = true;
                 T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
             }
             deltas[current_query] += real_delta;
             start = chrono::system_clock::now();
-            results = function(column, rangeQueries.leftpredicate[current_query+1],
-                               rangeQueries.rightpredicate[current_query+1], 0);
+            results = function(column, rangeQueries.leftpredicate[current_query + 1],
+                               rangeQueries.rightpredicate[current_query + 1], 0);
             end = chrono::system_clock::now();
-            if (results.sum != answers[current_query+1]) {
-                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query+1], sum);
+            if (results.sum != answers[current_query + 1]) {
+                fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                        answers[current_query + 1], sum);
             }
             full_scan_time = chrono::duration<double>(end - start).count();
-//            fprintf(stderr, "Full Scan Time : %f \n", full_scan_time);
         } else {
             if (converged) {
                 start = chrono::system_clock::now();
@@ -540,7 +551,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 sum = scanQuery(column.final_data, offset1, offset2);
                 end = chrono::system_clock::now();
                 query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
-                prefix_sum+=chrono::duration<double>(end - start).count();
+                prefix_sum += chrono::duration<double>(end - start).count();
                 query_times.prefix_sum[current_query] += prefix_sum;
             } else {
                 double estimated_time = 0;
@@ -563,24 +574,25 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                                    rangeQueries.rightpredicate[current_query], 0);
                 end = chrono::system_clock::now();
                 if (results.sum != answers[current_query]) {
-                    fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+                    fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                            answers[current_query], sum);
                 }
                 double base_time = chrono::duration<double>(end - start).count();
                 query_times.q_time[current_query].query_processing += base_time;
 
                 start = chrono::system_clock::now();
                 results = function(column, rangeQueries.leftpredicate[current_query],
-                                                            rangeQueries.rightpredicate[current_query], estimated_delta);
+                                   rangeQueries.rightpredicate[current_query], estimated_delta);
                 end = chrono::system_clock::now();
-                query_times.idx_time[current_query].index_creation+= chrono::duration<double>(end - start).count() - base_time;
+                query_times.idx_time[current_query].index_creation +=
+                        chrono::duration<double>(end - start).count() - base_time;
                 sum = results.sum;
                 double time = chrono::duration<double>(end - start).count();
-                prefix_sum+=chrono::duration<double>(end - start).count();
+                prefix_sum += chrono::duration<double>(end - start).count();
                 query_times.prefix_sum[current_query] += prefix_sum;
-               // fprintf(stderr, "%f\t%f\n", estimated_time,time);
-
                 if (sum != answers[current_query]) {
-                    fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query, answers[current_query], sum);
+                    fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                            answers[current_query], sum);
                 }
                 // now interpolate the real delta
                 double cost_per_delta = (time - base_time) / estimated_delta;
@@ -589,25 +601,28 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                     converged = true;
                     T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
                 }
-                    deltas[current_query] += real_delta;
-                if (DECAY_QUERIES && current_query == 0){
-                                        fprintf(stderr, "Current Query: %d \n", current_query);
-
+                deltas[current_query] += real_delta;
+                if (DECAY_QUERIES && current_query == 0) {
                     initial_query_time = time;
-
-                    final_query_time = 0.002; // Educated Guess
-
-                    // ratio = calcute_decay_ratio(initial_query_time,final_query_time);
-                    ratio = calculate_linear_decay_ratio(initial_query_time,final_query_time);
-
+                    final_query_time = 0.002; // Educated Guess, We assume the DBMS has statistics about this
+                    if (DECAY_TYPE == 0)
+                        ratio = calculate_linear_decay_ratio(initial_query_time, final_query_time);
+                    else
+                        ratio = calcute_exponential_decay_ratio(initial_query_time, final_query_time);
                 }
 
-                if(current_query < DECAY_QUERIES){
-                    // INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold(initial_query_time,ratio,current_query+1);
-                    INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold_linear(initial_query_time,ratio,current_query+1);
-                    fprintf(stderr, "%f\t%f\n", estimated_time,time);
+                if (current_query < DECAY_QUERIES) {
+                    if (DECAY_TYPE == 0)
+                        INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold_linear(initial_query_time,
+                                                                                                 ratio,
+                                                                                                 current_query + 1);
+                    else
+                        INTERACTIVITY_THRESHOLD = calcute_current_interactivity_threshold_exponential(
+                                initial_query_time,
+                                ratio,
+                                current_query + 1);
                 }
-
+                query_times.cost_model[current_query] += estimated_time;
             }
 
         }
@@ -631,6 +646,7 @@ void print_help(int argc, char **argv) {
     fprintf(stderr, "   --interactivity-threshold\n");
     fprintf(stderr, "   --interactivity-is-percentage\n");
     fprintf(stderr, "   --decay-queries\n");
+    fprintf(stderr, "   --decay-type\n");
 
 
 }
@@ -654,6 +670,7 @@ int main(int argc, char **argv) {
     INTERACTIVITY_IS_PERCENTAGE = 1; // By default interactivity is a percentage of FS time
     INTERACTIVITY_THRESHOLD = 0.5;
     DECAY_QUERIES = 0;
+    DECAY_TYPE = 0;
     int repetition = 1;
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
@@ -689,6 +706,8 @@ int main(int argc, char **argv) {
             INTERACTIVITY_THRESHOLD = atof(arg_value.c_str());
         } else if (arg_name == "decay-queries") {
             DECAY_QUERIES = atoi(arg_value.c_str());
+        } else if (arg_name == "decay-type") {
+            DECAY_TYPE = atoi(arg_value.c_str());
         } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
@@ -699,92 +718,74 @@ int main(int argc, char **argv) {
     load_queries(&rangequeries, QUERIES_FILE_PATH, NUM_QUERIES);
     Column c;
     load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
-//    if(true){
-//        for (size_t i = 0; i < NUM_QUERIES; i++) {
-//            cout << i+1 << ";" << rangequeries.leftpredicate[i] << ";"<< rangequeries.rightpredicate[i] <<"\n";
-//        }
-//    }
-//    if(true){
-//        int64_t highest = 0;
-//        for (size_t i = 0; i < COLUMN_SIZE; i++) {
-//            if(c.data[i]> highest)
-//                highest = c.data[i];
-//        }
-//        fprintf(stderr, " max:  %lld \n",highest);
-//    }
-// if(true){
-//     int64_t highest = 0;
-//     size_t random;
-//     for (size_t i = 0; i < COLUMN_SIZE/10000; i++) {
-//         random = rand()%((i+1)*10000-i*10000 + 1) + i*10000;
-//         if (i == 0)
-//             cout << i+1 << ";" << c.data[random] <<"\n";
-//         else
-//             cout << i*10000 << ";" << c.data[random] <<"\n";
-//     }
-// }
-   vector<int64_t> answers;
-   load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
-   if (!RUN_CORRECTNESS)
-       repetition = 10;
-   query_times.Initialize(NUM_QUERIES);
-   vector<double> times(NUM_QUERIES);
-   vector<double> deltas(NUM_QUERIES);
-   current_query = 0;
-   for (size_t i = 0; i < repetition; i++) {
-       switch (ALGORITHM) {
-           case 1:
-               full_scan(c, rangequeries, answers);
-               break;
-           case 2:
-               full_index(c, rangequeries, answers);
-               break;
-           case 3:
-               standard_cracking(c, rangequeries, answers);
-               break;
-           case 4:
-               stochastic_cracking(c, rangequeries, answers);
-               break;
-           case 5:
-               progressive_stochastic_cracking(c, rangequeries, answers);
-               break;
-           case 6:
-               coarse_granular_index(c, rangequeries, answers);
-               break;
-           case 7:
-               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_quicksort);
-               break;
-           case 8:
-               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                       range_query_incremental_quicksort,get_estimated_time_quicksort);
-               break;
-           case 9:
-               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_bucketsort_equiheight);
-               break;
-           case 10:
-               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                                               range_query_incremental_bucketsort_equiheight,get_estimated_time_bucketsort);
-               break;
-           case 11:
-               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_radixsort_lsd);
-               break;
-           case 12:
-               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                                               range_query_incremental_radixsort_lsd,get_estimated_time_radixsort_lsd);
-               break;
-           case 13:
-               progressive_indexing(c, rangequeries, answers, deltas,range_query_incremental_radixsort_msd);
-               break;
-           case 14:
-               progressive_indexing_cost_model(c, rangequeries, answers, deltas,
-                                               range_query_incremental_radixsort_msd,get_estimated_time_radixsort_msd);
-               break;
-       }
-   }
+
+    vector<int64_t> answers;
+    load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
+    if (!RUN_CORRECTNESS)
+        repetition = 10;
+    query_times.Initialize(NUM_QUERIES);
+    vector<double> times(NUM_QUERIES);
+    vector<double> deltas(NUM_QUERIES);
+    current_query = 0;
+    for (size_t i = 0; i < repetition; i++) {
+        switch (ALGORITHM) {
+            case 1:
+                full_scan(c, rangequeries, answers);
+                break;
+            case 2:
+                full_index(c, rangequeries, answers);
+                break;
+            case 3:
+                standard_cracking(c, rangequeries, answers);
+                break;
+            case 4:
+                stochastic_cracking(c, rangequeries, answers);
+                break;
+            case 5:
+                progressive_stochastic_cracking(c, rangequeries, answers);
+                break;
+            case 6:
+                coarse_granular_index(c, rangequeries, answers);
+                break;
+            case 7:
+                progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_quicksort);
+                break;
+            case 8:
+                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                                range_query_incremental_quicksort, get_estimated_time_quicksort);
+                break;
+            case 9:
+                progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_bucketsort_equiheight);
+                break;
+            case 10:
+                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                                range_query_incremental_bucketsort_equiheight,
+                                                get_estimated_time_bucketsort);
+                break;
+            case 11:
+                progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd);
+                break;
+            case 12:
+                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                                range_query_incremental_radixsort_lsd,
+                                                get_estimated_time_radixsort_lsd);
+                break;
+            case 13:
+                progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd);
+                break;
+            case 14:
+                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                                range_query_incremental_radixsort_msd,
+                                                get_estimated_time_radixsort_msd);
+                break;
+        }
+    }
     if (!RUN_CORRECTNESS)
         for (size_t i = 0; i < NUM_QUERIES; i++) {
-            double total_time, total_indexing,total_querying;
+            double total_time, total_indexing, total_querying;
             total_time = query_times.idx_time[i].index_creation + query_times.q_time[i].query_processing;
-            cout << deltas[i] / repetition << ";"  << query_times.q_time[i].query_processing / repetition << ";"  << query_times.idx_time[i].index_creation / repetition <<  ";" << total_time / repetition << ";" << query_times.prefix_sum[i] / repetition << "\n";
+            cout << deltas[i] / repetition << ";" << query_times.q_time[i].query_processing / repetition << ";" <<
+                 query_times.idx_time[i].index_creation / repetition << ";" << total_time / repetition << ";"
+                 << query_times.prefix_sum[i] / repetition << ";" << query_times.cost_model[i] / repetition << "\n";
         }
 }

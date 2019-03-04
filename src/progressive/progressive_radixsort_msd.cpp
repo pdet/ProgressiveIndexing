@@ -2,6 +2,7 @@
 #include "../include/util/binary_search.h"
 #include "../include/full_index/hybrid_radix_insert_sort.h"
 #include "../include/progressive/constants.h"
+
 using namespace std;
 
 
@@ -15,8 +16,7 @@ static inline bucket_type GetBucketIDRadixSort(int64_t point) {
     return point >> (RADIXSORT_TOTAL_BYTES - RADIXSORT_MSD_BYTES);
 }
 
-ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64_t high, double delta)
-{
+ResultStruct range_query_incremental_radixsort_msd(Column &c, int64_t low, int64_t high, double delta) {
     ResultStruct results;
     results.reserve(c.data.size());
 
@@ -36,8 +36,8 @@ ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64
     bool check_sortindex = false;
     auto first_bucket_id = GetBucketIDRadixSort(low);
     auto last_bucket_id = GetBucketIDRadixSort(high);
-    for(size_t i = first_bucket_id; i <= last_bucket_id; i++) {
-        BucketRoot& bucket = c.bucket_index.buckets[i];
+    for (size_t i = first_bucket_id; i <= last_bucket_id; i++) {
+        BucketRoot &bucket = c.bucket_index.buckets[i];
         if (bucket.head && !bucket.tail) {
             // we set bucket.tail to NULL when all elements in the bucket have been inserted
             // into the final index
@@ -54,21 +54,23 @@ ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64
     }
 
     if (check_sortindex) {
-        range_query_sorted_subsequent_value(c.bucket_index.final_index, c.bucket_index.final_index_entries, low, high, results);
+        range_query_sorted_subsequent_value(c.bucket_index.final_index, c.bucket_index.final_index_entries, low, high,
+                                            results);
     }
 
     if (c.bucket_index.index_position < c.data.size()) {
         // initial run: have to insert elements into the buckets
         // then place the elements into the buckets
-        size_t next_position = std::min(c.bucket_index.index_position + (size_t)(c.data.size() * delta), c.data.size());
-        for(auto &i = c.bucket_index.index_position; i < next_position; i++) {
+        size_t next_position = std::min(c.bucket_index.index_position + (size_t) (c.data.size() * delta),
+                                        c.data.size());
+        for (auto &i = c.bucket_index.index_position; i < next_position; i++) {
             auto bucket_id = GetBucketIDRadixSort(c.data[i]);
             c.bucket_index.buckets[bucket_id].AddElement(i, c.data[i]);
             int matching = c.data[i] >= low && c.data[i] <= high;
             results.maybe_push_back(c.data[i], matching);
         }
         // now scan the remainder of the data
-        for(size_t i = next_position; i < c.data.size(); i++) {
+        for (size_t i = next_position; i < c.data.size(); i++) {
             int matching = c.data[i] >= low &&
                            c.data[i] <= high;
             results.maybe_push_back(c.data[i], matching);
@@ -79,8 +81,8 @@ ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64
         // we do this using a progressive quicksort
 
         // loop over the buckets
-        ssize_t remaining_swaps = (ssize_t)(c.data.size() * delta);
-        while(c.bucket_index.unsorted_bucket < c.bucket_index.buckets.size() && remaining_swaps > 0) {
+        ssize_t remaining_swaps = (ssize_t) (c.data.size() * delta);
+        while (c.bucket_index.unsorted_bucket < c.bucket_index.buckets.size() && remaining_swaps > 0) {
             auto &bucket = c.bucket_index.buckets[c.bucket_index.unsorted_bucket];
             if (bucket.count == 0) {
                 c.bucket_index.unsorted_bucket++;
@@ -108,14 +110,14 @@ ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64
             }
 
             if (c.qs_index.root.left < 0) {
-                int64_t* index = c.qs_index.data;
-                size_t* pointers = c.qs_index.index;
-                QuicksortNode& node = c.qs_index.root;
+                int64_t *index = c.qs_index.data;
+                size_t *pointers = c.qs_index.index;
+                QuicksortNode &node = c.qs_index.root;
 
                 // initialize the elements in the qs index around the pivot
-                for(; bucket.sort_entry; bucket.sort_entry = bucket.sort_entry->next) {
+                for (; bucket.sort_entry; bucket.sort_entry = bucket.sort_entry->next) {
                     remaining_swaps -= bucket.sort_entry->size - bucket.sort_entry->sort_index;
-                    for(auto& i = bucket.sort_entry->sort_index; i < bucket.sort_entry->size; i++) {
+                    for (auto &i = bucket.sort_entry->sort_index; i < bucket.sort_entry->size; i++) {
                         int bigger_pivot = bucket.sort_entry->data[i] >= node.pivot;
                         int smaller_pivot = 1 - bigger_pivot;;
 
@@ -164,14 +166,14 @@ ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64
 
                 if (c.qs_index.current_pivot < c.qs_index.nodes.size()) {
                     // perform the pivoting operations
-                    while(remaining_swaps > 0 && c.qs_index.current_pivot < c.qs_index.nodes.size()) {
-                        QuicksortNode& node = c.qs_index.nodes[c.qs_index.current_pivot];
+                    while (remaining_swaps > 0 && c.qs_index.current_pivot < c.qs_index.nodes.size()) {
+                        QuicksortNode &node = c.qs_index.nodes[c.qs_index.current_pivot];
                         if (node.min == node.max) {
                             node.sorted = true;
                             SortedCheck(c, node.parent >= 0 ? c.qs_index.nodes[node.parent]
                                                             : c.qs_index.root);
                             c.qs_index.current_pivot++;
-                        } else if ((node.end - node.start) <= (size_t)(8192 / sizeof(int64_t))) {
+                        } else if ((node.end - node.start) <= (size_t) (8192 / sizeof(int64_t))) {
                             // node is very small, just sort it normally
                             itqs(c.qs_index.data + node.start, c.qs_index.index + node.start, node.end - node.start);
                             node.sorted = true;
@@ -181,7 +183,7 @@ ResultStruct range_query_incremental_radixsort_msd(Column& c, int64_t low, int64
                             c.qs_index.current_pivot++;
                         } else {
                             int64_t *index = c.qs_index.data;
-                            size_t* pointers = c.qs_index.index;
+                            size_t *pointers = c.qs_index.index;
                             // now we start swapping stuff
                             while (node.current_start < node.current_end &&
                                    remaining_swaps > 0) {
@@ -292,8 +294,8 @@ double get_estimated_time_radixsort_msd(Column &c, int64_t low, int64_t high, do
         bool check_sortindex = false;
         auto first_bucket_id = GetBucketIDRadixSort(low);
         auto last_bucket_id = GetBucketIDRadixSort(high);
-        for(size_t i = first_bucket_id; i <= last_bucket_id; i++) {
-            BucketRoot& bucket = c.bucket_index.buckets[i];
+        for (size_t i = first_bucket_id; i <= last_bucket_id; i++) {
+            BucketRoot &bucket = c.bucket_index.buckets[i];
             if (bucket.head && !bucket.tail) {
                 // we set bucket.tail to NULL when all elements in the bucket have been inserted
                 // into the final index
@@ -310,8 +312,10 @@ double get_estimated_time_radixsort_msd(Column &c, int64_t low, int64_t high, do
         }
 
         if (check_sortindex) {
-            auto lower_bound = binary_search_gte(c.bucket_index.final_index, low, 0, c.bucket_index.final_index_entries);
-            auto high_bound = binary_search_lte(c.bucket_index.final_index, high, 0, c.bucket_index.final_index_entries);
+            auto lower_bound = binary_search_gte(c.bucket_index.final_index, low, 0,
+                                                 c.bucket_index.final_index_entries);
+            auto high_bound = binary_search_lte(c.bucket_index.final_index, high, 0,
+                                                c.bucket_index.final_index_entries);
             double page_count = (high_bound - lower_bound) / ELEMENTS_PER_PAGE;
             double scan_cost = READ_ONE_PAGE_WITHOUT_CHECKS_SEQ_MS * page_count;
             cost += scan_cost += RANDOM_ACCESS_PAGE_MS * log2(c.bucket_index.final_index_entries);
@@ -321,7 +325,8 @@ double get_estimated_time_radixsort_msd(Column &c, int64_t low, int64_t high, do
 
     if (c.bucket_index.index_position < c.data.size()) {
         // initial phase: bucketing
-        size_t next_position = std::min(c.bucket_index.index_position + (size_t)(c.data.size() * delta), c.data.size());
+        size_t next_position = std::min(c.bucket_index.index_position + (size_t) (c.data.size() * delta),
+                                        c.data.size());
 
         // cost of bucketing
         double bucketing_pages = (next_position - c.bucket_index.index_position) / ELEMENTS_PER_PAGE;
@@ -333,7 +338,8 @@ double get_estimated_time_radixsort_msd(Column &c, int64_t low, int64_t high, do
     } else {
         // second phase: quicksort
         // we only do swaps, we don't actually perform any scans/retrieval in the QS
-        double page_count = (c.data.size() / ELEMENTS_PER_PAGE) + (c.data.size() % ((int)ELEMENTS_PER_PAGE) != 0 ? 1 : 0);
+        double page_count =
+                (c.data.size() / ELEMENTS_PER_PAGE) + (c.data.size() % ((int) ELEMENTS_PER_PAGE) != 0 ? 1 : 0);
         double refine_speed = SWAP_COST_PAGE_MS * page_count;
         cost += refine_speed * delta;
     }

@@ -13,7 +13,7 @@ os.chdir("..")
 SkyServer=1
 Random=2
 SeqOver=3
-SeqRand=3
+SeqRand=4
 ZoomIn=5
 SeqZoomIn=6
 Skew=7
@@ -98,8 +98,8 @@ def template_correctness():
                       ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
                       ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
     COLUMN_SIZE_LIST = [100000000]
-    ALL_WORKLOAD_LIST = [Random,SeqOver,SeqInv,SeqRand,SeqNoOver,SeqAlt,ConsRandom,ZoomIn,ZoomOut,SeqZoomIn,SeqZoomOut,Skew,
-                     ZoomOutAlt,SkewZoomOutAlt,Periodic,Mixed]
+    syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
+
     QUERY_SELECTIVITY_LIST = [0.001]
     num_queries = 10000
     # clean_generated_data()

@@ -187,7 +187,6 @@ AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree 
     if (p1->first == p2->first && p1->second == p2->second) {
         pivot_pair = mdd1rp_find(c, p1->first, p1->second, lowKey, highKey, COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE,
                                  qo->view1, qo->view_size1); // a = L b = R N = Column_size p = swap_percentage
-        // crackInTwoMDD1R(c, p1->first, p1->second, lowKey, highKey,qo->view1, qo->view_size1);
         if (pivot_pair) {
             lowKey = pivot_pair->first;
             highKey = pivot_pair->first;

@@ -47,7 +47,7 @@ class Workload {
 
     // a and b is selected uniformly at random and a < b
     bool random_w() {
-        a = rand() % (N-S);
+        a = rand() % (N - S);
         b = a + S;
         return true;
     }
@@ -55,7 +55,7 @@ class Workload {
     // a will be incremented by 10 every subsequent query
     // the range may overlap with the next queries
     bool seq_over_w() {
-        int j  = N/NUM_QUERIES;
+        int j = N / NUM_QUERIES;
         a = I * j;
         b = a + S;
         return b <= N;
@@ -64,14 +64,11 @@ class Workload {
 
     // half the time is seq_over half the time is random_w
     bool seq_rand_w() {
-        int j  = N/NUM_QUERIES;
+        int j = N / NUM_QUERIES;
         a = I * j;
-        b = a + rand()%(N-I*j);
+        b = a + rand() % (N - I * j);
         return true;
     }
-
-
-
 
 
     // start at the [middle - 100500, middle + 100500),
@@ -83,12 +80,11 @@ class Workload {
         if (!I) R = 2 * N / 3;
         if (L >= R || L < 0 || R > N) return false;
         a = L;
-        L += N/100000;  // make the range smaller
+        L += N / 100000;  // make the range smaller
         b = R;
-        R -= N/100000;
+        R -= N / 100000;
         return true;
     }
-
 
 
     // after zooming in on one region, move to next unexplored region to the right
@@ -150,16 +146,16 @@ class Workload {
     }
 
     bool periodic_w() {
-        static long long jump = N/100;
-        a = (I * jump) % (N-S);
+        static long long jump = N / 100;
+        a = (I * jump) % (N - S);
         b = a + S;
         return true;
     }
 
     bool zoom_in_alt_w() {
-        int x = pow(-1,I);
-        int j  = N/NUM_QUERIES;
-        a =  x * I *j + (N-S)*(1-x)/2;
+        int x = pow(-1, I);
+        int j = N / NUM_QUERIES;
+        a = x * I * j + (N - S) * (1 - x) / 2;
         b = a + S;
         return true;
     }
@@ -211,20 +207,6 @@ public :
     }
 };
 
-int64_t check_answer(int64_t low, int64_t high){
-    int64_t answer;
-    size_t size;
-    if (low == 0)
-        size = high - low;
-    else
-        size = high - low + 1;
-    if (size % 2 == 0)
-        answer = (high + low) * size/2;
-    else
-        answer = (high + low) * (size/2) + ((high + low)/2);
-    return answer;
-}
-
 void print_help(int argc, char **argv) {
     fprintf(stderr, "Unrecognized command line option.\n");
     fprintf(stderr, "Usage: %s [args]\n", argv[0]);
@@ -242,11 +224,13 @@ pair<string, string> split_once(string delimited, char delimiter) {
     auto pos = delimited.find_first_of(delimiter);
     return {delimited.substr(0, pos), delimited.substr(pos + 1)};
 }
+
 void *fullIndex(IndexEntry *c) {
     hybrid_radixsort_insert(c, COLUMN_SIZE);
     void *I = build_bptree_bulk(c, COLUMN_SIZE);
     return I;
 }
+
 int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
     int64_t sum = 0;
     for (int64_t i = from; i <= to; i++) {
@@ -267,7 +251,7 @@ int main(int argc, char **argv) {
     vector<int64_t> leftQuery;
     vector<int64_t> rightQuery;
     vector<int64_t> queryAnswer;
-    bool print_mode = 0;
+
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
         if (arg.substr(0, 2) != "--") {
@@ -292,62 +276,44 @@ int main(int argc, char **argv) {
             COLUMN_SIZE = atoi(arg_value.c_str());
         } else if (arg_name == "queries-pattern") {
             QUERIES_PATTERN = atoi(arg_value.c_str());
-        } else if (arg_name == "print-mode") {
-            print_mode = atoi(arg_value.c_str());
         } else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
     }
-    if(print_mode){
-        Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
-        int64_t a, b;
-        for (size_t i = 0; i < NUM_QUERIES; i++) {
-            W.query(a, b);
-            cout << i+1 << ";" << a << ";"<< b <<"\n";
-        }
-    }
-    else{
-            Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE/100 * SELECTIVITY_PERCENTAGE);
-            int64_t a, b;
-            Column c;
-            IndexEntry *data;
-            BulkBPTree *T;
-            if (QUERIES_PATTERN == 1) {
-                c.data = vector<int64_t>(COLUMN_SIZE);
-                load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
-                data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
-                for (size_t i = 0; i < COLUMN_SIZE; i++) {
-                    data[i].m_key = c.data[i];
-                    data[i].m_rowId = i;
-                }
-                T = (BulkBPTree *) fullIndex(data);
-            }
-            for (size_t i = 0; i < NUM_QUERIES; i++) {
-                W.query(a, b);
-                leftQuery.push_back(a);
-                rightQuery.push_back(b);
-                // The skyserver workload doesn'' follow the same column distribution as other queries
-                // Hence a scan is performed to generate the query answers
-                if (QUERIES_PATTERN == 1){
-                    int64_t offset1 = (T)->gte(a);
-                    int64_t offset2 = (T)->lte(b);
-                    int64_t sum = scanQuery(data, offset1, offset2);
-                    queryAnswer.push_back(sum);
-                }
-                else{
-                    queryAnswer.push_back(check_answer(a,b));
-                }
-            }
-            FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");
-            fwrite(&leftQuery[0], sizeof(int64_t), NUM_QUERIES, f);
-            fwrite(&rightQuery[0], sizeof(int64_t), NUM_QUERIES, f);
-            fclose(f);
-            FILE *f_2 = fopen(ANSWER_FILE_PATH.c_str(), "w+");
-            fwrite(&queryAnswer[0], sizeof(int64_t), NUM_QUERIES, f_2);
-            fclose(f_2);
 
-        }
+    Workload W(COLUMN_SIZE, QUERIES_PATTERN, COLUMN_SIZE / 100 * SELECTIVITY_PERCENTAGE);
+    int64_t a, b;
+    Column c;
+    IndexEntry *data;
+    BulkBPTree *T;
+    c.data = vector<int64_t>(COLUMN_SIZE);
+    load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
+    data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+        data[i].m_key = c.data[i];
+        data[i].m_rowId = i;
     }
+    T = (BulkBPTree *) fullIndex(data);
+
+    for (size_t i = 0; i < NUM_QUERIES; i++) {
+        W.query(a, b);
+        leftQuery.push_back(a);
+        rightQuery.push_back(b);
+        // Using Full Index to generate answers to all workloads.
+        int64_t offset1 = (T)->gte(a);
+        int64_t offset2 = (T)->lte(b);
+        int64_t sum = scanQuery(data, offset1, offset2);
+        queryAnswer.push_back(sum);
+
+    }
+    FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");
+    fwrite(&leftQuery[0], sizeof(int64_t), NUM_QUERIES, f);
+    fwrite(&rightQuery[0], sizeof(int64_t), NUM_QUERIES, f);
+    fclose(f);
+    FILE *f_2 = fopen(ANSWER_FILE_PATH.c_str(), "w+");
+    fwrite(&queryAnswer[0], sizeof(int64_t), NUM_QUERIES, f_2);
+    fclose(f_2);
+
 
 }
