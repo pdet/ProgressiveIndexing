@@ -23,8 +23,8 @@ R ("dplyr", "ggplot2", "ggthemes", "ggrepel", "data.table", "RColorBrewer") is u
 # Available Workloads
 There are two types of workloads available. Both are based on the work of [Halim et al.](http://www.cs.au.dk/~karras/StochasticDatabaseCracking.pdf)
 ## SkyServer
-The Sloan Digital Sky Survey is a project that maps the universe. The data set and interactive data exploration query logs are publicly available via the SkyServer website. This benchmark is focused on the range queries that are applied on the Right Ascension column of the PhotoObjAll table. The data set contains almost 600 million tuples, with around $160,000$ range queries that focus on specific sections of the domain before moving to different areas. The data distribution and the workload distribution are shown below:
-![alt text](Images/skyserver-column.jpg) ![alt text](Images/skyserver-workload.png)
+The Sloan Digital Sky Survey is a project that maps the universe. The data set and interactive data exploration query logs are publicly available via the SkyServer website. This benchmark is focused on the range queries that are applied on the Right Ascension column of the PhotoObjAll table. The data set contains almost 600 million tuples, with around 160,000 range queries that focus on specific sections of the domain before moving to different areas. The data distribution and the workload distribution are shown below:
+<img src="https://github.com/pholanda/ProgressiveIndexing/blob/master/Images/skyserver.png" width="900" height="300" />
 
 ## Synthetic 
 The synthetic data set is composed of two data distributions, consisting of size n 8-byte integers distributed in the range of [0, n). We use two different data sets. The first one is composed of unique integers uniformly distributed, while the second one follows a skewed distribution with non-unique integers where 90% of the data is concentrated in the middle of the [0, n) range. The synthetic workload consists of 10^5 queries in the form 
