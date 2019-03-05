@@ -3,8 +3,9 @@ import inspect
 import sqlite3
 import urllib
 
-os.system("rm results.db")
-os.system("python scripts/sqlite.py")
+# os.system("rm results.db")
+if (os.path.exists("./results.db") == False):
+    os.system("python scripts/sqlite.py")
 db = sqlite3.connect('results.db')
 cursor = db.cursor()
 
