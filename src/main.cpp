@@ -24,7 +24,7 @@
 #include "include/cracking/progressive_stochastic_cracking.h"
 #include "include/progressive/incremental.h"
 #include "include/generate/random.h"
-
+#include "include/cracking/predicated_cracking.h"
 
 #pragma clang diagnostic ignored "-Wformat"
 
@@ -129,6 +129,46 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
         //Partitioning Column and Inserting in Cracker Indexing
         start = chrono::system_clock::now();
         T = standardCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[current_query],
+                             rangeQueries.rightpredicate[current_query] + 1);
+        end = chrono::system_clock::now();
+        query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
+        //Querying
+        start = chrono::system_clock::now();
+        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[current_query], (AvlTree) T, COLUMN_SIZE - 1);
+        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[current_query] + 1, (AvlTree) T, COLUMN_SIZE - 1);
+        int offset1 = p1->first;
+        int offset2 = p2->second;
+        free(p1);
+        free(p2);
+        int64_t sum = scanQuery(crackercolumn, offset1, offset2);
+        end = chrono::system_clock::now();
+        query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
+        if (sum != answers[current_query])
+            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
+                    answers[current_query], sum);
+    }
+    free(crackercolumn);
+}
+
+void predicated_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
+    chrono::time_point<chrono::system_clock> start, end;
+    start = chrono::system_clock::now();
+    IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    //Creating Cracker Column
+    for (size_t i = 0; i < COLUMN_SIZE; i++) {
+        crackercolumn[i].m_key = column.data[i];
+        crackercolumn[i].m_rowId = i;
+    }
+    end = chrono::system_clock::now();
+    query_times.idx_time[0].index_creation += chrono::duration<double>(end - start).count();
+    //Initialitizing Cracker Index
+    AvlTree T = NULL;
+
+
+    for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
+        //Partitioning Column and Inserting in Cracker Indexing
+        start = chrono::system_clock::now();
+        T = predicatedCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[current_query],
                              rangeQueries.rightpredicate[current_query] + 1);
         end = chrono::system_clock::now();
         query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
@@ -778,6 +818,9 @@ int main(int argc, char **argv) {
                                                 range_query_incremental_radixsort_msd,
                                                 get_estimated_time_radixsort_msd);
                 break;
+            case 15:
+                predicated_cracking(c, rangequeries, answers);
+
         }
     }
     if (!RUN_CORRECTNESS)

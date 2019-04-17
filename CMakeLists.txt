@@ -33,7 +33,7 @@ add_executable(main
         src/util/file_manager.cpp src/util/binary_search.cpp src/full_index/hybrid_radix_insert_sort.cpp
         src/full_index/bulkloading_bp_tree.cpp src/util/avl_tree.cpp src/cracking/cracking_util.cpp
         src/cracking/standard_cracking.cpp src/cracking/stochastic_cracking.cpp
-        src/cracking/progressive_stochastic_cracking.cpp
+        src/cracking/predicated_cracking.cpp src/cracking/progressive_stochastic_cracking.cpp
         src/progressive/progressive_quicksort.cpp src/progressive/progressive_bucketsort_equiheight.cpp
         src/progressive/progressive_radixsort_lsd.cpp src/progressive/progressive_radixsort_msd.cpp
         src/main.cpp)

@@ -1,5 +1,7 @@
 #include "../include/cracking/standard_cracking.h"
 
+
+
 AvlTree standardCracking(IndexEntry *&c, int dataSize, AvlTree T, int lowKey, int highKey) {
 
     IntPair p1, p2;

@@ -36,6 +36,7 @@ ProgressiveRadixsortLSD=11
 ProgressiveRadixsortLSDCostModel=12
 ProgressiveRadixsortMSD=13
 ProgressiveRadixsortMSDCostModel=14
+PredicatedCracking=15
 
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
@@ -94,16 +95,17 @@ def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUE
         print("Failed!")
 
 def template_correctness():
-    ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
-                      ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
-                      ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
-    COLUMN_SIZE_LIST = [100000000]
+    # ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
+    #                   ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
+    #                   ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
+    ALGORITHM_LIST = [PredicatedCracking]
+    COLUMN_SIZE_LIST = [10000000]
     syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
 
-    QUERY_SELECTIVITY_LIST = [0.001]
-    num_queries = 10000
-    # clean_generated_data()
-    generate_cost_model()
+    QUERY_SELECTIVITY_LIST = [0.1]
+    num_queries = 1000
+    clean_generated_data()
+    # generate_cost_model()
     compile()
     for column_size in COLUMN_SIZE_LIST:
         generate_column(column_size)
