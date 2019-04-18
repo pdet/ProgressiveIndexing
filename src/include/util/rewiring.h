@@ -20,7 +20,7 @@
 #define SYS_memfd_create 319
 namespace rewiring
 {
-    constexpr const char *HUGETLBFS_MOUNTPOINT = "/mnt/hugetlbfs/";
+    constexpr const char *HUGETLBFS_MOUNTPOINT = "/export/scratch1/home/holanda/mnt/hugetlbfs/";
 
     template<std::size_t PAGE_SIZE>
     inline std::size_t ceil_to_pagesize(std::size_t size)
@@ -87,21 +87,21 @@ namespace rewiring
 
 /*-- Memory file -----------------------------------------------------------------------------------------------------*/
     template<>
-    memory_file<false>::memory_file(const char *filename)
+     memory_file<false>::memory_file(const char *filename)
     {
         path = filename;
         fd = syscall(SYS_memfd_create, filename, 0);
     }
 
     template<>
-    memory_file<true>::memory_file(const char *filename)
+     memory_file<true>::memory_file(const char *filename)
     {
         path = std::string{HUGETLBFS_MOUNTPOINT}.append(filename);
         fd = open(path.c_str(), O_RDWR | O_CREAT, 0755);
     }
 
     template<bool UseHugepages>
-    memory_file<UseHugepages>::~memory_file()
+     memory_file<UseHugepages>::~memory_file()
     {
         if (close(fd))
             warn("closing file \"%s\" failed", path.c_str());
