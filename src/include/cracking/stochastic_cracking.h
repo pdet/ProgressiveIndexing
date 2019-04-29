@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include "../util/avl_tree.h"
 #include "../structs.h"
-#include "cracking_util.h"
+#include "cracking_engine.h"
 
 AvlTree
 stochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey, QueryOutput *qo);

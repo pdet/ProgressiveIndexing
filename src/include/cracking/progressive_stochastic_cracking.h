@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include <cstdlib>
 #include "../structs.h"
-#include "cracking_util.h"
+#include "cracking_engine.h"
 
 
 AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey,

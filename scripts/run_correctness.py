@@ -98,9 +98,9 @@ def template_correctness():
     # ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
     #                   ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
     #                   ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
-    ALGORITHM_LIST = [PredicatedCracking]
+    ALGORITHM_LIST = [StandardCracking]
     COLUMN_SIZE_LIST = [10000000]
-    syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
+    syntethical_workload_list = [Random]
 
     QUERY_SELECTIVITY_LIST = [0.1]
     num_queries = 1000
