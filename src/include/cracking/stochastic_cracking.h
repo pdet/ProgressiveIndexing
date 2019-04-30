@@ -8,6 +8,6 @@
 #include "cracking_engine.h"
 
 AvlTree
-stochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey, QueryOutput *qo);
+stochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey, QueryOutput *qo,CrackEngineType engineType);
 
 #endif //PROGRESSIVEINDEXING_STOCHASTIC_CRACKING_H

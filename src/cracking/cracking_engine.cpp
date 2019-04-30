@@ -273,34 +273,47 @@ void checkColumn(IndexEntry *&c, int64_t pos, int64_t pivot, int64_t column_size
 }
 
 int64_t crackInTwoPredicated(IndexEntry *&c, int64_t posL, int64_t posH, int64_t pivot) {
-    int64_t x1 = posL, x2 = posH;
     IndexEntry *begin = &c[posL];
-    IndexEntry *end = &c[posH];
-    auto first = *begin;
-    auto second = *end;
-    while (x1 <= x2) {
-        *begin = *end = first;
-        auto left = begin[1];
-        auto right = end[-1];
-        auto advance_lower = first < pivot;
-        begin += advance_lower;
-        end += advance_lower -1;
-        x1 +=advance_lower;
-        x2 += advance_lower -1;
-        first = advance_lower ? left:right;
-        *begin = *end = second;
-        left = begin[1];
-        right = end[-1];
-        advance_lower = second < pivot;
-        begin+= advance_lower;
-        end += advance_lower - 1;
-        x1 +=advance_lower;
-        x2 += advance_lower -1;
-        second = advance_lower? left:right;
+    IndexEntry *end = &c[posH+1];
+    /* Corner case handling for odd number of elements. */
+    if ((end - begin) & 0x1) {
+        if (end[-1] >= pivot)
+            --end;
+        else {
+            using std::swap;
+            swap(end[-1], *begin);
+            ++begin;
+            ++posL;
+        }
     }
-    while (x1 > 0 && c[x1].m_key >= pivot)
-        x1--;
-    checkColumn(c,x1,pivot,9999999);
+    assert(not(end - begin & 0x1) && "not a multiple of 2");
 
-    return x1;
+    auto first = *begin;
+    auto second = end[-1];
+
+    while (begin < end) {
+        {
+            *begin = end[-1] = first;
+            auto left = begin[1];
+            auto right = end[-2];
+            const ptrdiff_t advance_lower = first < pivot;
+            begin += advance_lower;
+            posL+=advance_lower;
+            end   += ptrdiff_t(-1) + advance_lower;
+            first = advance_lower ? left : right;
+        }
+        {
+            *begin = end[-1] = second;
+            auto left = begin[1];
+            auto right = end[-2];
+            const ptrdiff_t advance_lower = second < pivot;
+            begin += advance_lower;
+            posL+=advance_lower;
+            end   += ptrdiff_t(-1) + advance_lower;
+            second = advance_lower ? left : right;
+        }
+    }
+    while (posL > 0 && c[posL] >= pivot)
+        posL--;
+    return posL;
 }

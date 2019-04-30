@@ -10,8 +10,8 @@ extern double ALLOWED_SWAPS_PERCENTAGE;
 
 map<int64_t, pair<int64_t, pair<int64_t, int64_t> > > partial_crack;
 
-IntPair mdd1rfull(IndexEntry *&c, int64_t posL, int64_t posH, int64_t low, int64_t high, IndexEntry *&view,
-                  int64_t &view_size) {
+IntPair mdd1rfullBranched(IndexEntry *&c, int64_t posL, int64_t posH, int64_t low, int64_t high, IndexEntry *&view,
+                          int64_t &view_size) {
 
     int64_t L = posL;
     int64_t R = posH;
@@ -52,8 +52,9 @@ IntPair mdd1rfull(IndexEntry *&c, int64_t posL, int64_t posH, int64_t low, int64
 
 // Partial MDD1R : Materialize DD1R (Partial)
 IntPair
-mdd1rp_split_and_materialize(IndexEntry *&c, pair<int64_t, pair<int64_t, int64_t> > &P, int64_t L, int64_t R, int64_t a,
-                             int64_t b, int64_t nswap, IndexEntry *&view, int64_t &view_size) {
+mdd1rp_split_and_materializeBranched(IndexEntry *&c, pair<int64_t, pair<int64_t, int64_t> > &P, int64_t L, int64_t R,
+                                     int64_t a,
+                                     int64_t b, int64_t nswap, IndexEntry *&view, int64_t &view_size) {
     int64_t X = P.first;
     int64_t &pL = P.second.first, &pR = P.second.second;
     if (view)
@@ -157,16 +158,16 @@ mdd1rp_split_and_materialize(IndexEntry *&c, pair<int64_t, pair<int64_t, int64_t
 
 
 IntPair mdd1rp_find(IndexEntry *&c, int64_t L, int64_t R, int64_t a, int64_t b, int nswap, IndexEntry *&view,
-                    int64_t &view_size) {
+                    int64_t &view_size,CrackEngineType engineType) {
     IntPair pivot_pair;
     if (R - L < L2_SIZE) { // full crack if the piece size is less than 1M tuples
-        return mdd1rfull(c, L, R, a, b, view, view_size);
+        return mdd1rfullBranched(c, L, R, a, b, view, view_size);
     }
     if (!partial_crack.count(L)) { // pick a pivot value X randomly in index [L,R)
         int64_t x = c[L + (1 + (int64_t) ((R - L + 1) * (double) rand() / (RAND_MAX + 1.0))) - 1].m_key;
         partial_crack[L] = make_pair(x, make_pair(L, R));
     }
-    pivot_pair = mdd1rp_split_and_materialize(c, partial_crack[L], L, R, a, b, nswap, view, view_size);
+    pivot_pair = mdd1rp_split_and_materializeBranched(c, partial_crack[L], L, R, a, b, nswap, view, view_size);
     if (pivot_pair) {
         assert(partial_crack.count(L));
         partial_crack.erase(L);  // remove from partial crack
@@ -175,7 +176,7 @@ IntPair mdd1rp_find(IndexEntry *&c, int64_t L, int64_t R, int64_t a, int64_t b, 
 }
 
 AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey,
-                                      QueryOutput *qo) {
+                                      QueryOutput *qo,CrackEngineType engineType) {
 
     IntPair p1, p2;
 
@@ -186,7 +187,7 @@ AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree 
 
     if (p1->first == p2->first && p1->second == p2->second) {
         pivot_pair = mdd1rp_find(c, p1->first, p1->second, lowKey, highKey, COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE,
-                                 qo->view1, qo->view_size1); // a = L b = R N = Column_size p = swap_percentage
+                                 qo->view1, qo->view_size1,engineType); // a = L b = R N = Column_size p = swap_percentage
         if (pivot_pair) {
             lowKey = pivot_pair->first;
             highKey = pivot_pair->first;
@@ -197,12 +198,12 @@ AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree 
         pivot_pair->first = 0;
         pivot_pair->second = 0;
         IntPair pivot_pair1 = mdd1rp_find(c, p1->first, p1->second, lowKey, highKey,
-                                          COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE, qo->view1, qo->view_size1);
+                                          COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE, qo->view1, qo->view_size1,engineType);
         qo->middlePart = &c[p1->second + 1];
         int size2 = p2->first - p1->second - 1;
         qo->middlePart_size = size2;
         IntPair pivot_pair2 = mdd1rp_find(c, p2->first, p2->second, lowKey, highKey,
-                                          COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE, qo->view2, qo->view_size2);
+                                          COLUMN_SIZE * ALLOWED_SWAPS_PERCENTAGE, qo->view2, qo->view_size2,engineType);
 
         if (pivot_pair1 && pivot_pair2) {
             pivot_pair->first = pivot_pair1->second;

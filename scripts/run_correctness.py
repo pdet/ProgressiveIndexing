@@ -98,10 +98,10 @@ def template_correctness():
     # ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
     #                   ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
     #                   ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
-    ALGORITHM_LIST = [StandardCracking]
+    ALGORITHM_LIST = [ProgressiveStochasticCracking]
     COLUMN_SIZE_LIST = [10000000]
-    syntethical_workload_list = [Random]
-
+    # syntethical_workload_list = [Random]
+    syntethical_workload_list = [2,3,4,5,6,7,8,9,10]
     QUERY_SELECTIVITY_LIST = [0.1]
     num_queries = 1000
     clean_generated_data()

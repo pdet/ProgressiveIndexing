@@ -124,17 +124,15 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
     CrackEngineType engineType;
 
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
+        start = chrono::system_clock::now();
         int64_t left_query = rangeQueries.leftpredicate[current_query];
         int64_t right_query = rangeQueries.rightpredicate[current_query] + 1;
-        start = chrono::system_clock::now();
         IntPair pivot_pair = NULL;
         if (T)
             engineType = adaptive_cracking_engine(crackercolumn,T,left_query,right_query, COLUMN_SIZE);
         else
             engineType = CrackEngineType::Branched;
-        //Partitioning Column and Inserting in Cracker Indexing
         IntPair p1,p2;
-
         switch(engineType){
             case CrackEngineType ::Branched:{
                 p1 = FindNeighborsLT(left_query, T, COLUMN_SIZE - 1);
@@ -154,14 +152,7 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
                 T = Insert(offset, right_query, T);
             }
             break;
-            case CrackEngineType::Rewired:{
-                p1 = FindNeighborsLT(rangeQueries.leftpredicate[current_query], T, COLUMN_SIZE - 1);
-                int64_t offset = crackInTwoBranched(crackercolumn, p1->first, p1->second, rangeQueries.leftpredicate[current_query]);
-                T = Insert(offset, rangeQueries.leftpredicate[current_query], T);
-                p1 = FindNeighborsLT(rangeQueries.rightpredicate[current_query]+1, T, COLUMN_SIZE - 1);
-                offset = crackInTwoBranched(crackercolumn, p1->first, p1->second, rangeQueries.rightpredicate[current_query]+1);
-                T = Insert(offset, rangeQueries.rightpredicate[current_query]+1, T);
-            }
+            case CrackEngineType::Rewired:
             break;
         }
         end = chrono::system_clock::now();
@@ -208,8 +199,16 @@ void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_
     QueryOutput *qo = (QueryOutput *) malloc(sizeof(struct QueryOutput));
     qo->sum = 0;
 
+    CrackEngineType engineType;
 
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
+        start = chrono::system_clock::now();
+        int64_t left_query = rangeQueries.leftpredicate[current_query];
+        int64_t right_query = rangeQueries.rightpredicate[current_query] + 1;
+        if (T)
+            engineType = adaptive_cracking_engine(crackercolumn,T,left_query,right_query, COLUMN_SIZE);
+        else
+            engineType = CrackEngineType::Branched;
         qo->view1 = NULL;
         qo->view_size1 = 0;
         qo->view2 = NULL;
@@ -218,11 +217,8 @@ void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_
         qo->middlePart_size = 0;
         qo->sum = 0;
 
-        //Partitioning Column and Inserting in Cracker Indexing
-        start = chrono::system_clock::now();
-
         T = stochasticCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[current_query],
-                               rangeQueries.rightpredicate[current_query] + 1, qo);
+                               rangeQueries.rightpredicate[current_query] + 1, qo,engineType);
         end = chrono::system_clock::now();
         query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
         start = chrono::system_clock::now();
@@ -271,7 +267,10 @@ void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, v
     //Intializing Query Output
     QueryOutput *qo = (QueryOutput *) malloc(sizeof(struct QueryOutput));
     qo->sum = 0;
+    CrackEngineType engineType;
+
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
+
         qo->view1 = NULL;
         qo->view_size1 = 0;
         qo->view2 = NULL;
@@ -280,9 +279,15 @@ void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, v
         qo->middlePart_size = 0;
         qo->sum = 0;
         start = chrono::system_clock::now();
+        int64_t left_query = rangeQueries.leftpredicate[current_query];
+        int64_t right_query = rangeQueries.rightpredicate[current_query] + 1;
+        if (T)
+            engineType = adaptive_cracking_engine(crackercolumn,T,left_query,right_query, COLUMN_SIZE);
+        else
+            engineType = CrackEngineType::Branched;
         //Partitioning Column and Inserting in Cracker Indexing
         T = progressiveStochasticCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[current_query],
-                                          rangeQueries.rightpredicate[current_query] + 1, qo);
+                                          rangeQueries.rightpredicate[current_query] + 1, qo,engineType);
         end = chrono::system_clock::now();
         query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
         start = chrono::system_clock::now();
@@ -334,6 +339,8 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
     start = chrono::system_clock::now();
     vector<int64_t> partitions;
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    CrackEngineType engineType;
+
     //Creating Cracker Column
     for (size_t i = 0; i < COLUMN_SIZE; i++) {
         crackercolumn[i].m_key = column.data[i];
@@ -344,9 +351,13 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
     // Running 1000 - equal sized partitions
     generate_equal_size_partitions_order(&partitions, 0, COLUMN_SIZE);
     for (size_t i = 0; i < 1000; i++) {
-//        T = standardCracking(crackercolumn, COLUMN_SIZE, T, partitions[i], partitions[i]);
-    }
 
+        IntPair p1;
+        p1 = FindNeighborsLT(partitions[i], T, COLUMN_SIZE - 1);
+        int64_t offset = crackInTwoBranched(crackercolumn, p1->first, p1->second, partitions[i]);
+        T = Insert(offset, partitions[i], T);
+
+    }
     end = chrono::system_clock::now();
     query_times.idx_time[0].index_creation += chrono::duration<double>(end - start).count();
 
@@ -354,15 +365,43 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
         // crack
         start = chrono::system_clock::now();
 
-//        T = standardCracking(crackercolumn, COLUMN_SIZE, T, rangeQueries.leftpredicate[current_query],
-//                             rangeQueries.rightpredicate[current_query] + 1);
+        int64_t left_query = rangeQueries.leftpredicate[current_query];
+        int64_t right_query = rangeQueries.rightpredicate[current_query] + 1;
+        IntPair pivot_pair = NULL;
+        if (T)
+            engineType = adaptive_cracking_engine(crackercolumn,T,left_query,right_query, COLUMN_SIZE);
+        else
+            engineType = CrackEngineType::Branched;
+        IntPair p1,p2;
+        switch(engineType){
+            case CrackEngineType ::Branched:{
+                p1 = FindNeighborsLT(left_query, T, COLUMN_SIZE - 1);
+                int64_t offset = crackInTwoBranched(crackercolumn, p1->first, p1->second, left_query);
+                T = Insert(offset, left_query, T);
+                p1 = FindNeighborsLT(right_query, T, COLUMN_SIZE - 1);
+                offset = crackInTwoBranched(crackercolumn, p1->first, p1->second, right_query);
+                T = Insert(offset, right_query, T);
+            }
+                break;
+            case CrackEngineType::Predicated:{
+                p1 = FindNeighborsLT(left_query, T, COLUMN_SIZE - 1);
+                int64_t offset = crackInTwoPredicated(crackercolumn, p1->first, p1->second, left_query);
+                T = Insert(offset, left_query, T);
+                p1 = FindNeighborsLT(right_query, T, COLUMN_SIZE - 1);
+                offset = crackInTwoPredicated(crackercolumn, p1->first, p1->second, right_query);
+                T = Insert(offset, right_query, T);
+            }
+                break;
+            case CrackEngineType::Rewired:
+                break;
+        }
         end = chrono::system_clock::now();
         query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
 
         // query
         start = chrono::system_clock::now();
-        IntPair p1 = FindNeighborsGTE(rangeQueries.leftpredicate[current_query], (AvlTree) T, COLUMN_SIZE - 1);
-        IntPair p2 = FindNeighborsLT(rangeQueries.rightpredicate[current_query] + 1, (AvlTree) T, COLUMN_SIZE - 1);
+         p1 = FindNeighborsGTE(rangeQueries.leftpredicate[current_query], (AvlTree) T, COLUMN_SIZE - 1);
+         p2 = FindNeighborsLT(rangeQueries.rightpredicate[current_query] + 1, (AvlTree) T, COLUMN_SIZE - 1);
         int64_t offset1 = p1->first;
         int64_t offset2 = p2->second;
         free(p1);
@@ -756,7 +795,7 @@ int main(int argc, char **argv) {
     vector<int64_t> answers;
     load_answers(&answers, ANSWER_FILE_PATH, NUM_QUERIES);
     if (!RUN_CORRECTNESS)
-        repetition = 10;
+        repetition = 1;
     query_times.Initialize(NUM_QUERIES);
     vector<double> times(NUM_QUERIES);
     vector<double> deltas(NUM_QUERIES);
