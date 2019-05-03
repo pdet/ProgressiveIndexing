@@ -1,7 +1,6 @@
 #include "../include/full_index/hybrid_radix_insert_sort.h"
 #include <cstring>
 
-unsigned int INSERT_SORT_LEVEL = 64;
 
 // insertion sort
 void insertion_sort(IndexEntry *c, int n) {

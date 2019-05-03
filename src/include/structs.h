@@ -14,6 +14,8 @@
 #include <climits>
 #include <algorithm>
 #include <cstring>
+#include <map>
+#include "setup.h"
 
 #define MAXIMUM_BUCKET_ENTRY_SIZE 1024
 #define INCREMENTAL_RADIX_BASE 64
@@ -397,6 +399,64 @@ struct TotalTime{
 
     };
 };
+
+//! Structs used for Adaptive Adaptive Indexing
+typedef int64_t entry_t;
+typedef int64_t offset_t;
+typedef struct {
+    entry_t rowId;
+    entry_t cols[1];
+} row_t;
+
+typedef struct {
+    entry_t rowId;
+    entry_t col;
+} crow_t;
+
+typedef struct {
+    offset_t offset;
+    offset_t entryLength;
+    bool sorted;
+} offset_length_t;
+
+typedef struct {
+    entry_t first;
+    entry_t second;
+} entry_pair_t;
+
+
+typedef struct {
+    entry_t entry;
+    offset_length_t offsetWithLength;
+} entry_offset_pair_t;
+
+typedef struct {
+    entry_offset_pair_t first;
+    entry_offset_pair_t second;
+} working_area_t;
+
+typedef offset_t (*ADAPT_FUNC)(const working_area_t p, const offset_t numBits, const offset_t bMin, const offset_t bMax, const offset_t sThreshold);
+
+typedef std::map<entry_t, offset_length_t> map_t;
+typedef map_t* cracker_index_t;
+typedef map_t::iterator cracker_index_iterator_t;
+typedef struct {
+    row_t *src;
+    crow_t *dst;
+    crow_t *sorted;
+    //
+    offset_t bMin;
+    offset_t bMax;
+    offset_t sThreshold;
+    offset_t sComplete;
+    offset_t sRecursion;
+    offset_t sTolerance;
+    double tMax;
+    entry_t maxKey;
+    offset_t numOOPBits;
+    ADAPT_FUNC F;
+    offset_t maxRecursionCount;
+} wdPartitioned_t;
 
 
 #endif

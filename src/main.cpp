@@ -23,17 +23,25 @@
 #include "include/cracking/progressive_stochastic_cracking.h"
 #include "include/progressive/incremental.h"
 #include "include/generate/random.h"
+#include "include/setup.h"
+#include "include/cracking/index.h"
+#include "include/cracking/adaptive_adaptive_indexing.h"
 
 #pragma clang diagnostic ignored "-Wformat"
 
 string COLUMN_FILE_PATH, QUERIES_FILE_PATH, ANSWER_FILE_PATH;
-int64_t COLUMN_SIZE, NUM_QUERIES, L2_SIZE;
+int64_t COLUMN_SIZE;
+int64_t L2_SIZE = 16000; // 320000 64 bit integers
+int64_t NUM_QUERIES;
 int ALGORITHM, RUN_CORRECTNESS, INTERACTIVITY_IS_PERCENTAGE, RADIXSORT_TOTAL_BYTES, DECAY_QUERIES, DECAY_TYPE;
 double ALLOWED_SWAPS_PERCENTAGE;
 int64_t num_partitions = 0;
 double DELTA, INTERACTIVITY_THRESHOLD;
 TotalTime query_times;
 size_t current_query;
+
+
+
 
 typedef ResultStruct (*progressive_function)(Column &c, int64_t low, int64_t high, double delta);
 
@@ -704,6 +712,60 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 }
 
 
+
+void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
+                       const offset_t size,
+                       const entry_pair_t *const queries,
+                       const offset_t numQueries) {
+
+    // create copy of input key column (only because of testing)
+    init_workingData(workingData, size);
+    crow_t *in = workingData->dst;
+
+    // allocate and pre-fault output column
+    crow_t *out = NULL;
+    int s = posix_memalign((void **) &out, (size_t) L1_LINE_SIZE, sizeof(*out) * size);
+    if (s != 0) {
+        exit(s);
+    }
+    memset(out, 0, sizeof(*out) * size);
+
+    // create empty index
+    crackerIndex_pt index = getNewCrackerIndex();
+    findNeighborsLT(0, index, size - 1);
+
+    // get method parameters
+    offset_t shiftOffset = findInitialShiftOffset(workingData->maxKey);
+    //offset_t numOOPBits = workingData->numOOPBits;
+    ADAPT_FUNC F = workingData->F;
+
+    // init variables
+    crow_t *dst = NULL;
+    entry_t res = 0;
+
+    // process queries
+    for (offset_t i = 0; i < numQueries; i++) {
+        // decide how to partition the data
+        if (i == 0) {
+            // do oop partition on first query
+            EQUIDEPTHOOPRADIX_helper(in, out, size, shiftOffset, index, workingData);
+            dst = out;
+            res = FILTER_helper(dst, size, queries[i].first, queries[i].second, index);
+        } else {
+            res = DECISION_helper_simple(dst, size, queries[i].first, queries[i].second, index, F, workingData);
+        }
+
+
+    }
+
+    // free memory
+    workingData->dst = out;
+    free(in);
+    free(out);
+    delete((cracker_index_t)index);
+}
+
+
 void print_help(int argc, char **argv) {
     fprintf(stderr, "Unrecognized command line option.\n");
     fprintf(stderr, "Usage: %s [args]\n", argv[0]);
@@ -728,12 +790,23 @@ pair<string, string> split_once(string delimited, char delimiter) {
     auto pos = delimited.find_first_of(delimiter);
     return {delimited.substr(0, pos), delimited.substr(pos + 1)};
 }
-
+void initConfiguration(wdPartitioned_t *out) {
+    out->bMin = NUM_BITS_MIN;
+    out->bMax = NUM_BITS_MAX;
+    out->sThreshold = SCALING_THRESHOLD;
+    out->sComplete = SORTING_THRESHOLD;
+    out->sRecursion = RECURSION_THRESHOLD;
+    out->tMax = TIME_LIMIT_MAX;
+    out->sTolerance = (offset_t)TOLERANCE;
+    out->maxKey = MAX_KEY;
+    out->numOOPBits = NUM_OOP_BITS;
+    out->F = FANOUT;
+    out->maxRecursionCount = MAX_RECURSION_COUNT;
+}
 int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "generated_data/10000000/column";
     QUERIES_FILE_PATH = "generated_data/10000000/query_1_2";
     ANSWER_FILE_PATH = "generated_data/10000000/answer_1_2";
-    L2_SIZE = 16000; // 320000 64 bit integers
     ALLOWED_SWAPS_PERCENTAGE = 0.1;
     NUM_QUERIES = 10000;
     COLUMN_SIZE = 10000000;
@@ -851,6 +924,14 @@ int main(int argc, char **argv) {
                                                 range_query_incremental_radixsort_msd,
                                                 get_estimated_time_radixsort_msd);
                 break;
+            case 15:
+                entry_pair_t queries[NUM_QUERIES];
+                for (size_t i = 0; i < NUM_QUERIES;i++){
+                    queries[i].first = rangequeries.leftpredicate[i];
+                    queries[i].second = rangequeries.rightpredicate[i];
+                }
+//                adaptive_adaptive_indexing();
+            break;
         }
     }
     if (!RUN_CORRECTNESS)
