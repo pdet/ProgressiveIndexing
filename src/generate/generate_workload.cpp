@@ -299,7 +299,11 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < NUM_QUERIES; i++) {
         W.query(a, b);
         leftQuery.push_back(a);
+        // Weird binary search edge-case
+        if (b == COLUMN_SIZE)
+            b-=2;
         rightQuery.push_back(b);
+
         // Using Full Index to generate answers to all workloads.
         int64_t offset1 = (T)->gte(a);
         int64_t offset2 = (T)->lte(b);

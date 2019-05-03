@@ -1,4 +1,6 @@
 #include "../include/cracking/progressive_stochastic_cracking.h"
+#include "../include/cracking/stochastic_cracking.h"
+
 #include <map>
 #include <assert.h>
 
@@ -10,47 +12,6 @@ extern double ALLOWED_SWAPS_PERCENTAGE;
 
 map<int64_t, pair<int64_t, pair<int64_t, int64_t> > > partial_crack;
 
-IntPair mdd1rfullBranched(IndexEntry *&c, int64_t posL, int64_t posH, int64_t low, int64_t high, IndexEntry *&view,
-                          int64_t &view_size) {
-
-    int64_t L = posL;
-    int64_t R = posH;
-    int64_t a = low;
-    int64_t b = high;
-
-    view = (IndexEntry *) malloc(
-            (R - L + 1) * sizeof(IndexEntry));        // initialize view to the maximum possible size
-    int64_t size = 0;
-
-
-    int64_t x = c[L + (1 + (int64_t) ((R - L + 1) * (double) rand() / (RAND_MAX + 1.0))) - 1].m_key;
-
-
-    while (L <= R) {
-        while (L <= R && c[L] < x) {
-            if (c[L] >= a && c[L] < b)
-                view[size++] = c[L];
-            L = L + 1;
-        }
-        while (L <= R && c[R] >= x) {
-            if (c[R] >= a && c[R] < b)
-                view[size++] = c[R];
-            R = R - 1;
-        }
-        if (L < R)
-            exchange(c, L, R);
-    }
-
-    view_size = size;
-
-    // add crack on X at position L
-    IntPair p = (IntPair) malloc(sizeof(struct int_pair));
-    p->first = x;
-    p->second = L - 1;
-    return p;
-}
-
-// Partial MDD1R : Materialize DD1R (Partial)
 IntPair
 mdd1rp_split_and_materializeBranched(IndexEntry *&c, pair<int64_t, pair<int64_t, int64_t> > &P, int64_t L, int64_t R,
                                      int64_t a,
@@ -156,18 +117,155 @@ mdd1rp_split_and_materializeBranched(IndexEntry *&c, pair<int64_t, pair<int64_t,
     return NULL; // Did not finished cracking
 }
 
+IntPair
+mdd1rp_split_and_materializePredicated(IndexEntry *&c, pair<int64_t, pair<int64_t, int64_t> > &P, int64_t L, int64_t R,
+                                     int64_t a,
+                                     int64_t b, int64_t nswap, IndexEntry *&view, int64_t &view_size) {
+    int64_t X = P.first;
+    int64_t &pL = P.second.first, &pR = P.second.second;
+    if (view)
+        free(view);
+    view = (IndexEntry *) malloc(
+            (R - L + 1) * sizeof(IndexEntry));        // initialize view to the maximum possible size
+
+    // optimization based on where [a,b] relative to X
+    if (b < X) {
+        assert(pR <= R);
+        R = pR; // skip the right section
+
+        // fast scan the left
+        while (L < pL) {
+            int matching = c[L] >= a && c[L] < b;
+            view[view_size] = c[L];
+            view_size+=matching;
+            L++;
+        }
+
+        for (; L <= R;) {        // split [L,R) based on X and materialize
+            while (L <= R && c[L] < X) {
+                int matching = c[L] >= a && c[L] < b;
+                view[view_size] = c[L];
+                view_size+=matching;
+                L++;
+            }
+            while (L <= R && c[R] >= X) R--;  // the arr[R] don't need to be checked for materialization!
+            if (L < R) {
+                exchange(c, L, R);
+                if (nswap-- <= 0) break;
+            }
+        }
+    } else if (X <= a) {
+        assert(L <= pL);
+        L = pL; // skip the left section
+
+        // fast scan the right
+        while (pR < R) {
+            int matching = c[R] >= a && c[R] < b;
+            view[view_size] = c[R];
+            view_size+=matching;
+            R--;
+        }
+
+        for (; L <= R;) {        // split [L,R) based on X and materialize
+            while (L <= R && c[L] < X) L++;    // the arr[L] don't need to be checked for materialization!
+            while (L <= R && c[R] >= X) {
+                int matching = c[R] >= a && c[R] < b;
+                view[view_size] = c[R];
+                view_size+=matching;
+                R--;
+            }
+            if (L < R) {
+                exchange(c, L, R);
+                if (nswap-- <= 0) break;
+            }
+        }
+    } else {
+        // fast scan left and right
+        while (L < pL) {
+            int matching = c[L] >= a && c[L] < b;
+            view[view_size] = c[L];
+            view_size+=matching;
+            L++;
+        }
+        while (pR < R) {
+            int matching = c[R] >= a && c[R] < b;
+            view[view_size] = c[R];
+            view_size+=matching;
+            R--;
+        }
+
+        for (; L <= R;) {        // split [L,R) based on X and materialize
+            while (L <= R && c[L] < X) {
+                int matching = c[L] >= a;
+                view[view_size] = c[L];
+                view_size+=matching;
+                L++;
+            }
+            while (L <= R && c[R] >= X) {
+                int matching = c[R] < b;
+                view[view_size] = c[R];
+                view_size+=matching;
+                R--;
+            }
+            if (L < R) {
+                exchange(c, L, R);
+                if (nswap-- <= 0) break;
+            }
+        }
+    }
+    pL = L;
+    pR = R;
+
+    if (L > R) {
+        // add crack on X at position L
+        IntPair p = (IntPair) malloc(sizeof(struct int_pair));
+        p->first = X;
+        p->second = L - 1;
+        return p; // Finished cracking
+    }
+    while (L <= R) {
+        int matching = c[L] >= a && c[L] < b;
+        view[view_size] = c[L];
+        view_size+=matching;
+        L++;
+    }
+    return NULL; // Did not finished cracking
+}
+
 
 IntPair mdd1rp_find(IndexEntry *&c, int64_t L, int64_t R, int64_t a, int64_t b, int nswap, IndexEntry *&view,
                     int64_t &view_size,CrackEngineType engineType) {
     IntPair pivot_pair;
     if (R - L < L2_SIZE) { // full crack if the piece size is less than 1M tuples
-        return mdd1rfullBranched(c, L, R, a, b, view, view_size);
+        switch(engineType){
+            case CrackEngineType ::Branched:{
+                return crackInTwoMDD1RBranched(c, L, R, a, b, view, view_size);
+            }
+            case CrackEngineType::Predicated:{
+                return crackInTwoMDD1RPredicated(c, L, R, a, b, view, view_size);
+            }
+            case CrackEngineType::Rewired:
+                return nullptr;
+        }
     }
     if (!partial_crack.count(L)) { // pick a pivot value X randomly in index [L,R)
         int64_t x = c[L + (1 + (int64_t) ((R - L + 1) * (double) rand() / (RAND_MAX + 1.0))) - 1].m_key;
         partial_crack[L] = make_pair(x, make_pair(L, R));
     }
-    pivot_pair = mdd1rp_split_and_materializeBranched(c, partial_crack[L], L, R, a, b, nswap, view, view_size);
+    switch(engineType){
+        case CrackEngineType ::Branched:{
+            pivot_pair = mdd1rp_split_and_materializeBranched(c, partial_crack[L], L, R, a, b, nswap, view, view_size);
+        }
+        break;
+        case CrackEngineType::Predicated:{
+            pivot_pair = mdd1rp_split_and_materializePredicated(c, partial_crack[L], L, R, a, b, nswap, view, view_size);
+        }
+        break;
+
+        case CrackEngineType::Rewired:
+            break;
+    }
+//    pivot_pair = mdd1rp_split_and_materializeBranched(c, partial_crack[L], L, R, a, b, nswap, view, view_size);
     if (pivot_pair) {
         assert(partial_crack.count(L));
         partial_crack.erase(L);  // remove from partial crack

@@ -16,7 +16,7 @@
 #include <cstring>
 
 #define MAXIMUM_BUCKET_ENTRY_SIZE 1024
-#define INCREMENTAL_RADIX_BASE 256
+#define INCREMENTAL_RADIX_BASE 64
 
 typedef int bucket_type;
 struct Column;
