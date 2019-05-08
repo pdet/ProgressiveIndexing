@@ -34,9 +34,16 @@ void load_column(Column *c, string COLUMN_FILE_PATH, int64_t COLUMN_SIZE) {
     int *temp_data = (int *) malloc(sizeof(int) * COLUMN_SIZE);
     fread(temp_data, sizeof(int), COLUMN_SIZE, f);
     c->data = vector<int64_t>(COLUMN_SIZE);
+	c->min = std::numeric_limits<int64_t>::max();
+	c->max = std::numeric_limits<int64_t>::min();
     for (size_t i = 0; i < COLUMN_SIZE; i++) {
-
         c->data[i] = temp_data[i];
+		if (c->data[i] < c->min) {
+			c->min = c->data[i];
+		}
+		if (c->data[i] > c->max) {
+			c->max = c->data[i];
+		}
     }
     fclose(f);
 }
