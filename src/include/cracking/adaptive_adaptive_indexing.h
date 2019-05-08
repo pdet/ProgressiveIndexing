@@ -35,4 +35,5 @@ entry_t DECISION_helper_simple(crow_t *dst, offset_t size, entry_t keyL, entry_t
 void EQUIDEPTHOOPRADIX_helper(crow_t *in, crow_t *out, offset_t size,
                               offset_t shiftOffset, crackerIndex_pt index, wdPartitioned_t *const workingData);
 offset_t FLINEAR(const working_area_t p, const offset_t numBits, const offset_t bMin, const offset_t bMax, const offset_t sThreshold);
+void hybrid_radix_insert_sort(crow_t *c, offset_t n);
 #endif //PROGRESSIVEINDEXING_ADAPTIVE_ADAPTIVE_INDEXING_H

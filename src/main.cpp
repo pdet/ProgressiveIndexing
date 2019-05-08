@@ -41,8 +41,6 @@ TotalTime query_times;
 size_t current_query;
 
 
-
-
 typedef ResultStruct (*progressive_function)(Column &c, int64_t low, int64_t high, double delta);
 
 typedef double (*estimate_function)(Column &c, int64_t low, int64_t high, double delta);
@@ -716,11 +714,13 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
                        const offset_t size,
                        const entry_pair_t *const queries,
-                       const offset_t numQueries) {
-
+                       const offset_t numQueries, vector<int64_t> &answers) {
+    chrono::time_point<chrono::system_clock> start, middle, end;
+    chrono::duration<double> elapsed_seconds;
     // create copy of input key column (only because of testing)
     init_workingData(workingData, size);
     crow_t *in = workingData->dst;
+    start = chrono::system_clock::now();
 
     // allocate and pre-fault output column
     crow_t *out = NULL;
@@ -744,18 +744,29 @@ void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
     entry_t res = 0;
 
     // process queries
-    for (offset_t i = 0; i < numQueries; i++) {
+    end = chrono::system_clock::now();
+    query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
+    for (current_query = 0; current_query < numQueries; current_query++) {
         // decide how to partition the data
-        if (i == 0) {
+        if (current_query == 0) {
             // do oop partition on first query
+            start = chrono::system_clock::now();
             EQUIDEPTHOOPRADIX_helper(in, out, size, shiftOffset, index, workingData);
             dst = out;
-            res = FILTER_helper(dst, size, queries[i].first, queries[i].second, index);
+            res = FILTER_helper(dst, size, queries[current_query].first, queries[current_query].second+1, index);
+            // process queries
+            end = chrono::system_clock::now();
+            query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
         } else {
-            res = DECISION_helper_simple(dst, size, queries[i].first, queries[i].second, index, F, workingData);
+            start = chrono::system_clock::now();
+            res = DECISION_helper_simple(dst, size, queries[current_query].first, queries[current_query].second+1, index, F, workingData);
+            // process queries
+            end = chrono::system_clock::now();
+            query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
         }
-
-
+        if (res != answers[current_query])
+            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                    answers[current_query], res);
     }
 
     // free memory
@@ -803,6 +814,16 @@ void initConfiguration(wdPartitioned_t *out) {
     out->F = FANOUT;
     out->maxRecursionCount = MAX_RECURSION_COUNT;
 }
+
+void sort_data(crow_t *sorted, row_t *src, offset_t size) {
+
+    // copy data from input to cracker column
+    entry_t max = 0;
+    copy_key_column(src, sorted, size, max);
+    hybrid_radix_insert_sort(sorted, size);
+
+}
+
 int main(int argc, char **argv) {
     COLUMN_FILE_PATH = "generated_data/10000000/column";
     QUERIES_FILE_PATH = "generated_data/10000000/query_1_2";
@@ -924,14 +945,46 @@ int main(int argc, char **argv) {
                                                 range_query_incremental_radixsort_msd,
                                                 get_estimated_time_radixsort_msd);
                 break;
-            case 15:
+            case 15:{
+                // Init dataset container
+                wdPartitioned_t *workingData;
+                wdPartitioned_t wd = {};
+                workingData = &wd;
+
+                // Init dataset
+                row_t *src = (row_t *) malloc(sizeof(row_t) * DATA_SIZE);
+                for (size_t i = 0; i < COLUMN_SIZE; i++) {
+                    src[i].rowId =  i;
+                    src[i].cols[KEY_COLUMN_ID] =  c.data[i];
+                }
+                wd.src = src;
+
+                // pre-sort
+                crow_t *sorted = NULL;
+                int s = posix_memalign((void **) &sorted, L1_LINE_SIZE, sizeof(*sorted) * DATA_SIZE);
+                if (s != 0) {
+                    exit(s);
+                }
+                memset(sorted, 0, sizeof(*sorted) * DATA_SIZE);
+                sort_data(sorted, src, DATA_SIZE);
+                wd.sorted = sorted;
+
+                // Init thresholds and other parameters
+                initConfiguration(workingData);
+
+                // Init query workload
                 entry_pair_t queries[NUM_QUERIES];
-                for (size_t i = 0; i < NUM_QUERIES;i++){
+                for (size_t i = 0; i < NUM_QUERIES;i++) {
                     queries[i].first = rangequeries.leftpredicate[i];
                     queries[i].second = rangequeries.rightpredicate[i];
                 }
-//                adaptive_adaptive_indexing();
-            break;
+
+                adaptive_adaptive_indexing(workingData, DATA_SIZE, queries, NUM_QUERIES,answers);
+                free(sorted);
+                free(src);
+                break;
+            }
+
         }
     }
     if (!RUN_CORRECTNESS)

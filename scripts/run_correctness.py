@@ -36,7 +36,7 @@ ProgressiveRadixsortLSD=11
 ProgressiveRadixsortLSDCostModel=12
 ProgressiveRadixsortMSD=13
 ProgressiveRadixsortMSDCostModel=14
-PredicatedCracking=15
+AdaptiveAdaptiveIndexing=15
 
 def column_path(COLUMN_SIZE):
     path = "generated_data/" +str(COLUMN_SIZE)
@@ -98,7 +98,7 @@ def template_correctness():
     # ALGORITHM_LIST = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,ProgressiveQuicksort,ProgressiveQuicksortCostModel,ProgressiveBucketsortEquiheight,
     #                   ProgressiveBucketsortEquiheightCostModel,ProgressiveRadixsortLSD,ProgressiveRadixsortLSDCostModel,
     #                   ProgressiveRadixsortMSD,ProgressiveRadixsortMSDCostModel]
-    ALGORITHM_LIST = [ProgressiveStochasticCracking]
+    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
     COLUMN_SIZE_LIST = [10000000]
     # syntethical_workload_list = [Random]
     syntethical_workload_list = [2,3,4,5,6,7,8,9,10]

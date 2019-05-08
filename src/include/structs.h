@@ -401,7 +401,7 @@ struct TotalTime{
 };
 
 //! Structs used for Adaptive Adaptive Indexing
-typedef int64_t entry_t;
+typedef uint64_t entry_t;
 typedef int64_t offset_t;
 typedef struct {
     entry_t rowId;

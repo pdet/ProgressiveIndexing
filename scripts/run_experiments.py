@@ -40,7 +40,7 @@ ProgressiveRadixsortLSD=11
 ProgressiveRadixsortLSDCostModel=12
 ProgressiveRadixsortMSD=13
 ProgressiveRadixsortMSDCostModel=14
-PredicatedCracking=15
+AdaptiveAdaptiveIndexing=15
 
 #Setting Values for Different Column Distributions
 RandomDist = 1
@@ -48,7 +48,7 @@ SkewedDist = 2
 SkyServerDist = 3
 
 
-baseline_list = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,PredicatedCracking]
+baseline_list = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
