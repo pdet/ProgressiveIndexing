@@ -68,7 +68,7 @@ The skyserver data and workload can be manually downloaded [here](https://zenodo
 ```
 Example:
 ```bash
-./generate_column --column-size=10000000 --column-path=generated_data/10000000/column --column-dist=1
+./generate_column --column-size=10000000 --column-path=col1 --column-dist=1
 ```
 
 ### Generate Workload
@@ -94,7 +94,7 @@ After generating the dataset, you can generate workload:
      * 10 = ZoomInAlt
 Example:
 ```bash
-./generate_workload --num-queries=10000 --column-size=10000000 --column-path=generated_data/10000000/column --query-path=generated_data/10000000/query_0.01_2 --answer-path=generated_data/10000000/answer_0.01_2 --selectivity=0.01 --queries-pattern=2
+./generate_workload --num-queries=10000 --column-size=10000000 --column-path=col1 --query-path=q1 --answer-path=a1 --selectivity=0.01 --queries-pattern=2
 ```
 
 ### Run Experiments
@@ -121,7 +121,7 @@ algorithm:
 
 Example:
 ```bash
-./main --num-queries=10000 --column-size=10000000 --algorithm=7 --column-path=generated_data/10000000/column --query-path=generated_data/10000000/query_10_2 --answer-path=generated_data/10000000/answer_10_2
+./main --num-queries=10000 --column-size=10000000 --algorithm=7 --column-path=col1 --query-path=q1 --answer-path=a1
 ```
 
 #### For Progressive with fixed delta:
@@ -136,7 +136,7 @@ Example:
     * 13 = Progressive Radixsort MSD
 Example:
 ```bash
-./main --num-queries=10000 --column-size=10000000 --algorithm=13 --column-path=generated_data/10000000/column --query-path=generated_data/10000000/query_10_2 --answer-path=generated_data/10000000/answer_10_2 --delta=0.2
+./main --num-queries=10000 --column-size=10000000 --algorithm=13 --column-path=col1 --query-path=q1 --answer-path=a1 --delta=0.2
 ```
 #### For Progressive with self-adjusting delta:
 ```bash

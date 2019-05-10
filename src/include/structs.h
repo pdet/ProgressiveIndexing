@@ -18,7 +18,10 @@
 #include "setup.h"
 
 #define MAXIMUM_BUCKET_ENTRY_SIZE 1024
-#define INCREMENTAL_RADIX_BASE 64
+#define RADIXSORT_LSD_BUCKETS 64
+
+constexpr static int64_t RADIX_MASK = 63;
+constexpr static int64_t RADIX_SHIFT = 6;
 
 typedef int bucket_type;
 struct Column;
@@ -225,11 +228,11 @@ struct BucketRoot {
 
 
 struct RadixSortBuckets {
-    BucketRoot buckets[INCREMENTAL_RADIX_BASE];
+    BucketRoot buckets[RADIXSORT_LSD_BUCKETS];
 
     RadixSortBuckets *Copy() {
         auto ret = new RadixSortBuckets();
-        for(size_t i = 0; i < INCREMENTAL_RADIX_BASE; i++) {
+        for(size_t i = 0; i < RADIXSORT_LSD_BUCKETS; i++) {
             buckets[i].Copy(ret->buckets[i]);
         }
         return ret;
@@ -244,11 +247,12 @@ struct IncrementalRadixIndex {
     size_t current_bucket_index;
     size_t current_bucket;
     BucketEntry* current_entry = nullptr;
-    int64_t current_power;
+    int iteration;
+	int64_t current_power;
 
     std::vector<int64_t> final_index;
 
-    IncrementalRadixIndex() : current_power(1), current_bucket_index(0) { }
+    IncrementalRadixIndex() : iteration(0), current_power(1), current_bucket_index(0) { }
 
     void Copy(IncrementalRadixIndex& target);
     void clear();
@@ -274,6 +278,8 @@ struct IncrementalBucketSortIndex {
 
 
 struct Column {
+	int64_t min;
+	int64_t max;
     std::vector<int64_t> data;
     std::vector<size_t> sortindex;
     IncrementalBucketSortIndex bucket_index;
