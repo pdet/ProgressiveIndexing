@@ -1,5 +1,7 @@
 #include <sys/mman.h>
 #include "../include/cracking/cracking_engine.h"
+#include <assert.h>
+
 int numSwapps = 0;
 
 

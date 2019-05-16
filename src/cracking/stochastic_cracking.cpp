@@ -1,4 +1,5 @@
 #include "../include/cracking/stochastic_cracking.h"
+#include <assert.h>
 
 int64_t randomNumber(int64_t max) {
     return 1 + (int64_t) (max * (double) rand() / (RAND_MAX + 1.0));
