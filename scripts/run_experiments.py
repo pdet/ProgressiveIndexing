@@ -48,7 +48,7 @@ SkewedDist = 2
 SkyServerDist = 3
 
 
-baseline_list = [FullScan,FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
+baseline_list = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
@@ -360,7 +360,7 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
                         db.commit()
 def run_baseline():
     ALGORITHM_LIST = baseline_list
-    # COLUMN_SIZE_LIST=[10000000]
+    COLUMN_SIZE_LIST=[100000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
@@ -368,9 +368,14 @@ def run_baseline():
     # NUM_QUERIES=10
     template_run(ALGORITHM_LIST)
 
+def run_progressive_fixed_deltas():
+    ALGORITHM_LIST = progressive_list
+    run_skyserver(ALGORITHM_LIST)
+
+
 def run_progressive():
     ALGORITHM_LIST = progressive_list
-    # COLUMN_SIZE_LIST=[10000000]
+    COLUMN_SIZE_LIST=[100000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
@@ -380,7 +385,7 @@ def run_progressive():
 
 def run_progressive_cost_model():
     ALGORITHM_LIST = progressive_cm_list
-    # COLUMN_SIZE_LIST=[10000000]
+    COLUMN_SIZE_LIST=[100000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
     # QUERY_SELECTIVITY_LIST=[]
@@ -413,11 +418,12 @@ def run_skyserver_progressive_cost_model_query_decay():
     INTERACTIVITY_THRESHOLD_LIST=[1.2]
     run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
+# run_progressive_fixed_deltas()
 run_baseline()
-run_progressive()
-run_progressive_cost_model()
+# run_progressive()
+# run_progressive_cost_model()
 run_skyserver_baseline()
-run_skyserver_progressive()
-run_skyserver_progressive_cost_model()
-run_skyserver_progressive_cost_model_query_decay()
+# run_skyserver_progressive()
+# run_skyserver_progressive_cost_model()
+# run_skyserver_progressive_cost_model_query_decay()
 db.close()

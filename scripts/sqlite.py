@@ -18,7 +18,7 @@ cursor.execute('''
     CREATE TABLE queries(experiment_id INTEGER , query_number INTEGER NOT NULL, delta REAL , query_time REAL NOT NULL,indexing_time REAL NOT NULL,total_time REAL NOT NULL,pref_sum_total_time REAL NOT NULL, cost_model_time REAL, FOREIGN KEY (experiment_id) REFERENCES experiment(id),  PRIMARY KEY(experiment_id,query_number))
 ''')
 
-algorithms = [('FullScan',),('FullIndex',),('StandardCracking',),('StochasticCracking',),('ProgressiveStochasticCracking',),('CoarseGranularIndex',), ('ProgressiveQuicksort',),('ProgressiveQuicksortCostModel',),('ProgressiveBucketsortEquiheight',),('ProgressiveBucketsortEquiheightCostModel',) ,('ProgressiveRadixsortLSD',),('ProgressiveRadixsortLSDCostModel',),('ProgressiveRadixsortMSD',),('ProgressiveRadixsortMSDCostModel',)]
+algorithms = [('FullScan',),('FullIndex',),('StandardCracking',),('StochasticCracking',),('ProgressiveStochasticCracking',),('CoarseGranularIndex',), ('ProgressiveQuicksort',),('ProgressiveQuicksortCostModel',),('ProgressiveBucketsortEquiheight',),('ProgressiveBucketsortEquiheightCostModel',) ,('ProgressiveRadixsortLSD',),('ProgressiveRadixsortLSDCostModel',),('ProgressiveRadixsortMSD',),('ProgressiveRadixsortMSDCostModel',),('AdaptiveAdaptiveIndexing',)]
 cursor.executemany(''' INSERT INTO algorithms(name) VALUES(?)''', algorithms)
 
 workload = [('SkyServer',),('Random',),('SeqOver',),('SeqRand',),('ZoomIn',),('SeqZoomIn',), ('Skew',),('ZoomOutAlt',),('Periodic',),('ZoomInAlt',)]
