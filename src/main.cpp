@@ -39,7 +39,7 @@ int64_t num_partitions = 0;
 double DELTA, INTERACTIVITY_THRESHOLD;
 TotalTime query_times;
 size_t current_query;
-
+int FIXED_BUDGET;
 
 typedef ResultStruct (*progressive_function)(Column &c, int64_t low, int64_t high, double delta);
 
@@ -637,16 +637,43 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 size_t ITERATIONS = 10;
                 double estimated_delta = 0.5;
                 double offset = estimated_delta / 2;
-                for (size_t j = 0; j < ITERATIONS; j++) {
-                    estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
-                                              rangeQueries.rightpredicate[current_query], estimated_delta);
-                    if (estimated_time > INTERACTIVITY_THRESHOLD) {
-                        estimated_delta -= offset;
-                    } else {
-                        estimated_delta += offset;
+                if (FIXED_BUDGET){
+                    //get current query cost
+                    start = chrono::system_clock::now();
+                    results = function(column, rangeQueries.leftpredicate[current_query],
+                                       rangeQueries.rightpredicate[current_query], 0);
+                    end = chrono::system_clock::now();
+                    //o3 not optimizing this away
+                    if (results.sum != answers[current_query]) {
+                        fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+                                answers[current_query], sum);
                     }
-                    offset /= 2;
+                    double current_query_cost = chrono::duration<double>(end - start).count();
+                    for (size_t j = 0; j < ITERATIONS; j++) {
+                        estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
+                                                  rangeQueries.rightpredicate[current_query], estimated_delta);
+                        if (estimated_time > INTERACTIVITY_THRESHOLD-full_scan_time+current_query_cost) {
+                            estimated_delta -= offset;
+                        } else {
+                            estimated_delta += offset;
+                        }
+                        offset /= 2;
+                    }
+
                 }
+                else{
+                    for (size_t j = 0; j < ITERATIONS; j++) {
+                        estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
+                                                  rangeQueries.rightpredicate[current_query], estimated_delta);
+                        if (estimated_time > INTERACTIVITY_THRESHOLD) {
+                            estimated_delta -= offset;
+                        } else {
+                            estimated_delta += offset;
+                        }
+                        offset /= 2;
+                    }
+                }
+
                 // first get the base time with delta = 0
                 start = chrono::system_clock::now();
                 results = function(column, rangeQueries.leftpredicate[current_query],
@@ -793,6 +820,8 @@ void print_help(int argc, char **argv) {
     fprintf(stderr, "   --interactivity-is-percentage\n");
     fprintf(stderr, "   --decay-queries\n");
     fprintf(stderr, "   --decay-type\n");
+    fprintf(stderr, "   --fxd-budget\n");
+
 
 
 }
@@ -835,9 +864,10 @@ int main(int argc, char **argv) {
     DELTA = 0.1;
     RUN_CORRECTNESS = 0; // By Default run regular runs
     INTERACTIVITY_IS_PERCENTAGE = 1; // By default interactivity is a percentage of FS time
-    INTERACTIVITY_THRESHOLD = 0.5;
+    INTERACTIVITY_THRESHOLD = 1.2;
     DECAY_QUERIES = 0;
     DECAY_TYPE = 0;
+    FIXED_BUDGET = 0; // By Default we run adaptive indexing budgets
     int repetition = 1;
     for (int i = 1; i < argc; i++) {
         auto arg = string(argv[i]);
@@ -875,7 +905,10 @@ int main(int argc, char **argv) {
             DECAY_QUERIES = atoi(arg_value.c_str());
         } else if (arg_name == "decay-type") {
             DECAY_TYPE = atoi(arg_value.c_str());
-        } else {
+        } else if (arg_name == "fxd-budget") {
+            FIXED_BUDGET = atoi(arg_value.c_str());
+        }
+        else {
             print_help(argc, argv);
             exit(EXIT_FAILURE);
         }
