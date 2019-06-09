@@ -442,6 +442,8 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
     BulkBPTree *T;
     int64_t sum = 0;
     bool converged = false;
+    double prefix_sum = 0;
+
     if (function == range_query_incremental_bucketsort_equiheight) {
         // create the initial buckets for bucketsort without counting the time
         // we do this because it throws off our benchmarking otherwise
@@ -470,6 +472,8 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
             int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[current_query]);
             sum = scanQuery(column.final_data, offset1, offset2);
             end = chrono::system_clock::now();
+            prefix_sum += chrono::duration<double>(end - start).count();
+            query_times.prefix_sum[current_query] += prefix_sum;
             query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
         } else {
             start = chrono::system_clock::now();
@@ -488,6 +492,8 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
             end = chrono::system_clock::now();
 
             sum = results.sum;
+            prefix_sum += chrono::duration<double>(end - start).count();
+            query_times.prefix_sum[current_query] += prefix_sum;
             query_times.idx_time[current_query].index_creation +=
                     chrono::duration<double>(end - start).count() - baseline;
         }
