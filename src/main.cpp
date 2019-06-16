@@ -502,6 +502,7 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
             fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
                     answers[current_query], sum);
         if (!converged && column.converged) {
+            fprintf(stderr, "Converged on query %lld\n", current_query);
             converged = true;
             T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
 
@@ -615,6 +616,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             double cost_per_delta = (time - base_time) / estimated_delta;
             double real_delta = (best_convergence_delta_time - base_time) / cost_per_delta;
             if (column.converged) {
+                fprintf(stderr, "Converged on query %lld\n", current_query);
                 converged = true;
                 T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
             }
@@ -710,6 +712,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 double cost_per_delta = (time - base_time) / estimated_delta;
                 double real_delta = (INTERACTIVITY_THRESHOLD - base_time) / cost_per_delta;
                 if (column.converged) {
+                    fprintf(stderr, "Converged on query %lld\n", current_query);
                     converged = true;
                     T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
                 }
