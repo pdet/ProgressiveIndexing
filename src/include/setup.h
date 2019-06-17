@@ -27,11 +27,6 @@
 #define NORMAL          1
 #define ZIPF            2
 
-// DATA WORKLOAD SETTINGS
-#ifndef DATA_SIZE
-#define DATA_SIZE       100000000    // dataset size (def: 100 Mil)
-#endif
-
 // KEY DOMAIN (determines data size)
 #define MIN_KEY         0
 #define MAX_KEY         18446744073709551614UL      // max unsigned 64 bit - 1
