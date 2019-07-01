@@ -502,6 +502,7 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
             fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
                     answers[current_query], sum);
         if (!converged && column.converged) {
+            fprintf(stderr, "Converged on query %lld\n", current_query);
             converged = true;
             T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
 
@@ -615,6 +616,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
             double cost_per_delta = (time - base_time) / estimated_delta;
             double real_delta = (best_convergence_delta_time - base_time) / cost_per_delta;
             if (column.converged) {
+                fprintf(stderr, "Converged on query %lld\n", current_query);
                 converged = true;
                 T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
             }
@@ -710,6 +712,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 double cost_per_delta = (time - base_time) / estimated_delta;
                 double real_delta = (INTERACTIVITY_THRESHOLD - base_time) / cost_per_delta;
                 if (column.converged) {
+                    fprintf(stderr, "Converged on query %lld\n", current_query);
                     converged = true;
                     T = (BulkBPTree *) fullIndex(column.final_data, column.data.size());
                 }
@@ -991,7 +994,7 @@ int main(int argc, char **argv) {
                 workingData = &wd;
 
                 // Init dataset
-                row_t *src = (row_t *) malloc(sizeof(row_t) * DATA_SIZE);
+                row_t *src = (row_t *) malloc(sizeof(row_t) * COLUMN_SIZE);
                 for (size_t i = 0; i < COLUMN_SIZE; i++) {
                     src[i].rowId =  i;
                     src[i].cols[KEY_COLUMN_ID] =  c.data[i];
@@ -1000,12 +1003,12 @@ int main(int argc, char **argv) {
 
                 // pre-sort
                 crow_t *sorted = NULL;
-                int s = posix_memalign((void **) &sorted, L1_LINE_SIZE, sizeof(*sorted) * DATA_SIZE);
+                int s = posix_memalign((void **) &sorted, L1_LINE_SIZE, sizeof(*sorted) * COLUMN_SIZE);
                 if (s != 0) {
                     exit(s);
                 }
-                memset(sorted, 0, sizeof(*sorted) * DATA_SIZE);
-                sort_data(sorted, src, DATA_SIZE);
+                memset(sorted, 0, sizeof(*sorted) * COLUMN_SIZE);
+                sort_data(sorted, src, COLUMN_SIZE);
                 wd.sorted = sorted;
 
                 // Init thresholds and other parameters
@@ -1018,7 +1021,7 @@ int main(int argc, char **argv) {
                     queries[i].second = rangequeries.rightpredicate[i];
                 }
 
-                adaptive_adaptive_indexing(workingData, DATA_SIZE, queries, NUM_QUERIES,answers);
+                adaptive_adaptive_indexing(workingData, COLUMN_SIZE, queries, NUM_QUERIES,answers);
                 free(sorted);
                 free(src);
                 break;
