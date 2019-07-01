@@ -7,7 +7,7 @@ distributions = ["Random", "Skew", "SkyServer"]
 #workloads = ["Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
 
 distributions = ["Random"]
-workloads = ["Periodic"]
+workloads = ["Random"]
 workload_results = dict()
 for workload in workloads:
 	workload_results[workload] = dict()

@@ -215,7 +215,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
               {'experiment_id':experiment_id, 'query_number':query_number, 'delta':query_result[0], 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3], 'pref_sum_total_time': query_result[4], 'cost_model_time': query_result[5]})
 
 
-def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=1000000000,COLUMN_DISTRIBUTION_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=10000,INTERACTIVITY_IS_PERCENTAGE=1):
+def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[1000000000],COLUMN_DISTRIBUTION_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=100000,INTERACTIVITY_IS_PERCENTAGE=1):
     generate_cost_model(100000000) #Mock Gen
     compile()
     if COLUMN_SIZE_LIST == 0:
