@@ -1,41 +1,91 @@
 
 import sqlite3
+import numpy
 
 dbs = ["results/results_baseline.db", "results/results_progressive_synthetic.db", "results/results_progressive_sky.db"]
 
-distributions = ["Random", "Skew", "SkyServer"]
-#workloads = ["Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
-
 distributions = ["Random"]
-workloads = ["Random"]
+workloads = ["Random", "SeqOver", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+algorithms = ['ProgressiveRadixsortMSDCostModel', 'CoarseGranularIndex', 'AdaptiveAdaptiveIndexing', 'StandardCracking', 'ProgressiveStochasticCracking']
+# distributions = ["Random"]
+# workloads = ["Random"]
 workload_results = dict()
 for workload in workloads:
 	workload_results[workload] = dict()
+
+# for db in dbs:
+# 	print(db)
+# 	c = sqlite3.connect(db).cursor()
+# 	# figure out the set of algorithms
+# 	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id and algorithms.id > 6 and algorithms.id<15;")
+# 	algorithms = [x[0] for x in c.fetchall()]
+# 	for distribution_name in distributions:
+# 		c.execute("SELECT column_distributions.id FROM column_distributions WHERE name=?;", (distribution_name,))
+# 		distribution_id = c.fetchall()[0][0]
+
+# 		for workload_name in workloads:
+# 			c.execute("SELECT workloads.id FROM workloads WHERE name=?;", (workload_name,))
+# 			workload_id = c.fetchall()[0][0]
+# 			print('')
+# 			print("&"+workload_name + "&"),
+# 			for algorithm_name in algorithms:
+# 				c.execute("SELECT algorithms.id FROM algorithms WHERE name=?;", (algorithm_name,))
+# 				algorithm_id = c.fetchall()[0][0]
+# 				c.execute("SELECT id FROM experiments WHERE workload_id=? AND algorithm_id=? AND column_distribution_id=? AND query_selectivity<0.001", (workload_id, algorithm_id, distribution_id))
+# 				results = c.fetchall()
+# 				if len(results) == 0:
+# 					continue
+
+# 				experiment_id = results[0][0]
+# 				# print(experiment_id)
+# 				# print(algorithm_name, workload_name, distribution_name)
+
+# 				results = c.execute("SELECT total_time FROM queries WHERE query_number=0 AND experiment_id=?;", (experiment_id,)).fetchall()
+# 				if len(results) == 0:
+# 					print("?")
+# 					continue
+
+# 				first_query = results[0][0]
+
+# 				# print("First query", first_query)
+
+# 				c.execute("SELECT SUM(total_time) FROM queries WHERE experiment_id=?", (experiment_id,))
+# 				total_time = c.fetchall()[0][0]
+				
+# 				c.execute("SELECT total_time FROM queries WHERE experiment_id=? and query_number = 9999", (experiment_id,))
+# 				total_time = int(total_time + c.fetchall()[0][0] * (1000000 - 10000))
+# 				print(str(total_time) + "&"),
+
+result_dict = {}
+for distribution_name in distributions:
+	result_dict[distribution_name] = {}
+	for algorithm_name in algorithms:
+		result_dict[distribution_name][algorithm_name] = {}
 
 for db in dbs:
 	print(db)
 	c = sqlite3.connect(db).cursor()
 	# figure out the set of algorithms
-	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id;")
+	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id  and algorithms.id IN (14, 15, 6, 5, 3);")
 	algorithms = [x[0] for x in c.fetchall()]
-	for algorithm_name in algorithms:
-		c.execute("SELECT algorithms.id FROM algorithms WHERE name=?;", (algorithm_name,))
-		algorithm_id = c.fetchall()[0][0]
+	for distribution_name in distributions:
+		c.execute("SELECT column_distributions.id FROM column_distributions WHERE name=?;", (distribution_name,))
+		distribution_id = c.fetchall()[0][0]
+
 		for workload_name in workloads:
 			c.execute("SELECT workloads.id FROM workloads WHERE name=?;", (workload_name,))
 			workload_id = c.fetchall()[0][0]
-			for distribution_name in distributions:
-				c.execute("SELECT column_distributions.id FROM column_distributions WHERE name=?;", (distribution_name,))
-				distribution_id = c.fetchall()[0][0]
-
-				print(algorithm_name, workload_name, distribution_name)
-				c.execute("SELECT id FROM experiments WHERE workload_id=? AND algorithm_id=? AND column_distribution_id=? AND query_selectivity>0.001", (workload_id, algorithm_id, distribution_id))
+			for algorithm_name in algorithms:
+				c.execute("SELECT algorithms.id FROM algorithms WHERE name=?;", (algorithm_name,))
+				algorithm_id = c.fetchall()[0][0]
+				c.execute("SELECT id FROM experiments WHERE workload_id=? AND algorithm_id=? AND column_distribution_id=? AND query_selectivity<0.001", (workload_id, algorithm_id, distribution_id))
 				results = c.fetchall()
 				if len(results) == 0:
 					continue
 
 				experiment_id = results[0][0]
-				print(experiment_id)
+				# print(experiment_id)
+				# print(algorithm_name, workload_name, distribution_name)
 
 				results = c.execute("SELECT total_time FROM queries WHERE query_number=0 AND experiment_id=?;", (experiment_id,)).fetchall()
 				if len(results) == 0:
@@ -44,16 +94,80 @@ for db in dbs:
 
 				first_query = results[0][0]
 
-				print("First query", first_query)
-
 				c.execute("SELECT SUM(total_time) FROM queries WHERE experiment_id=?", (experiment_id,))
 				total_time = c.fetchall()[0][0]
+				
+				# c.execute("SELECT MIN(total_time) FROM queries WHERE experiment_id=?", (experiment_id,))
+				# total_time = int(total_time_before + c.fetchall()[0][0] * (1000000.0 - 10000.0))
+				# print(total_time_before, total_time)
 
-				print("Total time", total_time)
+				results = c.execute("SELECT total_time FROM queries WHERE experiment_id=? ORDER BY query_number;", (experiment_id,)).fetchall()
+				if len(results) == 0:
+					continue
+
+				res_list = []
+				stddevs = []
+				for i in range(len(results)):
+					res_list.append(results[i][0])
+					if (i + 1) % 10 == 0:
+						# print(res_list)
+						# print(float(numpy.pow(numpy.var(res_list), 10)))
+						stddevs.append(float(numpy.power(numpy.var(res_list), 2)))
+						res_list = []
+				robustness = sum(stddevs) / len(stddevs)
+				result_dict[distribution_name][algorithm_name][workload_name] = [first_query, total_time, robustness]
+
+
+print(result_dict)
+distributions = ["Random"]
+algorithms = ['ProgressiveRadixsortMSDCostModel', 'AdaptiveAdaptiveIndexing', 'CoarseGranularIndex', 'ProgressiveStochasticCracking', 'StandardCracking']
+workloads = ["Random", "SeqOver", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+
+# now print the values
+def render_table(render_index, cell_type):
+	print('')
+	header =  "  & Workload & PI & AAI & CGI & PSC & STD \\\\"
+	print(header)
+
+	for distribution in distributions:
+		distribution_text = "Uniform Random"
+		print('\\hline')
+		for workload in workloads:
+			line = ' & ' + workload
+			if workload == workloads[0]:
+				line = "\\multirow{" + str(len(workloads)) + "}{*}{\\rotatebox[origin=c]{90}{" + distribution_text + "}}" + line
+			smallest = algorithms[0]
+			for algore in algorithms:
+				if result_dict[distribution][algore][workload][render_index] < result_dict[distributions[0]][smallest][workload][render_index]:
+					smallest = algore
+			for algore in algorithms:
+				res = result_dict[distribution][algore][workload][render_index]
+				line += "& "
+				if algore == smallest:
+					line += "\\cellcolor{green!25}"
+				if cell_type == 'float':
+					if res < 0.01:
+						line += '{:0.1e}'.format(res)
+					elif res < 1:
+						line += "%.2f" % (res,)
+					elif res < 100:
+						line += "%.1f" % (res,)
+					else:
+						line += "%d" % (int(res),)
+
+				else:
+					line += "%d" % (res,)
+			line += " \\\\"
+			
+			print(line)
+
+render_table(0, 'float')
+render_table(1, 'float')
+render_table(2, 'float')
 
 
 
-
+# & Skew &  202 &200 & 550 & \cellcolor{green!25}166  \\
 
 """\begin{table}[ht]
 \centering\small

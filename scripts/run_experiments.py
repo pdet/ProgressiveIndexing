@@ -2,6 +2,7 @@ import os
 import inspect
 import sqlite3
 import urllib
+import time
 
 # os.system("rm results.db")
 if (os.path.exists("./results.db") == False):
@@ -142,7 +143,16 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --correctness=" + str(0)
     print(codestr)
-    result = os.popen(codestr).read()
+    result = subprocess.popen(codestr).read()
+    poll = result.poll()
+    time_sleeping = 0
+
+    while poll == None:
+        # p.subprocess is alive
+        time.sleep(5)
+        time_sleeping += 5
+        if time_sleeping > 600:
+            os.system("killall main")
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'column_distribution_id':COLUMN_DISTRIBUTION})
@@ -170,7 +180,16 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) + " --correctness=" + str(0)
     print(codestr)
-    result = os.popen(codestr).read()
+    result = subprocess.popen(codestr).read()
+    poll = result.poll()
+    time_sleeping = 0
+
+    while poll == None:
+        # p.subprocess is alive
+        time.sleep(5)
+        time_sleeping += 5
+        if time_sleeping > 600:
+            os.system("killall main")
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_delta,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_delta, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_delta':FIXED_DELTA, 'column_distribution_id':COLUMN_DISTRIBUTION})
@@ -199,7 +218,17 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) \
              + " --correctness=" + str(0) + " --interactivity-is-percentage="+str(INTERACTIVITY_IS_PERCENTAGE) + " --decay-queries="+str(QUERY_DECAY)
     print(codestr)
-    result = os.popen(codestr).read()
+    result = subprocess.popen(codestr).read()
+    poll = result.poll()
+    time_sleeping = 0
+
+    while poll == None:
+        # p.subprocess is alive
+        time.sleep(5)
+        time_sleeping += 5
+        if time_sleeping > 600:
+            os.system("killall main")
+    os.system("killall main")
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_interactivity_threshold, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_interactivity_threshold':FIXED_INTERACTIVITY_THRESHOLD, 'column_distribution_id':COLUMN_DISTRIBUTION})
@@ -423,7 +452,7 @@ def run_skyserver_progressive_cost_model_query_decay():
 # run_progressive()
 run_progressive_cost_model()
 # run_skyserver_baseline()
-# run_skyserver_progressive()
+run_skyserver_progressive()
 # run_skyserver_progressive_cost_model()
 # run_skyserver_progressive_cost_model_query_decay()
 db.close()
