@@ -244,7 +244,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
               {'experiment_id':experiment_id, 'query_number':query_number, 'delta':query_result[0], 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3], 'pref_sum_total_time': query_result[4], 'cost_model_time': query_result[5]})
 
 
-def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[1000000000],COLUMN_DISTRIBUTION_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=100000,INTERACTIVITY_IS_PERCENTAGE=1):
+def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000000],COLUMN_DISTRIBUTION_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=1000000,INTERACTIVITY_IS_PERCENTAGE=1):
     generate_cost_model(100000000) #Mock Gen
     compile()
     if COLUMN_SIZE_LIST == 0:
@@ -388,7 +388,7 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
                             run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,SkyServerDist,INTERACTIVITY_IS_PERCENTAGE)
                         db.commit()
 def run_baseline():
-    ALGORITHM_LIST = baseline_list
+    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
     COLUMN_SIZE_LIST=[100000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
@@ -448,9 +448,9 @@ def run_skyserver_progressive_cost_model_query_decay():
     run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
 # run_progressive_fixed_deltas()
-# run_baseline()
+run_baseline()
 # run_progressive()
-run_progressive_cost_model()
+# run_progressive_cost_model()
 # run_skyserver_baseline()
 run_skyserver_progressive()
 # run_skyserver_progressive_cost_model()
