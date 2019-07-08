@@ -148,6 +148,7 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
     time_sleeping = 0
 
     while poll == None:
+        poll = result.poll()
         # p.subprocess is alive
         time.sleep(5)
         time_sleeping += 5
@@ -185,6 +186,7 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
     time_sleeping = 0
 
     while poll == None:
+        poll = result.poll()
         # p.subprocess is alive
         time.sleep(5)
         time_sleeping += 5
@@ -223,6 +225,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
     time_sleeping = 0
 
     while poll == None:
+        poll = result.poll()
         # p.subprocess is alive
         time.sleep(5)
         time_sleeping += 5
