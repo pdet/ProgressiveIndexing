@@ -126,7 +126,21 @@ def generate_cost_model(COLUMN_SIZE):
     file.write('#define ELEMENTS_PER_PAGE (PAGESIZE / sizeof(int64_t))\n\n')
     file.write(result + '\n')
     file.write('\n#endif //PROGRESSIVEINDEXING_CONSTANTS_H')
-    file.close() 
+    file.close()
+
+def get_converged(stderr):
+    import re
+    match = re.search("Converged on query (\d+)", stderr)
+    if match == None:
+        return None
+    return int(match.groups()[0])
+
+def run_process(codestr):
+    import subprocess
+    p = subprocess.Popen(codestr.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout,stderr = p.communicate()
+    CONVERGED = get_converged(stderr)
+    return (stdout, CONVERGED)
 
 
 def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUERIES,COLUMN_DISTRIBUTION):
@@ -142,10 +156,10 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --correctness=" + str(0)
     print(codestr)
-    result = os.popen(codestr).read()
-    cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,column_distribution_id)
-                  VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity, :column_distribution_id)''',
-                  {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'column_distribution_id':COLUMN_DISTRIBUTION})
+    (result,CONVERGED) = run_process(codestr)
+    cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,column_distribution_id, converged)
+                  VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity, :column_distribution_id, :converged)''',
+                  {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'column_distribution_id':COLUMN_DISTRIBUTION, 'converged': CONVERGED})
     experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and column_distribution_id=(?)
                     ''', (ALGORITHM,QUERY_PATTERN,COLUMN_SIZE,QUERY_SELECTIVITY,COLUMN_DISTRIBUTION))
     experiment_id = cursor.fetchone()
@@ -170,10 +184,10 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) + " --correctness=" + str(0)
     print(codestr)
-    result = os.popen(codestr).read()
-    cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_delta,column_distribution_id)
-                  VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_delta, :column_distribution_id)''',
-                  {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_delta':FIXED_DELTA, 'column_distribution_id':COLUMN_DISTRIBUTION})
+    (result,CONVERGED) = run_process(codestr)
+    cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_delta,column_distribution_id, converged)
+                  VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_delta, :column_distribution_id, :converged)''',
+                  {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_delta':FIXED_DELTA, 'column_distribution_id':COLUMN_DISTRIBUTION, 'converged': CONVERGED})
     experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_delta=(?) and column_distribution_id=(?)
                     ''', (ALGORITHM,QUERY_PATTERN,COLUMN_SIZE,QUERY_SELECTIVITY,FIXED_DELTA,COLUMN_DISTRIBUTION))
     experiment_id = cursor.fetchone()
@@ -199,10 +213,10 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) \
              + " --correctness=" + str(0) + " --interactivity-is-percentage="+str(INTERACTIVITY_IS_PERCENTAGE) + " --decay-queries="+str(QUERY_DECAY)
     print(codestr)
-    result = os.popen(codestr).read()
-    cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold,column_distribution_id)
-                  VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_interactivity_threshold, :column_distribution_id)''',
-                  {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_interactivity_threshold':FIXED_INTERACTIVITY_THRESHOLD, 'column_distribution_id':COLUMN_DISTRIBUTION})
+    (result,CONVERGED) = run_process(codestr)
+    cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold,column_distribution_id, converged)
+                  VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_interactivity_threshold, :column_distribution_id, :converged)''',
+                  {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_interactivity_threshold':FIXED_INTERACTIVITY_THRESHOLD, 'column_distribution_id':COLUMN_DISTRIBUTION, 'converged': CONVERGED})
     experiment_id =  cursor.execute('''SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?) and column_distribution_id=(?)
                     ''', (ALGORITHM,QUERY_PATTERN,COLUMN_SIZE,QUERY_SELECTIVITY,FIXED_INTERACTIVITY_THRESHOLD,COLUMN_DISTRIBUTION))
     experiment_id = cursor.fetchone()
@@ -239,7 +253,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[1000000000],COLUM
             elif column_size == 1000000000:
                 if column_dist ==1:
                     QUERY_SELECTIVITY_LIST = [0.0000001,0.01]
-                elif:
+                else:
                     QUERY_SELECTIVITY_LIST = [0.01]
             else:
                 QUERY_SELECTIVITY_LIST = [0.001]
@@ -280,7 +294,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[1000000000],COLUM
                                 db.commit()
                             else:
                                 for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
-                                    cursor.execute(''' 
+                                    cursor.execute('''
                                        SELECT id FROM experiments where algorithm_id = (?) and workload_id=(?) and column_size=(?) and query_selectivity=(?) and fixed_interactivity_threshold=(?) and column_distribution_id=(?)
                                     ''', (algorithm,query,column_size,selectivity,interactivity_threshold,column_dist))
                                     experiment_exists = cursor.fetchone()
@@ -363,12 +377,6 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
                         db.commit()
 def run_baseline():
     ALGORITHM_LIST = [AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel,ProgressiveRadixsortLSDCostModel,ProgressiveBucketsortEquiheightCostModel]
-    COLUMN_SIZE_LIST=[100000000]
-    # WORKLOAD_LIST=[]
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
     template_run(ALGORITHM_LIST)
 
 def run_progressive_fixed_deltas():
@@ -378,22 +386,10 @@ def run_progressive_fixed_deltas():
 
 def run_progressive():
     ALGORITHM_LIST = progressive_list
-    COLUMN_SIZE_LIST=[100000000]
-    # WORKLOAD_LIST=[]
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
     template_run(ALGORITHM_LIST)
 
 def run_progressive_cost_model():
     ALGORITHM_LIST = progressive_cm_list
-    COLUMN_SIZE_LIST=[1000000000]
-    # WORKLOAD_LIST=[]
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[]
-    # INTERACTIVITY_THRESHOLD_LIST=[]
-    # NUM_QUERIES=10
     template_run(ALGORITHM_LIST)
 
 def run_skyserver_baseline():

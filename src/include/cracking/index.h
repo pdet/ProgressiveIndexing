@@ -1,9 +1,9 @@
-/* 
+/*
  * File:   index.h
  * Author: laurent
  *
  * Created on July 4, 2015, 2:48 PM
- * 
+ *
  * This file contains type and function declarations relating to indexes.
  */
 

@@ -11,7 +11,7 @@ cursor.execute('''
     CREATE TABLE column_distributions(id INTEGER PRIMARY KEY, name TEXT NOT NULL)
 ''')
 cursor.execute('''
-    CREATE TABLE experiments(id INTEGER PRIMARY KEY, algorithm_id INTEGER NOT NULL, workload_id INTEGER NOT NULL,  column_distribution_id INTEGER NOT NULL, column_size INTEGER NOT NULL, query_selectivity REAL NOT NULL, fixed_delta REAL, fixed_interactivity_threshold REAL
+    CREATE TABLE experiments(id INTEGER PRIMARY KEY, algorithm_id INTEGER NOT NULL, workload_id INTEGER NOT NULL,  column_distribution_id INTEGER NOT NULL, column_size INTEGER NOT NULL, query_selectivity REAL NOT NULL, fixed_delta REAL, fixed_interactivity_threshold REAL, converged INTEGER
     , FOREIGN KEY (workload_id) REFERENCES workload(id), FOREIGN KEY (algorithm_id) REFERENCES algorithm(id), FOREIGN KEY (column_distribution_id) REFERENCES column_distributions(id))
 ''')
 cursor.execute('''
