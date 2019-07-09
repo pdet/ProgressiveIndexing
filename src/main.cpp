@@ -117,6 +117,7 @@ void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answe
 }
 
 void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
+    bool converged = false;
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -181,8 +182,10 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
-        if(checkAVLConvergence(T))
+        if(!converged && checkAVLConvergence(T)){
             fprintf(stderr, "Converged on query %lld\n", current_query);
+            converged = true;
+        }
     }
     free(crackercolumn);
 }
@@ -195,6 +198,7 @@ int64_t queryStochastic(IndexEntry *crackercolumn, int limit) {
 }
 
 void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
+    bool converged = false;
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -261,13 +265,16 @@ void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
-        if(checkAVLConvergence(T))
+        if(!converged && checkAVLConvergence(T)){
             fprintf(stderr, "Converged on query %lld\n", current_query);
+            converged = true;
+        }
     }
     free(crackercolumn);
 }
 
 void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
+    bool converged = false;
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -333,8 +340,10 @@ void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, v
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
-        if(checkAVLConvergence(T))
+        if(!converged && checkAVLConvergence(T)){
             fprintf(stderr, "Converged on query %lld\n", current_query);
+            converged = true;
+        }
 
     }
     free(crackercolumn);
@@ -360,6 +369,7 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
     vector<int64_t> partitions;
     IndexEntry *crackercolumn = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
     CrackEngineType engineType;
+    bool converged = false;
 
     //Creating Cracker Column
     for (size_t i = 0; i < COLUMN_SIZE; i++) {
@@ -434,8 +444,10 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
-        if(checkAVLConvergence(T))
+        if(!converged && checkAVLConvergence(T)){
             fprintf(stderr, "Converged on query %lld\n", current_query);
+            converged = true;
+        }
     }
     free(crackercolumn);
 }
@@ -772,6 +784,7 @@ void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
                        const offset_t size,
                        const entry_pair_t *const queries,
                        const offset_t numQueries, vector<int64_t> &answers) {
+    bool converged;
     chrono::time_point<chrono::system_clock> start, middle, end;
     chrono::duration<double> elapsed_seconds;
     // create copy of input key column (only because of testing)
@@ -827,8 +840,10 @@ void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
             fprintf(stderr, " ");
         }
 
-        if(converged(index))
-                fprintf(stderr, "Converged on query %lld\n", current_query);
+        if(!converged && converged_adaptive(index)){
+            fprintf(stderr, "Converged on query %lld\n", current_query);
+            converged = true;
+        }
 
     }
 
