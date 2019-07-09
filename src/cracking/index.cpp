@@ -78,12 +78,15 @@ void insert(entry_t e, offset_t offset, offset_t length, bool sorted, crackerInd
 }
 
 bool converged_adaptive(crackerIndex_pt index){
-    bool converged = false;
     cracker_index_t crackerIndex = (cracker_index_t) index;
     cracker_index_iterator_t it = crackerIndex->upper_bound(0);
+    if (it->second.offset > 1000)
+        return false;
+    int64_t past = it->second.offset;
     while (it != crackerIndex->end()){
-        if (!it->second.sorted || (it->second.entryLength == sizeof(entry_t)*8))
+        if (!it->second.sorted - past > 1000)
             return false;
+        past = it->second.sorted;
         it++;
     }
     return true;
