@@ -1015,7 +1015,8 @@ int main(int argc, char **argv) {
                 initConfiguration(workingData);
 
                 // Init query workload
-                entry_pair_t queries[NUM_QUERIES];
+                auto query_data = unique_ptr<entry_pair_t[]>(new entry_pair_t[NUM_QUERIES]);
+                entry_pair_t *queries = query_data.get();
                 for (size_t i = 0; i < NUM_QUERIES;i++) {
                     queries[i].first = rangequeries.leftpredicate[i];
                     queries[i].second = rangequeries.rightpredicate[i];
