@@ -2,7 +2,6 @@ import os
 import inspect
 import sqlite3
 import urllib
-import time
 
 # os.system("rm results.db")
 if (os.path.exists("./results.db") == False):
@@ -143,17 +142,7 @@ def run_experiment_baseline(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITH
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --correctness=" + str(0)
     print(codestr)
-    result = subprocess.popen(codestr).read()
-    poll = result.poll()
-    time_sleeping = 0
-
-    while poll == None:
-        poll = result.poll()
-        # p.subprocess is alive
-        time.sleep(5)
-        time_sleeping += 5
-        if time_sleeping > 600:
-            os.system("killall main")
+    result = os.popen(codestr).read()
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'column_distribution_id':COLUMN_DISTRIBUTION})
@@ -181,17 +170,7 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) + " --correctness=" + str(0)
     print(codestr)
-    result = subprocess.popen(codestr).read()
-    poll = result.poll()
-    time_sleeping = 0
-
-    while poll == None:
-        poll = result.poll()
-        # p.subprocess is alive
-        time.sleep(5)
-        time_sleeping += 5
-        if time_sleeping > 600:
-            os.system("killall main")
+    result = os.popen(codestr).read()
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_delta,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_delta, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_delta':FIXED_DELTA, 'column_distribution_id':COLUMN_DISTRIBUTION})
@@ -220,18 +199,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) \
              + " --correctness=" + str(0) + " --interactivity-is-percentage="+str(INTERACTIVITY_IS_PERCENTAGE) + " --decay-queries="+str(QUERY_DECAY)
     print(codestr)
-    result = subprocess.popen(codestr).read()
-    poll = result.poll()
-    time_sleeping = 0
-
-    while poll == None:
-        poll = result.poll()
-        # p.subprocess is alive
-        time.sleep(5)
-        time_sleeping += 5
-        if time_sleeping > 600:
-            os.system("killall main")
-    os.system("killall main")
+    result = os.popen(codestr).read()
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold,column_distribution_id)
                   VALUES(:algorithm_id,:workload_id, :column_size, :query_selectivity,:fixed_interactivity_threshold, :column_distribution_id)''',
                   {'algorithm_id':ALGORITHM, 'workload_id':QUERY_PATTERN, 'column_size':COLUMN_SIZE, 'query_selectivity':QUERY_SELECTIVITY, 'fixed_interactivity_threshold':FIXED_INTERACTIVITY_THRESHOLD, 'column_distribution_id':COLUMN_DISTRIBUTION})
@@ -247,7 +215,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
               {'experiment_id':experiment_id, 'query_number':query_number, 'delta':query_result[0], 'query_time':query_result[1], 'indexing_time':query_result[2], 'total_time':query_result[3], 'pref_sum_total_time': query_result[4], 'cost_model_time': query_result[5]})
 
 
-def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000000],COLUMN_DISTRIBUTION_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=1000000,INTERACTIVITY_IS_PERCENTAGE=1):
+def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[1000000000],COLUMN_DISTRIBUTION_LIST=0,WORKLOAD_LIST=0,QUERY_SELECTIVITY_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,NUM_QUERIES=1000000,INTERACTIVITY_IS_PERCENTAGE=1):
     generate_cost_model(100000000) #Mock Gen
     compile()
     if COLUMN_SIZE_LIST == 0:
@@ -269,7 +237,10 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000000],COLUMN
             elif column_size == 100000000:
                 QUERY_SELECTIVITY_LIST = [0.000001,0.01]
             elif column_size == 1000000000:
-                QUERY_SELECTIVITY_LIST = [0.0000001,0.01]
+                if column_dist ==1:
+                    QUERY_SELECTIVITY_LIST = [0.0000001,0.01]
+                elif:
+                    QUERY_SELECTIVITY_LIST = [0.01]
             else:
                 QUERY_SELECTIVITY_LIST = [0.001]
             for query in WORKLOAD_LIST:
@@ -391,7 +362,7 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
                             run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,SkyServerDist,INTERACTIVITY_IS_PERCENTAGE)
                         db.commit()
 def run_baseline():
-    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
+    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel,ProgressiveRadixsortLSDCostModel,ProgressiveBucketsortEquiheightCostModel]
     COLUMN_SIZE_LIST=[100000000]
     # WORKLOAD_LIST=[]
     # DELTA_LIST=[]
@@ -426,7 +397,7 @@ def run_progressive_cost_model():
     template_run(ALGORITHM_LIST)
 
 def run_skyserver_baseline():
-    ALGORITHM_LIST = baseline_list
+    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel,ProgressiveRadixsortLSDCostModel,ProgressiveBucketsortEquiheightCostModel]
     # QUERY_SELECTIVITY_LIST=[0.001]
     run_skyserver(ALGORITHM_LIST)
 
@@ -454,8 +425,8 @@ def run_skyserver_progressive_cost_model_query_decay():
 run_baseline()
 # run_progressive()
 # run_progressive_cost_model()
-# run_skyserver_baseline()
-run_skyserver_progressive()
+run_skyserver_baseline()
+# run_skyserver_progressive()
 # run_skyserver_progressive_cost_model()
 # run_skyserver_progressive_cost_model_query_decay()
 db.close()
