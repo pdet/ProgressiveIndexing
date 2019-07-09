@@ -106,9 +106,11 @@ void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answe
         int64_t sum = scanQuery(data, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
-        if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
-                    answers[current_query], sum);
+        if (sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
     }
     free(data);
     free(T);
@@ -174,9 +176,11 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
         int64_t sum = scanQuery(crackercolumn, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
-        if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
-                    answers[current_query], sum);
+        if (sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
     }
     free(crackercolumn);
 }
@@ -250,9 +254,11 @@ void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
 
-        if (qo->sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
-                    answers[current_query], qo->sum);
+        if (qo->sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
     }
     free(crackercolumn);
 }
@@ -318,9 +324,11 @@ void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, v
         }
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
-        if (qo->sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
-                    answers[current_query], qo->sum);
+        if (qo->sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
 
     }
     free(crackercolumn);
@@ -415,9 +423,11 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
         int64_t sum = scanQuery(crackercolumn, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
-        if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %zu\n Expected : %ld    Got : %ld \n", current_query,
-                    answers[current_query], sum);
+        if (sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
     }
     free(crackercolumn);
 }
@@ -498,9 +508,11 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
                     chrono::duration<double>(end - start).count() - baseline;
         }
 
-        if (sum != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
-                    answers[current_query], sum);
+        if (sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
         if (!converged && column.converged) {
             fprintf(stderr, "Converged on query %lld\n", current_query);
             converged = true;
@@ -704,9 +716,10 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 double time = chrono::duration<double>(end - start).count();
                 prefix_sum += chrono::duration<double>(end - start).count();
                 query_times.prefix_sum[current_query] += prefix_sum;
-                if (sum != answers[current_query]) {
-                    fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
-                            answers[current_query], sum);
+                if (sum != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+                    fprintf(stderr, " ");
                 }
                 // now interpolate the real delta
                 double cost_per_delta = (time - base_time) / estimated_delta;
@@ -800,9 +813,15 @@ void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
             end = chrono::system_clock::now();
             query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count();
         }
-        if (res != answers[current_query])
-            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
-                    answers[current_query], res);
+        if (res != answers[current_query]){
+//            fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                    answers[current_query], res);
+            fprintf(stderr, " ");
+        }
+
+        if(converged(index))
+            fprintf(stderr," Index converged on query %lld\n", current_query);
+
     }
 
     // free memory
@@ -1001,16 +1020,6 @@ int main(int argc, char **argv) {
                 }
                 wd.src = src;
 
-                // pre-sort
-                crow_t *sorted = NULL;
-                int s = posix_memalign((void **) &sorted, L1_LINE_SIZE, sizeof(*sorted) * COLUMN_SIZE);
-                if (s != 0) {
-                    exit(s);
-                }
-                memset(sorted, 0, sizeof(*sorted) * COLUMN_SIZE);
-                sort_data(sorted, src, COLUMN_SIZE);
-                wd.sorted = sorted;
-
                 // Init thresholds and other parameters
                 initConfiguration(workingData);
 
@@ -1023,7 +1032,6 @@ int main(int argc, char **argv) {
                 }
 
                 adaptive_adaptive_indexing(workingData, COLUMN_SIZE, queries, NUM_QUERIES,answers);
-                free(sorted);
                 free(src);
                 break;
             }

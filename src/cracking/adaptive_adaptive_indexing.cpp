@@ -643,8 +643,6 @@ inline void radix_partition_with_given_histogram(crow_t *input, crow_t *output, 
         if (buffer_counters[bucket_num] == buffered_tuples) {
             final_buckets[bucket_num] -= buffered_tuples;
             for (entry_t b = 0; b < buffered_tuples; b += STREAM_UNIT) {
-
-                //TODO: Remove AVIX Intrisics
                 _mm256_stream_si256(reinterpret_cast<__m256i *>(output + final_buckets[bucket_num]),
                                     _mm256_load_si256((reinterpret_cast<__m256i *>(buffers + offset + b))));
                 final_buckets[bucket_num] += STREAM_UNIT;
