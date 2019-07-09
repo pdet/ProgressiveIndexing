@@ -72,7 +72,7 @@
 #define NUM_BITS        NUM_BITS_MIN
 #endif
 #ifndef NUM_OOP_BITS
-#define NUM_OOP_BITS    10
+#define NUM_OOP_BITS    1
 #endif
 #ifndef SCALING_THRESHOLD
 #define SCALING_THRESHOLD ELEMENTS_IN_TLB

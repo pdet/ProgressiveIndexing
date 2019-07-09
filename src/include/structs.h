@@ -449,8 +449,6 @@ typedef map_t::iterator cracker_index_iterator_t;
 typedef struct {
     row_t *src;
     crow_t *dst;
-    crow_t *sorted;
-    //
     offset_t bMin;
     offset_t bMax;
     offset_t sThreshold;
