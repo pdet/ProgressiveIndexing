@@ -181,6 +181,8 @@ void standard_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_t>
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
+        if(checkAVLConvergence(T))
+            fprintf(stderr, "Converged on query %lld\n", current_query);
     }
     free(crackercolumn);
 }
@@ -259,6 +261,8 @@ void stochastic_cracking(Column &column, RangeQuery &rangeQueries, vector<int64_
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
+        if(checkAVLConvergence(T))
+            fprintf(stderr, "Converged on query %lld\n", current_query);
     }
     free(crackercolumn);
 }
@@ -329,6 +333,8 @@ void progressive_stochastic_cracking(Column &column, RangeQuery &rangeQueries, v
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
+        if(checkAVLConvergence(T))
+            fprintf(stderr, "Converged on query %lld\n", current_query);
 
     }
     free(crackercolumn);
@@ -428,6 +434,8 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
 //                    answers[current_query], res);
             fprintf(stderr, " ");
         }
+        if(checkAVLConvergence(T))
+            fprintf(stderr, "Converged on query %lld\n", current_query);
     }
     free(crackercolumn);
 }
@@ -820,7 +828,7 @@ void adaptive_adaptive_indexing(wdPartitioned_t *const workingData,
         }
 
         if(converged(index))
-            fprintf(stderr," Index converged on query %lld\n", current_query);
+                fprintf(stderr, "Converged on query %lld\n", current_query);
 
     }
 

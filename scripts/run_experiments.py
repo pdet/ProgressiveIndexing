@@ -50,7 +50,7 @@ SkyServerDist = 3
 
 baseline_list = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
-all_algorithms_list =  [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing,ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
+all_algorithms_list =  [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
 #syntethical_workload_list = [Random]
@@ -253,7 +253,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
             elif column_size == 100000000:
                 QUERY_SELECTIVITY_LIST = [0.000001,0.01]
             elif column_size == 1000000000:
-                if column_dist ==1:
+                if column_dist ==1 :
                     QUERY_SELECTIVITY_LIST = [0.0000001,0.01]
                 else:
                     QUERY_SELECTIVITY_LIST = [0.01]
@@ -292,7 +292,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
                                 ''', (algorithm,query,column_size,selectivity,interactivity_threshold[0],column_dist))
                                 experiment_exists = cursor.fetchone()
                                 if experiment_exists is None:
-                                    run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,column_dist,interactivity_threshold[0],INTERACTIVITY_IS_PERCENTAGE)
+                                    run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold[0],column_dist,INTERACTIVITY_IS_PERCENTAGE)
                                 db.commit()
                             else:
                                 for interactivity_threshold in INTERACTIVITY_THRESHOLD_LIST:
@@ -301,7 +301,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
                                     ''', (algorithm,query,column_size,selectivity,interactivity_threshold,column_dist))
                                     experiment_exists = cursor.fetchone()
                                     if experiment_exists is None:
-                                        run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,INTERACTIVITY_IS_PERCENTAGE)
+                                        run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,column_dist,INTERACTIVITY_IS_PERCENTAGE)
                                     db.commit()
 
 def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUERY_SELECTIVITY_LIST=0,NUM_QUERIES = 158325, INTERACTIVITY_IS_PERCENTAGE=1, QUERY_DECAY=0):
@@ -379,7 +379,7 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
                         db.commit()
 def run_baseline():
     ALGORITHM_LIST = [AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel,ProgressiveRadixsortLSDCostModel,ProgressiveBucketsortEquiheightCostModel]
-    template_run(ALGORITHM_LIST)
+    template_run(all_algorithms_list)
 
 def run_progressive_fixed_deltas():
     ALGORITHM_LIST = progressive_list
@@ -419,6 +419,8 @@ def run_skyserver_progressive_cost_model_query_decay():
     INTERACTIVITY_THRESHOLD_LIST=[1.2]
     run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
+def run_test():
+    template_run(all_algorithms_list)
 # run_progressive_fixed_deltas()
 run_baseline()
 # run_progressive()

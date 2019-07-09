@@ -32,6 +32,8 @@ AvlTree FindNeighborsGTFinal(ElementType X, AvlTree T);
 
 std::vector<AvlTree> GetNodesInOrder(AvlTree T);
 
+bool checkAVLConvergence(AvlTree T);
+
 AvlTree FindFirstPiece(AvlTree T);
 
 AvlTree FindLastPiece(AvlTree T);
