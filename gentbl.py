@@ -1,13 +1,13 @@
 
 import sqlite3
 
-dbs = ["results/results_baseline.db", "results/results_progressive_synthetic.db", "results/results_progressive_sky.db"]
+dbs = ["results/results_baseline.db"]#, "results/results_progressive_synthetic.db", "results/results_progressive_sky.db"]
 
-distributions = ["Random", "Skew", "SkyServer"]
-#workloads = ["Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+# distributions = ["Random", "Skew", "SkyServer"]
+workloads = ["SkyServer", "Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
 
-distributions = ["Random"]
-workloads = ["Periodic"]
+distributions = ["Random", "SkyServer"]
+# workloads = ["Periodic"]
 workload_results = dict()
 for workload in workloads:
 	workload_results[workload] = dict()
@@ -18,40 +18,63 @@ for db in dbs:
 	# figure out the set of algorithms
 	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id;")
 	algorithms = [x[0] for x in c.fetchall()]
-	for algorithm_name in algorithms:
-		c.execute("SELECT algorithms.id FROM algorithms WHERE name=?;", (algorithm_name,))
-		algorithm_id = c.fetchall()[0][0]
-		for workload_name in workloads:
-			c.execute("SELECT workloads.id FROM workloads WHERE name=?;", (workload_name,))
-			workload_id = c.fetchall()[0][0]
-			for distribution_name in distributions:
-				c.execute("SELECT column_distributions.id FROM column_distributions WHERE name=?;", (distribution_name,))
-				distribution_id = c.fetchall()[0][0]
+	for workload_name in workloads:
+		c.execute("SELECT workloads.id FROM workloads WHERE name=?;", (workload_name,))
+		workload_id = c.fetchall()[0][0]
+		for distribution_name in distributions:
+			c.execute("SELECT column_distributions.id FROM column_distributions WHERE name=?;", (distribution_name,))
+			distribution_id = c.fetchall()[0][0]
 
-				print(algorithm_name, workload_name, distribution_name)
+			# full_index_results = c.execute("SELECT MAX(total_time) FROM queries, experiments, algorithms, workloads, column_distributions WHERE experiment_id=experiments.id AND algorithm_id=algorithms.id AND workload_id=workloads.id AND column_distributions.id=column_distribution_id AND algorithms.name='FullIndex' AND query_number>1 AND workloads.name=?", (workload_name,)).fetchall()
+			# if len(full_index_results) == 0:
+			# 	print(workload_name, distribution_name)
+			# 	exit(1)
+			for algorithm_name in algorithms:
+				c.execute("SELECT algorithms.id FROM algorithms WHERE name=?;", (algorithm_name,))
+				algorithm_id = c.fetchall()[0][0]
 				c.execute("SELECT id FROM experiments WHERE workload_id=? AND algorithm_id=? AND column_distribution_id=? AND query_selectivity>0.001", (workload_id, algorithm_id, distribution_id))
 				results = c.fetchall()
 				if len(results) == 0:
 					continue
 
 				experiment_id = results[0][0]
-				print(experiment_id)
+				# print(experiment_id)
 
 				results = c.execute("SELECT total_time FROM queries WHERE query_number=0 AND experiment_id=?;", (experiment_id,)).fetchall()
 				if len(results) == 0:
-					print("?")
 					continue
+
+				# print(algorithm_name)
 
 				first_query = results[0][0]
 
-				print("First query", first_query)
+				# print("First query", first_query)
 
 				c.execute("SELECT SUM(total_time) FROM queries WHERE experiment_id=?", (experiment_id,))
 				total_time = c.fetchall()[0][0]
 
-				print("Total time", total_time)
+				# print("Total time", total_time)
+				results = c.execute("SELECT total_time FROM queries WHERE experiment_id=? ORDER BY query_number", (experiment_id,)).fetchall()
+
+				# # find convergence
+				# convergence = len(results)
+				# rev = range(1, len(results))
+				# rev.reverse()
+				# for i in rev:
+				# 	if results[i][0] <= full_index_results[0][0]:
+				# 		print(results[i][0])
+				# 		print(full_index_results[0][0])
+				# 		convergence = i
+				# 	else:
+				# 		break
+				workload_results[workload_name][algorithm_name] = ('First query: ', first_query, 'Total time: ', total_time)
 
 
+for workload in workload_results.keys():
+	print("\n\n\n")
+	print(workload)
+	for algorithm in workload_results[workload].keys():
+		print(algorithm + ": " + str(workload_results[workload][algorithm]))
 
 
 
