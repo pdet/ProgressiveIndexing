@@ -10,8 +10,8 @@ set(CMAKE_CXX_FLAGS_DEFAULT "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -O3")
 
 set(CMAKE_C_FLAGS_DEFAULT "${CMAKE_CXX_FLAGS_DEFAULT}")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -msse -msse2 -msse3 -msse4.1 -msse4.2 -mavx -O3") #-g -O0
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11   -msse -msse2 -msse3 -msse4.1 -msse4.2 -mavx ") #-g -O0
 
 if (NOT CMAKE_BUILD_TYPE)
     message(FATAL_ERROR "Choose the type of build by setting -DCMAKE_BUILD_TYPE=<type>, options are: Debug Release RelWithDebInfo MinSizeRel.")
@@ -36,7 +36,7 @@ add_executable(main
         src/cracking/stochastic_cracking.cpp src/cracking/progressive_stochastic_cracking.cpp
         src/cracking/rewired_cracking.cpp
         src/progressive/progressive_quicksort.cpp src/progressive/progressive_bucketsort_equiheight.cpp
-        src/progressive/progressive_radixsort_lsd.cpp src/progressive/progressive_radixsort_msd.cpp
+        src/progressive/progressive_radixsort_lsd.cpp src/progressive/progressive_radixsort_msd.cpp src/progressive/progressive_radixsort_msd_noquick.cpp
         src/cracking/index.cpp src/cracking/adaptive_adaptive_indexing.cpp src/main.cpp)
 
 add_executable(measure

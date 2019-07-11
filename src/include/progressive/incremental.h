@@ -19,6 +19,8 @@ ResultStruct range_query_incremental_radixsort_lsd(Column &c, int64_t low, int64
 
 ResultStruct range_query_incremental_radixsort_msd(Column &c, int64_t low, int64_t high, double delta);
 
+ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t low, int64_t high, double delta);
+
 void SortedCheck(Column &c, QuicksortNode &node);
 
 void VerifyIndex(Column &c, QuicksortNode &node, int min, int max);
@@ -38,6 +40,8 @@ double get_estimated_time_bucketsort(Column &c, int64_t low, int64_t high, doubl
 double get_estimated_time_radixsort_lsd(Column &c, int64_t low, int64_t high, double delta);
 
 double get_estimated_time_radixsort_msd(Column &c, int64_t low, int64_t high, double delta);
+
+double get_estimated_time_radixsort_msd_noquick(Column &c, int64_t low, int64_t high, double delta);
 
 #define PROFILE_BINARY_SEARCH 1
 #define PROFILE_BASE_SCAN 2

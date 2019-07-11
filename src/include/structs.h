@@ -258,6 +258,30 @@ struct IncrementalRadixIndex {
     void clear();
 };
 
+struct IncrementalMSDIndex {
+    int64_t prev_array_index;
+    bool found_boundaries;
+    int64_t current_bucket;
+    int64_t initial_offset;
+    int64_t array_offset;
+    int64_t current_bucket_count;
+    int64_t prev_bucket_count;
+    int64_t shift_index;
+    BucketEntry* current_entry = nullptr;
+    std::unique_ptr<int64_t[]> counts;
+    std::unique_ptr<int64_t[]> offsets;
+    std::unique_ptr<int64_t[]> data;
+    std::unique_ptr<int64_t[]> prev_offsets;
+    std::unique_ptr<int64_t[]> prev_array;
+
+    std::vector<int64_t> shifts;
+    std::vector<int64_t> masks;
+
+    IncrementalMSDIndex() : prev_array_index(-1), found_boundaries(false), current_bucket(0), initial_offset(0), array_offset(0), prev_bucket_count(0), current_bucket_count(0) {}
+    void clear();
+    void Copy(Column& c, IncrementalMSDIndex& target);
+};
+
 struct IncrementalBucketSortIndex {
     int64_t min_value = INT_MAX;
     int64_t max_value = INT_MIN;
@@ -283,7 +307,7 @@ struct Column {
     std::vector<int64_t> data;
     std::vector<size_t> sortindex;
     IncrementalBucketSortIndex bucket_index;
-
+    IncrementalMSDIndex msd;
     IncrementalQuicksortIndex qs_index;
     IncrementalRadixIndex radix_index;
 
