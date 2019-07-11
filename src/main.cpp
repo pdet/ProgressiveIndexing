@@ -678,27 +678,30 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 double estimated_delta = 0.5;
                 double offset = estimated_delta / 2;
                 if (FIXED_BUDGET){
-                    //get current query cost
-                    start = chrono::system_clock::now();
-                    results = function(column, rangeQueries.leftpredicate[current_query],
-                                       rangeQueries.rightpredicate[current_query], 0);
-                    end = chrono::system_clock::now();
-                    //o3 not optimizing this away
-                    if (results.sum != answers[current_query]) {
-                        fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
-                                answers[current_query], sum);
-                    }
-                    double current_query_cost = chrono::duration<double>(end - start).count();
-                    for (size_t j = 0; j < ITERATIONS; j++) {
-                        estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
+                    estimated_delta = 0.25;
+                    estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
                                                   rangeQueries.rightpredicate[current_query], estimated_delta);
-                        if (estimated_time > INTERACTIVITY_THRESHOLD-full_scan_time+current_query_cost) {
-                            estimated_delta -= offset;
-                        } else {
-                            estimated_delta += offset;
-                        }
-                        offset /= 2;
-                    }
+//                    //get current query cost
+//                    start = chrono::system_clock::now();
+//                    results = function(column, rangeQueries.leftpredicate[current_query],
+//                                       rangeQueries.rightpredicate[current_query], 0);
+//                    end = chrono::system_clock::now();
+//                    //o3 not optimizing this away
+//                    if (results.sum != answers[current_query]) {
+//                        fprintf(stderr, "Incorrect Results on query %lld\n Expected : %lld    Got : %lld \n", current_query,
+//                                answers[current_query], sum);
+//                    }
+//                    double current_query_cost = chrono::duration<double>(end - start).count();
+//                    for (size_t j = 0; j < ITERATIONS; j++) {
+//                        estimated_time = estimate(column, rangeQueries.leftpredicate[current_query],
+//                                                  rangeQueries.rightpredicate[current_query], estimated_delta);
+//                        if (estimated_time > INTERACTIVITY_THRESHOLD-full_scan_time+current_query_cost) {
+//                            estimated_delta -= offset;
+//                        } else {
+//                            estimated_delta += offset;
+//                        }
+//                        offset /= 2;
+//                    }
 
                 }
                 else{

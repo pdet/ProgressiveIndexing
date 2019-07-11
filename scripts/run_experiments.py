@@ -54,7 +54,6 @@ progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRad
 all_algorithms_list =  [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,SeqRand,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
-#syntethical_workload_list = [Random]
 
 def DownloadSkyServer():
     if (os.path.isdir("./real_data") == False):
@@ -442,16 +441,27 @@ def run_prm():
 def run_prl():
     ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
     template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+
+def run_prm_cm():
+    ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
+    run_skyserver(ALGORITHM_LIST)
+
 #stones01
-#run_std_cracking()
+#run_skyserver_baseline()
+#run_skyserver_progressive_cost_model()
 #stones02
-#run_stc_cracking()
+#run_pq()
 #stones03
-#run_pstc_cracking()
+#run_pb()
 #stones04
-#run_cgi()
+#run_prm()
 #stones05
+#run_prl()
+#stones06
 #run_adp_adp_idx()
+#stones07
+#run_progressive_fixed_deltas()
+
 #stones06
 #run_pq()
 #stones07
@@ -464,5 +474,6 @@ def run_prl():
 #run_skyserver_baseline()
 #stones12
 #run_skyserver_progressive_cost_model()
+# run_prm_cm()
 
 db.close()
