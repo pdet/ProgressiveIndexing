@@ -262,14 +262,14 @@ ResultStruct range_query_incremental_bucketsort_equiheight(Column &c, int64_t lo
                                     // otherwise in (1) we pivot again, but move the pivot closer to the min or max
                                     if (node.current_start == node.start) {
                                         assert(node.pivot != node.max);
-                                        node.pivot = node.pivot / 2 + node.max / 2;
+                                        node.pivot = (node.pivot + node.max) / 2;
                                     } else {
                                         assert(node.pivot != node.min);
-                                        node.pivot = node.pivot / 2 + node.min / 2;
+                                        node.pivot = (node.pivot + node.min) / 2;
                                     }
                                     node.current_start = node.start;
                                     node.current_end = node.end - 1;
-                                    break;
+                                    continue;
                                 }
                                 node.left = c.qs_index.nodes.size();
                                 QuicksortNode left(node.left, node.position);

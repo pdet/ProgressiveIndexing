@@ -250,6 +250,9 @@ struct IncrementalRadixIndex {
     int iteration;
 	int64_t current_power;
 
+    std::vector<int64_t> shifts;
+    std::vector<int64_t> masks;
+
     std::vector<int64_t> final_index;
 
     IncrementalRadixIndex() : iteration(0), current_power(1), current_bucket_index(0) { }

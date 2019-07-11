@@ -41,6 +41,7 @@ ProgressiveRadixsortLSDCostModel=12
 ProgressiveRadixsortMSD=13
 ProgressiveRadixsortMSDCostModel=14
 AdaptiveAdaptiveIndexing=15
+ProgressiveRadixsortMSDNew=16
 
 #Setting Values for Different Column Distributions
 RandomDist = 1
@@ -441,7 +442,6 @@ def run_prm():
 def run_prl():
     ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
     template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
-
 #stones01
 #run_std_cracking()
 #stones02

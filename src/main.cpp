@@ -1061,7 +1061,12 @@ int main(int argc, char **argv) {
             case 16: {
                 progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick);
                 break;
-
+            }
+            case 17: {
+                progressive_indexing_cost_model(c, rangequeries, answers, deltas,
+                                                range_query_incremental_radixsort_msd_noquick,
+                                                get_estimated_time_radixsort_msd_noquick);
+                break;
             }
 
         }

@@ -9,7 +9,7 @@
 using namespace std;
 
 
-#define RADIXSORT_MSD_BYTES 8
+#define RADIXSORT_MSD_BYTES 6
 // total amount of relevant bytes in the data set
 // this is ceil(log2(MAX_VALUE)) of the data set
 // since our max value is 10^8, ceil(log2(10^8)) = 27
@@ -290,7 +290,91 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
 
 
 double get_estimated_time_radixsort_msd_noquick(Column &c, int64_t low, int64_t high, double delta) {
-    return 0;
+    if (c.converged) {
+        auto lower_bound = binary_search_gte(c.bucket_index.final_index, low, 0, c.bucket_index.final_index_entries);
+        auto high_bound = binary_search_lte(c.bucket_index.final_index, high, 0, c.bucket_index.final_index_entries);
+        double page_count = (high_bound - lower_bound) / ELEMENTS_PER_PAGE;
+        double scan_cost = READ_ONE_PAGE_WITHOUT_CHECKS_SEQ_MS * page_count;
+        return (scan_cost + RANDOM_ACCESS_PAGE_MS * log2(c.bucket_index.final_index_entries)) / 1000.0;
+    }
+
+    double cost = 0;
+
+    if (c.bucket_index.buckets.size() > 0) {
+        if (!c.msd.prev_array) {
+            bool check_sortindex = false;
+            auto first_bucket_id = low >> c.msd.shifts[0];
+            auto last_bucket_id = high >> c.msd.shifts[0];
+            for (size_t i = first_bucket_id; i <= last_bucket_id; i++) {
+                BucketRoot &bucket = c.bucket_index.buckets[i];
+                if (bucket.head && !bucket.tail) {
+                    // we set bucket.tail to NULL when all elements in the bucket have been inserted
+                    // into the final index
+                    // hence if bucket.tail is NULL and bucket.head isn't, we know that
+                    // we can just check the sortindex for this element
+                    check_sortindex = true;
+                } else {
+                    if (i > first_bucket_id && i < last_bucket_id) {
+                        cost += READ_ONE_PAGE_WITHOUT_CHECKS_SEQ_MS * bucket.count / ELEMENTS_PER_PAGE;
+                    } else {
+                        cost += READ_ONE_PAGE_SEQ_MS * bucket.count / ELEMENTS_PER_PAGE;
+                    }
+                }
+            }
+
+            if (check_sortindex) {
+                auto lower_bound = binary_search_gte(c.bucket_index.final_index, low, 0,
+                                                    c.bucket_index.final_index_entries);
+                auto high_bound = binary_search_lte(c.bucket_index.final_index, high, 0,
+                                                    c.bucket_index.final_index_entries);
+                double page_count = (high_bound - lower_bound) / ELEMENTS_PER_PAGE;
+                double scan_cost = READ_ONE_PAGE_WITHOUT_CHECKS_SEQ_MS * page_count;
+                cost += scan_cost += RANDOM_ACCESS_PAGE_MS * log2(c.bucket_index.final_index_entries);
+            }
+        } else {
+            int64_t start_pos = 0, end_pos = 0;
+            // get the bucket position for the start and end entry
+            for(size_t i = 0; i < c.msd.shift_index; i++) {
+                start_pos = start_pos * RADIX_BUCKET_COUNT + get_bucket_index(low, c.msd.masks[i], c.msd.shifts[i]);
+                end_pos = end_pos * RADIX_BUCKET_COUNT + get_bucket_index(high, c.msd.masks[i], c.msd.shifts[i]);
+            }
+            if (start_pos == end_pos) {
+                // both are in the same bucket, just scan this bucket
+                size_t start = c.msd.prev_offsets[start_pos];
+                size_t end = end_pos + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[end_pos + 1];
+                cost += READ_ONE_PAGE_SEQ_MS * (end - start) / ELEMENTS_PER_PAGE;
+            } else {
+                // both are different buckets, scan the "start" and "end" buckets separately
+                size_t first_bucket_start = c.msd.prev_offsets[start_pos];
+                size_t first_bucket_end = c.msd.prev_offsets[start_pos + 1];
+                size_t last_bucket_start = c.msd.prev_offsets[end_pos];
+                size_t last_bucket_end = end_pos + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[end_pos + 1];
+                // first scan the start bucket
+                cost += READ_ONE_PAGE_SEQ_MS * (first_bucket_end - first_bucket_start) / ELEMENTS_PER_PAGE;
+                cost += READ_ONE_PAGE_WITHOUT_CHECKS_SEQ_MS * (last_bucket_start - first_bucket_end) / ELEMENTS_PER_PAGE;
+                cost += READ_ONE_PAGE_SEQ_MS * (last_bucket_end - last_bucket_start) / ELEMENTS_PER_PAGE;
+            }
+        }
+    }
+
+    if (c.bucket_index.index_position < c.data.size()) {
+        // initial phase: bucketing
+        size_t next_position = std::min(c.bucket_index.index_position + (size_t) (c.data.size() * delta),
+                                        c.data.size());
+
+        // cost of bucketing
+        double bucketing_pages = (next_position - c.bucket_index.index_position) / ELEMENTS_PER_PAGE;
+        cost += bucketing_pages * BUCKET_ONE_PAGE_MS;
+
+        // base table scan
+        double base_table_pages = (c.data.size() - next_position) / ELEMENTS_PER_PAGE;
+        cost += base_table_pages * READ_ONE_PAGE_SEQ_MS;
+    } else {
+        // second phase: in-place bucketing
+        double bucketing_pages = (delta * c.data.size()) / ELEMENTS_PER_PAGE;
+        cost += bucketing_pages * BUCKET_ONE_PAGE_MS;
+    }
+    return cost / 1000.0;
 }
 
 void IncrementalMSDIndex::clear() {
