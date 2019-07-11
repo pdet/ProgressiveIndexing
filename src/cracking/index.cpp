@@ -81,18 +81,25 @@ bool converged_adaptive(crackerIndex_pt index){
     cracker_index_t crackerIndex = (cracker_index_t) index;
     cracker_index_iterator_t it = crackerIndex->upper_bound(0);
     if (it->second.offset > 1000){
-        return false;
+        if (!it->second.sorted){
+            return false;
+        }
     }
     int64_t past = it->second.offset;
     while (it != crackerIndex->end()){
         if (!it->second.offset - past > 1000){
-            return false;
+            if (!it->second.sorted){
+                return false;
+            }
         }
         past = it->second.offset;
         it++;
     }
     if (COLUMN_SIZE - past > 1000 ){
-        return false;
+        it--;
+        if (!it->second.sorted){
+            return false;
+        }
     }
     return true;
 }

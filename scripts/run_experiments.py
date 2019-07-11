@@ -416,31 +416,31 @@ def run_skyserver_progressive_cost_model_query_decay():
 
 def run_std_cracking():
     ALGORITHM_LIST = [StandardCracking]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
 def run_stc_cracking():
     ALGORITHM_LIST = [StochasticCracking]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)     
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)     
 def run_pstc_cracking():
     ALGORITHM_LIST = [ProgressiveStochasticCracking]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)   
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)   
 def run_cgi():
     ALGORITHM_LIST = [CoarseGranularIndex]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)     
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)     
 def run_adp_adp_idx():
     ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000) 
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000) 
 def run_pq():
     ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
 def run_pb():
     ALGORITHM_LIST = [ProgressiveBucketsortEquiheightCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
 def run_prm():
     ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
 def run_prl():
     ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
 
 def run_prm_cm():
     ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
@@ -475,5 +475,5 @@ def run_prm_cm():
 #stones12
 #run_skyserver_progressive_cost_model()
 # run_prm_cm()
-
+# run_adp_adp_idx()
 db.close()
