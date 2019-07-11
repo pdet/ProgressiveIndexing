@@ -264,9 +264,11 @@ struct IncrementalMSDIndex {
     int64_t current_bucket;
     int64_t initial_offset;
     int64_t array_offset;
+    int64_t array_offset_bucket;
     int64_t current_bucket_count;
     int64_t prev_bucket_count;
     int64_t shift_index;
+    int64_t remaining_buckets;
     BucketEntry* current_entry = nullptr;
     std::unique_ptr<int64_t[]> counts;
     std::unique_ptr<int64_t[]> offsets;

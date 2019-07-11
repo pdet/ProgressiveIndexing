@@ -29,18 +29,17 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
     if (c.bucket_index.buckets.size() == 0) {
         c.bucket_index.buckets.resize(RADIX_BUCKET_COUNT);
         // create all bitshifts and bitmasks
-        int64_t current_shift = RADIXSORT_TOTAL_BYTES;
-        while(current_shift > 0) {
-            current_shift -= RADIXSORT_MSD_BYTES;
-            if (current_shift > 0) {
-                c.msd.shifts.push_back(current_shift);
-                c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
-            } else {
-                c.msd.shifts.push_back(0);
-                c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) >> (RADIXSORT_MSD_BYTES - current_shift));
-                break;
-            }
-        }
+        int64_t current_shift = RADIXSORT_TOTAL_BYTES - RADIXSORT_MSD_BYTES;
+        c.msd.shifts.push_back(current_shift);
+        c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
+        current_shift -= RADIXSORT_MSD_BYTES;
+        c.msd.shifts.push_back(current_shift);
+        c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
+
+        c.msd.remaining_buckets = 1 << current_shift;
+        current_shift -= RADIXSORT_MSD_BYTES;
+        c.msd.shifts.push_back(current_shift);
+        c.msd.masks.push_back((c.msd.remaining_buckets - 1) << current_shift);
     }
 
     if (!c.msd.prev_array) {
@@ -192,7 +191,6 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
             c.msd.array_offset += bucket.count;
             c.msd.current_bucket++;
             c.msd.found_boundaries = false;
-            c.msd.counts = unique_ptr<int64_t[]>(new int64_t[RADIX_BUCKET_COUNT]);
             memset(c.msd.counts.get(), 0, sizeof(int64_t) * RADIX_BUCKET_COUNT);
             if (c.msd.current_bucket < RADIX_BUCKET_COUNT) {
                 c.msd.offsets[c.msd.initial_offset] = c.msd.array_offset;
@@ -205,10 +203,12 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
                 c.msd.prev_array = move(c.msd.data);
                 c.msd.prev_array_index = 0;
                 c.msd.shift_index = 2;
-                c.msd.current_bucket_count *= RADIX_BUCKET_COUNT;
+                c.msd.current_bucket_count *= c.msd.remaining_buckets;
                 c.msd.array_offset = 0;
                 c.msd.data = unique_ptr<int64_t[]>(new int64_t[c.data.size()]);
-                c.msd.offsets = unique_ptr<int64_t[]>(new int64_t[c.msd.current_bucket_count]);
+                c.msd.offsets = unique_ptr<int64_t[]>(new int64_t[c.msd.remaining_buckets]);
+                c.msd.counts = unique_ptr<int64_t[]>(new int64_t[c.msd.remaining_buckets]);
+                memset(c.msd.counts.get(), 0, sizeof(int64_t) * c.msd.remaining_buckets);
                 break;
             }
         }
@@ -221,22 +221,68 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
             int64_t start = c.msd.array_offset;
             int64_t end = c.msd.prev_array_index + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[c.msd.prev_array_index + 1];
             int64_t len = end - start;
-
-            if (len > 0) {
-                // small bucket: insert into target and sort
-                remaining_budget -= len * 3;
+            if (len < 1024) {
+                // small bucket: insert into final array and sort
+                remaining_budget -= len * 5;
                 memcpy(c.msd.data.get() + start, c.msd.prev_array.get() + start, len * sizeof(int64_t));
                 std::sort(c.msd.data.get() + start, c.msd.data.get() + start + len);
+            } else {
+                //bigger bucket: have to perform more partitioning
+                //first find the boundaries
+                if (!c.msd.found_boundaries) {
+                    // first we need to find the boundaries for this bucket, loop over all the entries that we can given our budget
+                    int64_t target = std::min(remaining_budget, end - c.msd.array_offset_bucket);
+                    remaining_budget -= target;
+                    int64_t current_end = c.msd.array_offset_bucket + target;
+                    for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
+                        auto bucket_index = get_bucket_index(c.msd.prev_array[i], current_mask, current_shift);
+                        c.msd.counts[bucket_index]++;
+                    }
+                    c.msd.array_offset_bucket = current_end;
+                    if (c.msd.array_offset_bucket == end) {
+                        // finished finding the boundaries
+                        c.msd.found_boundaries = true;
+                        c.msd.array_offset_bucket = c.msd.array_offset;
+                        // generate the offsets
+                        int64_t current_offset = c.msd.array_offset;
+                        for(size_t i = 0; i < c.msd.remaining_buckets; i++) {
+                            c.msd.offsets[i] = current_offset;
+                            current_offset += c.msd.counts[i];
+                            c.msd.counts[i] = 0;
+                        }
+                    }
+                    continue;
+                } else {
+                    // now that we have found the boundaries, actually perform the splitting into the different locations
+                    int64_t target = std::min(remaining_budget, end - c.msd.array_offset_bucket);
+                    remaining_budget -= target;
+                    int64_t current_end = c.msd.array_offset_bucket + target;
+                    c.msd.array_offset_bucket = current_end;
+                    for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
+                        auto point = c.msd.prev_array[i];
+                        auto bucket_index = get_bucket_index(point, current_mask, current_shift);
+                        c.msd.data[c.msd.offsets[bucket_index] + c.msd.counts[bucket_index]] = point;
+                        c.msd.counts[bucket_index]++;
+                    }
+                    if (c.msd.array_offset_bucket == end) {
+                        // done! reset count array
+                        memset(c.msd.counts.get(), 0, sizeof(int64_t) * c.msd.remaining_buckets);
+                    } else {
+                        break;
+                    }
+                }
             }
-
             // move on to the next bucket
             c.msd.prev_array_index++;
             c.msd.array_offset = end;
+            c.msd.array_offset_bucket = end;
+            c.msd.found_boundaries = false;
             if (c.msd.prev_array_index + 1 == c.msd.prev_bucket_count) {
                 c.converged = true;
                 c.final_data = c.msd.data.get();
                 break;
             }
+
         }
     }
     return results;
