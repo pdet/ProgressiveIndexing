@@ -403,24 +403,42 @@ std::vector<AvlTree> GetNodesInOrder(AvlTree T) {
     return nodesOrder;
 }
 
+//bool checkAVLConvergence(AvlTree T){
+//    bool converged = true;
+//    std::vector<AvlTree> nodesOrder = GetNodesInOrder(T);
+//    int diference;
+//    for (size_t i = 0; i < nodesOrder.size(); i++){
+//        if (i == 0){
+//            diference = nodesOrder[i]->offset;
+//        }
+//        else if (i == COLUMN_SIZE){
+//            diference = COLUMN_SIZE - nodesOrder[i]->offset;
+//        }
+//        else {
+//            diference = nodesOrder[i]->offset - nodesOrder[i-1]->offset;
+//        }
+//        if (diference > 1000)
+//            converged = false;
+//    }
+//    return converged;
+//}
+
 bool checkAVLConvergence(AvlTree T){
-    bool converged = true;
     std::vector<AvlTree> nodesOrder = GetNodesInOrder(T);
-    int diference;
-    for (size_t i = 0; i < nodesOrder.size(); i++){
-        if (i == 0){
-            diference = nodesOrder[i]->offset;
+
+    if (nodesOrder[0]->offset > 1000)
+        return false;
+    int64_t past = nodesOrder[0]->offset;
+    for (size_t i = 1; i < nodesOrder.size(); i++){
+        if (nodesOrder[i]->offset - past > 1000){
+            return false;
         }
-        else if (i == COLUMN_SIZE){
-            diference = COLUMN_SIZE - nodesOrder[i]->offset;
-        }
-        else {
-            diference = nodesOrder[i]->offset - nodesOrder[i-1]->offset;
-        }
-        if (diference > 1000)
-            converged = false;
+        past = nodesOrder[i]->offset;
     }
-    return converged;
+    if (COLUMN_SIZE - past > 1000){
+        return false;
+    }
+    return true;
 }
 
 
