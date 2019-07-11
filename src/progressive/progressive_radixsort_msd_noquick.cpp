@@ -133,7 +133,7 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
                     // first we need to find the boundaries for this bucket
                     // loop over all the buckets
                     while(remaining_budget > 0) {
-                        remaining_budget -= c.msd.current_entry->size;
+                        remaining_budget -= c.msd.current_entry->size / 2;
                         for(size_t i = 0; i < c.msd.current_entry->size; i++) {
                             // for every element in this bucket, figure out the bucket it belongs to and increment the offset
                             auto bucket_index = get_bucket_index(c.msd.current_entry->data[i], current_mask, current_shift);
@@ -232,7 +232,7 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
                 if (!c.msd.found_boundaries) {
                     // first we need to find the boundaries for this bucket, loop over all the entries that we can given our budget
                     int64_t target = std::min(remaining_budget, end - c.msd.array_offset_bucket);
-                    remaining_budget -= target;
+                    remaining_budget -= target / 2;
                     int64_t current_end = c.msd.array_offset_bucket + target;
                     for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
                         auto bucket_index = get_bucket_index(c.msd.prev_array[i], current_mask, current_shift);
@@ -257,13 +257,13 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
                     int64_t target = std::min(remaining_budget, end - c.msd.array_offset_bucket);
                     remaining_budget -= target;
                     int64_t current_end = c.msd.array_offset_bucket + target;
-                    c.msd.array_offset_bucket = current_end;
                     for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
                         auto point = c.msd.prev_array[i];
                         auto bucket_index = get_bucket_index(point, current_mask, current_shift);
                         c.msd.data[c.msd.offsets[bucket_index] + c.msd.counts[bucket_index]] = point;
                         c.msd.counts[bucket_index]++;
                     }
+                    c.msd.array_offset_bucket = current_end;
                     if (c.msd.array_offset_bucket == end) {
                         // done! reset count array
                         memset(c.msd.counts.get(), 0, sizeof(int64_t) * c.msd.remaining_buckets);
@@ -372,7 +372,7 @@ double get_estimated_time_radixsort_msd_noquick(Column &c, int64_t low, int64_t 
     } else {
         // second phase: in-place bucketing
         double bucketing_pages = (delta * c.data.size()) / ELEMENTS_PER_PAGE;
-        cost += bucketing_pages * BUCKET_ONE_PAGE_MS;
+        cost += bucketing_pages * WRITE_ONE_PAGE_SEQ_MS * 0.75;
     }
     return cost / 1000.0;
 }
