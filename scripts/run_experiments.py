@@ -395,20 +395,15 @@ def run_progressive_cost_model():
     template_run(ALGORITHM_LIST)
 
 def run_skyserver_baseline():
-    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel,ProgressiveRadixsortLSDCostModel,ProgressiveBucketsortEquiheightCostModel]
-    # QUERY_SELECTIVITY_LIST=[0.001]
+    ALGORITHM_LIST = [StandardCracking,StochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
     run_skyserver(ALGORITHM_LIST)
 
 def run_skyserver_progressive():
     ALGORITHM_LIST = progressive_list
-    # DELTA_LIST=[]
-    # QUERY_SELECTIVITY_LIST=[0.001]
     run_skyserver(ALGORITHM_LIST)
 
 def run_skyserver_progressive_cost_model():
     ALGORITHM_LIST = progressive_cm_list
-    # QUERY_SELECTIVITY_LIST=[0.001]
-    # INTERACTIVITY_THRESHOLD_LIST=[1.2]
     run_skyserver(ALGORITHM_LIST)
 
 
@@ -419,14 +414,55 @@ def run_skyserver_progressive_cost_model_query_decay():
     INTERACTIVITY_THRESHOLD_LIST=[1.2]
     run_skyserver(ALGORITHM_LIST,QUERY_DECAY=NUM_QUERY_DECAY,QUERY_SELECTIVITY_LIST=QUERY_SELECTIVITY_LIST,INTERACTIVITY_THRESHOLD_LIST=INTERACTIVITY_THRESHOLD_LIST)
 
-def run_test():
-    template_run(all_algorithms_list)
-# run_progressive_fixed_deltas()
-run_baseline()
-# run_progressive()
-# run_progressive_cost_model()
-# run_skyserver_baseline()
-# run_skyserver_progressive()
-# run_skyserver_progressive_cost_model()
-# run_skyserver_progressive_cost_model_query_decay()
+def run_std_cracking():
+    ALGORITHM_LIST = [StandardCracking]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+def run_stc_cracking():
+    ALGORITHM_LIST = [StochasticCracking]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)     
+def run_pstc_cracking():
+    ALGORITHM_LIST = [ProgressiveStochasticCracking]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)   
+def run_cgi():
+    ALGORITHM_LIST = [CoarseGranularIndex]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)     
+def run_adp_adp_idx():
+    ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000) 
+def run_pq():
+    ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+def run_pb():
+    ALGORITHM_LIST = [ProgressiveBucketsortEquiheightCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+def run_prm():
+    ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+def run_prl():
+    ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+
+#stones01
+#run_std_cracking()
+#stones02
+#run_stc_cracking()
+#stones03
+#run_pstc_cracking()
+#stones04
+#run_cgi()
+#stones05
+#run_adp_adp_idx()
+#stones06
+#run_pq()
+#stones07
+#run_pb()
+#stones09
+#run_prm()
+#stones10
+#run_prl()
+#stones11
+#run_skyserver_baseline()
+#stones12
+#run_skyserver_progressive_cost_model()
+
 db.close()
