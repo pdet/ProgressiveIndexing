@@ -395,7 +395,7 @@ def run_progressive_cost_model():
     template_run(ALGORITHM_LIST)
 
 def run_skyserver_baseline():
-    ALGORITHM_LIST = [StandardCracking,StochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
+    ALGORITHM_LIST = [StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
     run_skyserver(ALGORITHM_LIST)
 
 def run_skyserver_progressive():
