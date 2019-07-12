@@ -424,6 +424,9 @@ std::vector<AvlTree> GetNodesInOrder(AvlTree T) {
 //}
 
 bool checkAVLConvergence(AvlTree T){
+    if(!T){
+        return false;
+    }
     std::vector<AvlTree> nodesOrder = GetNodesInOrder(T);
 
     if (nodesOrder[0]->offset > 1000)
