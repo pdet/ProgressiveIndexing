@@ -17,7 +17,7 @@ extern int RADIXSORT_TOTAL_BYTES;
 
 constexpr size_t RADIX_BUCKET_COUNT = 1 << RADIXSORT_MSD_BYTES;
 
-static inline bucket_type get_bucket_index(int64_t point, int64_t mask, int64_t shift) {
+static inline int get_bucket_index(int64_t point, int64_t mask, int64_t shift) {
     return (point & mask) >> shift;
 }
 
@@ -127,8 +127,7 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
 
 static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
     // final runs: move elements into the result array
-    int64_t current_shift = c.msd.shifts[c.msd.shift_index];
-    int64_t current_mask = c.msd.masks[c.msd.shift_index];
+    int64_t final_mask = c.msd.masks.back();
     while(remaining_budget > 0) {
         int64_t start = c.msd.array_offset;
         int64_t end = c.msd.prev_array_index + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[c.msd.prev_array_index + 1];
@@ -149,7 +148,7 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
                 remaining_budget -= target / 2;
                 int64_t current_end = c.msd.array_offset_bucket + target;
                 for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
-                    auto bucket_index = get_bucket_index(c.msd.prev_array[i], current_mask, current_shift);
+                    int bucket_index = c.msd.prev_array[i] & final_mask;
                     c.msd.counts[bucket_index]++;
                 }
                 c.msd.array_offset_bucket = current_end;
@@ -173,7 +172,7 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
                 int64_t current_end = c.msd.array_offset_bucket + target;
                 for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
                     auto point = c.msd.prev_array[i];
-                    auto bucket_index = get_bucket_index(point, current_mask, current_shift);
+                    auto bucket_index = point & final_mask;
                     c.msd.data[c.msd.offsets[bucket_index] + c.msd.counts[bucket_index]] = point;
                     c.msd.counts[bucket_index]++;
                 }
@@ -217,9 +216,8 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
         c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
 
         c.msd.remaining_buckets = 1 << current_shift;
-        current_shift -= RADIXSORT_MSD_BYTES;
-        c.msd.shifts.push_back(current_shift);
-        c.msd.masks.push_back((c.msd.remaining_buckets - 1) << current_shift);
+        c.msd.shifts.push_back(0);
+        c.msd.masks.push_back((c.msd.remaining_buckets - 1));
     }
 
     if (!c.msd.prev_array) {
