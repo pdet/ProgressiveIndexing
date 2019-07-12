@@ -672,6 +672,8 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
                 query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
                 prefix_sum += chrono::duration<double>(end - start).count();
                 query_times.prefix_sum[current_query] += prefix_sum;
+                query_times.cost_model[current_query] += estimate(column, rangeQueries.leftpredicate[current_query],
+                                                  rangeQueries.rightpredicate[current_query], 0);
             } else {
                 double estimated_time = 0;
                 size_t ITERATIONS = 10;

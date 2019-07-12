@@ -193,8 +193,6 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
         if (c.msd.prev_array_index + 1 == c.msd.prev_bucket_count) {
             c.converged = true;
             c.final_data = c.msd.data.get();
-            c.bucket_index.final_index = c.final_data;
-            c.bucket_index.final_index_entries = c.data.size();
             break;
         }
     }
@@ -303,11 +301,11 @@ ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t lo
 
 double get_estimated_time_radixsort_msd_noquick(Column &c, int64_t low, int64_t high, double delta) {
     if (c.converged) {
-        auto lower_bound = binary_search_gte(c.bucket_index.final_index, low, 0, c.bucket_index.final_index_entries);
-        auto high_bound = binary_search_lte(c.bucket_index.final_index, high, 0, c.bucket_index.final_index_entries);
+        auto lower_bound = binary_search_gte(c.final_data, low, 0, c.data.size());
+        auto high_bound = binary_search_lte(c.final_data, high, 0, c.data.size());
         double page_count = (high_bound - lower_bound) / ELEMENTS_PER_PAGE;
         double scan_cost = READ_ONE_PAGE_WITHOUT_CHECKS_SEQ_MS * page_count;
-        return (scan_cost + RANDOM_ACCESS_PAGE_MS * log2(c.bucket_index.final_index_entries)) / 1000.0;
+        return (scan_cost + RANDOM_ACCESS_PAGE_MS * log2(c.data.size())) / 1000.0;
     }
 
     double cost = 0;
