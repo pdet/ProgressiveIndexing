@@ -194,6 +194,8 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
         if (c.msd.prev_array_index + 1 == c.msd.prev_bucket_count) {
             c.converged = true;
             c.final_data = c.msd.data.get();
+            c.bucket_index.final_index = c.final_data;
+            c.bucket_index.final_index_entries = c.data.size();
             break;
         }
     }
