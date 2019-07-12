@@ -3,13 +3,14 @@ import sqlite3
 import numpy
 import math
 
-dbs = ["results/results_baseline.db", "results/results_progressive_synthetic.db"]#, "results/results_progressive_sky.db"]
 
-# distributions = ["Random", "Skew", "SkyServer"]
-# workloads = ["SkyServer", "Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
-distributions = ["Random"]
-algorithms = ['ProgressiveRadixsortMSDCostModel', 'AdaptiveAdaptiveIndexing', 'CoarseGranularIndex', 'ProgressiveStochasticCracking', 'StandardCracking']
-workloads = ["Random"]#, "SeqOver", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+dbs = ['results2/results_adaptive.db','results2/results_fixeddeltas.db','results2/results_pb.db','results2/results_pq.db','results2/results_prl.db','results2/results_prm.db','results2/results_skyserver.db']
+
+distributions = ["Random", "Skew", "SkyServer"]
+workloads = ["SkyServer", "Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+# distributions = ["Random"]
+algorithms = ["ProgressiveQuicksortCostModel", "ProgressiveBucketsortEquiheightCostModel", "ProgressiveRadixsortLSDCostModel", "ProgressiveRadixsortMSDCostModel", 'AdaptiveAdaptiveIndexing']
+# workloads = ["Random", "SeqOver", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
 
 # distributions = ["Random", "SkyServer"]
 # workloads = ["Periodic"]
@@ -67,7 +68,7 @@ for db in dbs:
 	print(db)
 	c = sqlite3.connect(db).cursor()
 	# figure out the set of algorithms
-	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id  and algorithms.id IN (14, 15, 6, 5, 3);")
+	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id  and algorithms.id IN (8, 10, 12, 14, 15);")
 	algos = [x[0] for x in c.fetchall()]
 	for workload_name in workloads:
 		c.execute("SELECT workloads.id FROM workloads WHERE name=?;", (workload_name,))
@@ -123,65 +124,76 @@ for db in dbs:
 				poly = numpy.poly1d(z)
 				predicted = poly(query_numbers)
 				squared_error += numpy.sum((predicted - total_times) ** 2)
-				print(algorithm_name)
-				print('--------------------')
-				print(predicted[:10])
-				print(total_times[:10])
-				print(squared_error)
-				results = c.execute("SELECT column_size FROM experiments LIMIT 1").fetchall()
-				print(results)
-				print('')
 
 				result_dict[distribution_name][algorithm_name][workload_name] = [first_query, total_time, squared_error]
 
 
 print(result_dict)
 
+
+name_map = {"Random": "Uniform Random", "Skew": "Skewed", "SkyServer": "SkyServer"}
+
 # now print the values
-def render_table(render_index, cell_type):
+def render_table(render_index, cell_type, caption, label):
 	print('')
-	header =  "  & Workload & PI & AAI & CGI & PSC & STD \\\\"
-	print(header)
 
+	print("""
+\\begin{table}[ht]
+\\centering\small
+\\begin{tabular}{l|l|l|l|l|l|l}
+  & Workload & PQ & PB & PLSD & PMSD & AA \\\\""")
 	for distribution in distributions:
-		distribution_text = "Uniform Random"
+		distribution_text = name_map[distribution]
 		print('\\hline')
-		for workload in workloads:
-			line = ' & ' + workload
-			if workload == workloads[0]:
-				line = "\\multirow{" + str(len(workloads)) + "}{*}{\\rotatebox[origin=c]{90}{" + distribution_text + "}}" + line
-			smallest = algorithms[0]
-			for algore in algorithms:
-				if result_dict[distribution][algore][workload][render_index] < result_dict[distributions[0]][smallest][workload][render_index]:
-					smallest = algore
-			for algore in algorithms:
-				res = result_dict[distribution][algore][workload][render_index]
-				line += "& "
-				if algore == smallest:
-					line += "\\cellcolor{green!25}"
-				if cell_type == 'float':
-					if res < 0.01:
-						line += '{:0.1e}'.format(res)
-					elif res < 1:
-						line += "%.2f" % (res,)
-					elif res < 100:
-						line += "%.1f" % (res,)
-					else:
-						line += "%d" % (int(res),)
+		wloads = result_dict[distribution][algorithms[0]].keys()
 
+		for workload in wloads:
+			line = ' & ' + workload
+			if workload == wloads[0] and distribution != "SkyServer":
+				line = "\\multirow{" + str(len(wloads)) + "}{*}{\\rotatebox[origin=c]{90}{" + distribution_text + "}}" + line
+			smallest = None
+			for algore in algorithms:
+				if workload in result_dict[distribution][algore]:
+					if smallest is None:
+						smallest = algore
+					elif result_dict[distribution][algore][workload][render_index] < result_dict[distribution][smallest][workload][render_index]:
+						smallest = algore
+			for algore in algorithms:
+				if workload in result_dict[distribution][algore]:
+					res = result_dict[distribution][algore][workload][render_index]
+					line += "& "
+					if algore == smallest:
+						line += "\\cellcolor{green!25}"
+					if cell_type == 'float':
+						if res < 0.01:
+							line += '{:0.1e}'.format(res)
+						elif res < 1:
+							line += "%.2f" % (res,)
+						elif res < 100:
+							line += "%.1f" % (res,)
+						else:
+							line += "%d" % (int(res),)
+
+					else:
+						line += "%d" % (res,)
 				else:
-					line += "%d" % (res,)
+					line += "& ?"
 			line += " \\\\"
 
 			print(line)
+	print("""
+\\end{tabular}
+\\caption{CAPTION}
+\\label{LABEL}
+\\end{table}""".replace("CAPTION", caption).replace("LABEL", label))
 
 
 print("\n\n-- FIRST QUERY--\n\n")
-render_table(0, 'float')
+render_table(0, 'float', "First query cost", "tbl:firstquery")
 print("\n\n-- TOTAL TIME--\n\n")
-render_table(1, 'float')
+render_table(1, 'float', "Cumulative Time", "tbl:cumtime")
 print("\n\n-- ROBUSTNESS--\n\n")
-render_table(2, 'float')
+render_table(2, 'float', "Robustness", "tbl:robustness")
 
 print("\n\n-- DONE--\n\n")
 
