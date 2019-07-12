@@ -1,17 +1,18 @@
 
 import sqlite3
 import numpy
+import math
 
-dbs = ["results/results_baseline.db"]#, "results/results_progressive_synthetic.db", "results/results_progressive_sky.db"]
+dbs = ["results/results_baseline.db", "results/results_progressive_synthetic.db"]#, "results/results_progressive_sky.db"]
 
 # distributions = ["Random", "Skew", "SkyServer"]
-workloads = ["SkyServer", "Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+# workloads = ["SkyServer", "Random", "SeqOver", "SeqRand", "ZoomIn", "SeqZoomIn", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
+distributions = ["Random"]
+algorithms = ['ProgressiveRadixsortMSDCostModel', 'AdaptiveAdaptiveIndexing', 'CoarseGranularIndex', 'ProgressiveStochasticCracking', 'StandardCracking']
+workloads = ["Random"]#, "SeqOver", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
 
-distributions = ["Random", "SkyServer"]
+# distributions = ["Random", "SkyServer"]
 # workloads = ["Periodic"]
-workload_results = dict()
-for workload in workloads:
-	workload_results[workload] = dict()
 
 # for db in dbs:
 # 	print(db)
@@ -67,7 +68,7 @@ for db in dbs:
 	c = sqlite3.connect(db).cursor()
 	# figure out the set of algorithms
 	c.execute("SELECT DISTINCT name FROM algorithms, experiments WHERE algorithms.id=algorithm_id  and algorithms.id IN (14, 15, 6, 5, 3);")
-	algorithms = [x[0] for x in c.fetchall()]
+	algos = [x[0] for x in c.fetchall()]
 	for workload_name in workloads:
 		c.execute("SELECT workloads.id FROM workloads WHERE name=?;", (workload_name,))
 		workload_id = c.fetchall()[0][0]
@@ -79,7 +80,7 @@ for db in dbs:
 			# if len(full_index_results) == 0:
 			# 	print(workload_name, distribution_name)
 			# 	exit(1)
-			for algorithm_name in algorithms:
+			for algorithm_name in algos:
 				c.execute("SELECT algorithms.id FROM algorithms WHERE name=?;", (algorithm_name,))
 				algorithm_id = c.fetchall()[0][0]
 				c.execute("SELECT id FROM experiments WHERE workload_id=? AND algorithm_id=? AND column_distribution_id=? AND query_selectivity>0.001", (workload_id, algorithm_id, distribution_id))
@@ -108,33 +109,33 @@ for db in dbs:
 				# print(total_time_before, total_time)
 
 				# print("Total time", total_time)
-				results = c.execute("SELECT total_time FROM queries WHERE experiment_id=? ORDER BY query_number", (experiment_id,)).fetchall()
 
-				# # find convergence
-				# convergence = len(results)
-				# rev = range(1, len(results))
-				# rev.reverse()
-				# for i in rev:
-				# 	if results[i][0] <= full_index_results[0][0]:
-				# 		print(results[i][0])
-				# 		print(full_index_results[0][0])
-				# 		convergence = i
-				# 	else:
-				# 		break
-				workload_results[workload_name][algorithm_name] = ('First query: ', first_query, 'Total time: ', total_time)
+				# find robustness
+				results = c.execute("SELECT query_number, total_time FROM queries WHERE experiment_id=? ORDER BY query_number", (experiment_id,)).fetchall()
+				all_query_numbers = numpy.array([x[0] for x in results])
+				all_total_times = numpy.array([x[1] for x in results])
+				squared_error = 0
 
+				query_numbers = all_query_numbers[:1000]
+				total_times = all_total_times[:1000]
 
-for workload in workload_results.keys():
-	print("\n\n\n")
-	print(workload)
-	for algorithm in workload_results[workload].keys():
-		print(algorithm + ": " + str(workload_results[workload][algorithm]))
+				z = numpy.polyfit(query_numbers, total_times, 2)
+				poly = numpy.poly1d(z)
+				predicted = poly(query_numbers)
+				squared_error += numpy.sum((predicted - total_times) ** 2)
+				print(algorithm_name)
+				print('--------------------')
+				print(predicted[:10])
+				print(total_times[:10])
+				print(squared_error)
+				results = c.execute("SELECT column_size FROM experiments LIMIT 1").fetchall()
+				print(results)
+				print('')
+
+				result_dict[distribution_name][algorithm_name][workload_name] = [first_query, total_time, squared_error]
 
 
 print(result_dict)
-distributions = ["Random"]
-algorithms = ['ProgressiveRadixsortMSDCostModel', 'AdaptiveAdaptiveIndexing', 'CoarseGranularIndex', 'ProgressiveStochasticCracking', 'StandardCracking']
-workloads = ["Random", "SeqOver", "Skew", "ZoomOutAlt", "Periodic", "ZoomInAlt"]
 
 # now print the values
 def render_table(render_index, cell_type):
@@ -174,9 +175,15 @@ def render_table(render_index, cell_type):
 
 			print(line)
 
+
+print("\n\n-- FIRST QUERY--\n\n")
 render_table(0, 'float')
+print("\n\n-- TOTAL TIME--\n\n")
 render_table(1, 'float')
+print("\n\n-- ROBUSTNESS--\n\n")
 render_table(2, 'float')
+
+print("\n\n-- DONE--\n\n")
 
 
 
