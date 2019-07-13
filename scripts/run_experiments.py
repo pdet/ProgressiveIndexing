@@ -247,7 +247,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
     for column_dist in COLUMN_DISTRIBUTION_LIST:
         for column_size in COLUMN_SIZE_LIST:
             generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
-            # generate_column(column_dist,column_size)
+            generate_column(column_dist,column_size)
             if column_size == 10000000:
                 QUERY_SELECTIVITY_LIST = [0.00001,0.01]
             elif column_size == 100000000:
