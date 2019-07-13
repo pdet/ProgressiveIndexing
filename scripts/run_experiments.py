@@ -53,7 +53,7 @@ baseline_list = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStocha
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 all_algorithms_list =  [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
-syntethical_workload_list = [Random,SeqOver,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt]
+syntethical_workload_list = [Random,SeqOver,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt,SeqRand]
 
 def DownloadSkyServer():
     if (os.path.isdir("./real_data") == False):
@@ -247,7 +247,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
     for column_dist in COLUMN_DISTRIBUTION_LIST:
         for column_size in COLUMN_SIZE_LIST:
             generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
-            generate_column(column_dist,column_size)
+            # generate_column(column_dist,column_size)
             if column_size == 10000000:
                 QUERY_SELECTIVITY_LIST = [0.00001,0.01]
             elif column_size == 100000000:
@@ -416,31 +416,31 @@ def run_skyserver_progressive_cost_model_query_decay():
 
 def run_std_cracking():
     ALGORITHM_LIST = [StandardCracking]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_stc_cracking():
     ALGORITHM_LIST = [StochasticCracking]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)     
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)     
 def run_pstc_cracking():
     ALGORITHM_LIST = [ProgressiveStochasticCracking]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)   
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)   
 def run_cgi():
     ALGORITHM_LIST = [CoarseGranularIndex]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)     
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)     
 def run_adp_adp_idx():
     ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000) 
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000) 
 def run_pq():
     ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_pb():
     ALGORITHM_LIST = [ProgressiveBucketsortEquiheightCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_prm():
     ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_prl():
     ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
-    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[100000000],NUM_QUERIES=1000000)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_adp_adp_idx_2():
     ALGORITHM_LIST = [AdaptiveAdaptiveIndexing]
     template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000) 
@@ -496,12 +496,23 @@ def run_cgi_2():
 #stones13
 #run_adp_adp_idx_2()
 
-#stones01
-# run_std_cracking_2()
-#stones02
-# run_stc_cracking_2
-#stones03
-# run_pstc_cracking_2()
-#stones04
-# run_cgi_2()
+#s1
+# run_std_cracking()
+#s2
+# run_stc_cracking()
+#s3
+# run_pstc_cracking()
+#s4
+# run_cgi()
+#s5
+# run_adp_adp_idx()
+#s6
+# run_pq()
+#s7
+# run_pb()
+#s9
+# run_prm()
+#s10
+# run_prl()
+
 db.close()
