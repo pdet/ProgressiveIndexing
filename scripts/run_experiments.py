@@ -457,9 +457,18 @@ def run_prl_2():
     ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
     template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
 
-def run_prm_cm():
+def run_std_cracking_2():
+    ALGORITHM_LIST = [StandardCracking]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000) 
+def run_stc_cracking_2():
+    ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+def run_pstc_cracking_2():
+    ALGORITHM_LIST = [ProgressiveBucketsortEquiheightCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
+def run_cgi_2():
     ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
-    run_skyserver(ALGORITHM_LIST)
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000000)
 
 #stones01
 #run_skyserver_baseline()
@@ -487,4 +496,12 @@ def run_prm_cm():
 #stones13
 #run_adp_adp_idx_2()
 
+#stones01
+# run_std_cracking_2()
+#stones02
+# run_stc_cracking_2
+#stones03
+# run_pstc_cracking_2()
+#stones04
+# run_cgi_2()
 db.close()
