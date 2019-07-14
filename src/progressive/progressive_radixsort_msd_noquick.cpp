@@ -29,6 +29,7 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
         c.msd.current_bucket = 0;
         c.msd.current_bucket_count = RADIX_BUCKET_COUNT * RADIX_BUCKET_COUNT;
         c.msd.data = unique_ptr<int64_t[]>(new int64_t[c.data.size()]);
+        c.msd.ids = unique_ptr<size_t[]>(new size_t[c.data.size()]);
         c.msd.offsets = unique_ptr<int64_t[]>(new int64_t[c.msd.current_bucket_count]);
         c.msd.counts = unique_ptr<int64_t[]>(new int64_t[RADIX_BUCKET_COUNT]);
         memset(c.msd.counts.get(), 0, sizeof(int64_t) * RADIX_BUCKET_COUNT);
@@ -75,7 +76,9 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
                         // for every element in this bucket, figure out the bucket it belongs to and write the element there
                         auto point = c.msd.current_entry->data[i];
                         auto bucket_index = get_bucket_index(point, current_mask, current_shift);
-                        c.msd.data[c.msd.offsets[c.msd.initial_offset + bucket_index] + c.msd.counts[bucket_index]] = point;
+                        auto index = c.msd.offsets[c.msd.initial_offset + bucket_index] + c.msd.counts[bucket_index];
+                        c.msd.data[index] = point;
+                        c.msd.ids[index] = c.msd.current_entry->indices[i];
                         c.msd.counts[bucket_index]++;
                     }
                     // done with this bucket, go to the next one
@@ -111,12 +114,14 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
             c.msd.prev_bucket_count = c.msd.current_bucket_count;
             c.msd.prev_offsets = move(c.msd.offsets);
             c.msd.prev_array = move(c.msd.data);
+            c.msd.prev_ids = move(c.msd.ids);
             c.msd.prev_array_index = 0;
             c.msd.shift_index = 2;
             c.msd.current_bucket_count *= c.msd.remaining_buckets;
             c.msd.array_offset = 0;
             c.msd.array_offset_bucket = 0;
             c.msd.data = unique_ptr<int64_t[]>(new int64_t[c.data.size()]);
+            c.msd.ids = unique_ptr<size_t[]>(new size_t[c.data.size()]);
             c.msd.offsets = unique_ptr<int64_t[]>(new int64_t[c.msd.remaining_buckets]);
             c.msd.counts = unique_ptr<int64_t[]>(new int64_t[c.msd.remaining_buckets]);
             memset(c.msd.counts.get(), 0, sizeof(int64_t) * c.msd.remaining_buckets);
@@ -137,7 +142,8 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
                 // small bucket: insert into final array and sort
                 remaining_budget -= len * 5;
                 memcpy(c.msd.data.get() + start, c.msd.prev_array.get() + start, len * sizeof(int64_t));
-                std::sort(c.msd.data.get() + start, c.msd.data.get() + start + len);
+                memcpy(c.msd.ids.get() + start, c.msd.prev_ids.get() + start, len * sizeof(size_t));
+                itqs(c.msd.data.get() + start, c.msd.ids.get() + start, len);
             }
         } else {
             //bigger bucket: have to perform more partitioning
@@ -173,7 +179,9 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
                 for(int64_t i = c.msd.array_offset_bucket; i < current_end; i++) {
                     auto point = c.msd.prev_array[i];
                     auto bucket_index = point & final_mask;
-                    c.msd.data[c.msd.offsets[bucket_index] + c.msd.counts[bucket_index]] = point;
+                    auto index = c.msd.offsets[bucket_index] + c.msd.counts[bucket_index];
+                    c.msd.data[index] = point;
+                    c.msd.ids[index] = c.msd.prev_ids[i];
                     c.msd.counts[bucket_index]++;
                 }
                 c.msd.array_offset_bucket = current_end;

@@ -278,6 +278,8 @@ struct IncrementalMSDIndex {
     std::unique_ptr<int64_t[]> data;
     std::unique_ptr<int64_t[]> prev_offsets;
     std::unique_ptr<int64_t[]> prev_array;
+    std::unique_ptr<size_t[]> ids;
+    std::unique_ptr<size_t[]> prev_ids;
 
     std::vector<int64_t> shifts;
     std::vector<int64_t> masks;
