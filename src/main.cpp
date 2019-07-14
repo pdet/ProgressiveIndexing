@@ -79,23 +79,29 @@ int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
     return sum;
 }
 
-void *fullIndex(IndexEntry *c) {
-    hybrid_radixsort_insert(c, COLUMN_SIZE);
-    void *I = build_bptree_bulk(c, COLUMN_SIZE);
-    return I;
+int64_t scanQuery(int64_t *c, int64_t from, int64_t to) {
+    int64_t sum = 0;
+    for (int64_t i = from; i <= to; i++) {
+        sum += c[i];
+    }
+
+    return sum;
 }
+
 
 void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answers) {
     chrono::time_point<chrono::system_clock> start, end;
     start = chrono::system_clock::now();
-    IndexEntry *data = (IndexEntry *) malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
+    int64_t *sorted_column = (int64_t*) malloc(COLUMN_SIZE * sizeof(int64_t));
+    size_t *indices = (size_t *) malloc(COLUMN_SIZE * sizeof(size_t));
     for (size_t i = 0; i < COLUMN_SIZE; i++) {
-        data[i].m_key = column.data[i];
-        data[i].m_rowId = i;
+        sorted_column[i] = column.data[i];
+        indices[i] = i;
     }
+    itqs(sorted_column, indices, COLUMN_SIZE);
 
 
-    BulkBPTree *T = (BulkBPTree *) fullIndex(data);
+    BulkBPTree *T = (BulkBPTree *) build_bptree_bulk_int(sorted_column, COLUMN_SIZE);
     end = chrono::system_clock::now();
     query_times.idx_time[0].index_creation += chrono::duration<double>(end - start).count();
     for (current_query = 0; current_query < NUM_QUERIES; current_query++) {
@@ -103,7 +109,7 @@ void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answe
         start = chrono::system_clock::now();
         int64_t offset1 = (T)->gte(rangeQueries.leftpredicate[current_query]);
         int64_t offset2 = (T)->lte(rangeQueries.rightpredicate[current_query]);
-        int64_t sum = scanQuery(data, offset1, offset2);
+        int64_t sum = scanQuery(sorted_column, offset1, offset2);
         end = chrono::system_clock::now();
         query_times.q_time[current_query].query_processing += chrono::duration<double>(end - start).count();
         if (sum != answers[current_query]){
@@ -112,7 +118,8 @@ void full_index(Column &column, RangeQuery &rangeQueries, vector<int64_t> &answe
             fprintf(stderr, " ");
         }
     }
-    free(data);
+    free(sorted_column);
+    free(indices);
     free(T);
 }
 
@@ -450,15 +457,6 @@ void coarse_granular_index(Column &column, RangeQuery &rangeQueries, vector<int6
         }
     }
     free(crackercolumn);
-}
-
-int64_t scanQuery(int64_t *c, int64_t from, int64_t to) {
-    int64_t sum = 0;
-    for (int64_t i = from; i <= to; i++) {
-        sum += c[i];
-    }
-
-    return sum;
 }
 
 void *fullIndex(int64_t *c, int n) {
