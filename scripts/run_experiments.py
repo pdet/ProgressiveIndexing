@@ -53,7 +53,7 @@ baseline_list = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStocha
 progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
 all_algorithms_list =  [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
-syntethical_workload_list = [Random,SeqOver,ZoomIn,SeqZoomIn,Skew,ZoomOutAlt,Periodic,ZoomInAlt,SeqRand]
+syntethical_workload_list = [Random,SeqOver,Skew]
 
 def DownloadSkyServer():
     if (os.path.isdir("./real_data") == False):
@@ -243,7 +243,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
     if DELTA_LIST == 0:
         DELTA_LIST = [0.005,0.01,0.05,0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     if COLUMN_DISTRIBUTION_LIST == 0:
-        COLUMN_DISTRIBUTION_LIST = [1,2]
+        COLUMN_DISTRIBUTION_LIST = [1]
     for column_dist in COLUMN_DISTRIBUTION_LIST:
         for column_size in COLUMN_SIZE_LIST:
             generate_cost_model(column_size) #Radix MSD Cost Model is dependent on column_size
@@ -254,7 +254,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
                 QUERY_SELECTIVITY_LIST = [0.000001,0.01]
             elif column_size == 1000000000:
                 if column_dist ==1 :
-                    QUERY_SELECTIVITY_LIST = [0.0000001,0.01]
+                    QUERY_SELECTIVITY_LIST = [0.1]
                 else:
                     QUERY_SELECTIVITY_LIST = [0.01]
             else:
@@ -485,6 +485,7 @@ def run_cgi_2():
 #run_adp_adp_idx()
 #stones07
 #run_progressive_fixed_deltas()
+
 #stones09
 #run_pq_2()
 #stones10
