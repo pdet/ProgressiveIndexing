@@ -126,7 +126,17 @@ for db in dbs:
 				squared_error += numpy.sum((predicted - total_times) ** 2)
 
 				result_dict[distribution_name][algorithm_name][workload_name] = [first_query, total_time, squared_error]
-
+				#find payoff
+				# results = c.execute("SELECT total_time FROM queries WHERE experiment_id=? ORDER BY query_number", (experiment_id,)).fetchall()
+				# all_total_times = numpy.array([x[0] for x in results])
+				# pay_off = 0
+				# prefixed_sum = 0
+				# for x in all_total_times:
+				# 	pay_off +=1
+				# 	prefixed_sum+=x
+				# 	if(pay_off*0.7 > prefixed_sum):
+				# 		break
+				# result_dict[distribution_name][algorithm_name][workload_name] = [first_query, total_time, squared_error,pay_off]
 
 print(result_dict)
 
