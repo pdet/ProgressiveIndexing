@@ -1,7 +1,7 @@
-#ifndef PROGRESSIVEINDEXING_FILE_MANAGER_H_
-#define PROGRESSIVEINDEXING_FILE_MANAGER_H_
+#pragma once
 
 #include "../structs.h"
+
 #include <iostream>
 
 using namespace std;
@@ -14,5 +14,3 @@ void load_answers(vector<int64_t> *answers, string QUERIES_ANSWERS_PATH, int64_t
 
 bool file_exists(const string &name);
 
-
-#endif

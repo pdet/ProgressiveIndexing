@@ -1,13 +1,11 @@
-#ifndef PROGRESSIVEINDEXING_PROGRESSIVE_STOCHASTIC_CRACKING_H
-#define PROGRESSIVEINDEXING_PROGRESSIVE_STOCHASTIC_CRACKING_H
+#pragma once
 
-#include "stdio.h"
-#include <cstdlib>
 #include "../structs.h"
 #include "cracking_engine.h"
+#include "stdio.h"
 
+#include <cstdlib>
 
 AvlTree progressiveStochasticCracking(IndexEntry *&c, int64_t dataSize, AvlTree T, int64_t lowKey, int64_t highKey,
-                                      QueryOutput *qo,CrackEngineType engineType);
+                                      QueryOutput *qo, CrackEngineType engineType);
 
-#endif //PROGRESSIVEINDEXING_PROGRESSIVE_STOCHASTIC_CRACKING_H

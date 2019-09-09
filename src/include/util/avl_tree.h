@@ -1,9 +1,8 @@
-#ifndef PROGRESSIVEINDEXING_AVLTREE_H
-#define PROGRESSIVEINDEXING_AVLTREE_H
+#pragma once
 
+#include "../structs.h"
 
 #include <cstdlib>
-#include "../structs.h"
 
 struct AvlNode;
 
@@ -41,9 +40,6 @@ AvlTree FindLastPiece(AvlTree T);
 AvlTree FindNeighborsLTFinal(ElementType X, AvlTree T);
 
 AvlTree FindNodeLTE(ElementType X, AvlTree T);
-// AvlTree FindNodeLTE( ElementType X, AvlTree T, ElementType limit );
+//! AvlTree FindNodeLTE( ElementType X, AvlTree T, ElementType limit );
 
 void Print(AvlTree T);
-
-
-#endif

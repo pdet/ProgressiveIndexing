@@ -1,8 +1,6 @@
-#ifndef PROGRESSIVEINDEXING_BINARY_SEARCH_H
-#define PROGRESSIVEINDEXING_BINARY_SEARCH_H
+#pragma once
 
 #include "../structs.h"
-
 
 void *build_binary_tree(IndexEntry *c, int n);
 
@@ -17,5 +15,3 @@ int64_t binary_search_gte(IndexEntry *c, int64_t key, int64_t start, int64_t end
 int64_t binary_search_lte(int64_t *c, int64_t key, int64_t start, int64_t end);
 
 int64_t binary_search_gte(int64_t *c, int64_t key, int64_t start, int64_t end);
-
-#endif //LIGHTWEIGHTADAPTIVEINDEXING_BINARY_SEARCH_H
