@@ -41,7 +41,8 @@ ProgressiveRadixsortLSDCostModel=12
 ProgressiveRadixsortMSD=13
 ProgressiveRadixsortMSDCostModel=14
 AdaptiveAdaptiveIndexing=15
-ProgressiveRadixsortMSDNew=16
+ProgressiveRadixsortMSDPure=16
+ProgressiveRadixsortMSDPureCostModel=17
 
 #Setting Values for Different Column Distributions
 RandomDist = 1
@@ -50,7 +51,7 @@ SkyServerDist = 3
 
 
 baseline_list = [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing]
-progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight]
+progressive_list = [ProgressiveQuicksort,ProgressiveRadixsortMSD, ProgressiveRadixsortLSD, ProgressiveBucketsortEquiheight,ProgressiveRadixsortMSDPure]
 all_algorithms_list =  [FullIndex,StandardCracking,StochasticCracking,ProgressiveStochasticCracking,CoarseGranularIndex,AdaptiveAdaptiveIndexing,ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,Skew]
@@ -437,6 +438,9 @@ def run_pb():
     template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_prm():
     ALGORITHM_LIST = [ProgressiveRadixsortMSDCostModel]
+    template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
+def run_prm_pure():
+    ALGORITHM_LIST = [ProgressiveRadixsortMSDPureCostModel]
     template_run(ALGORITHM_LIST,COLUMN_SIZE_LIST=[1000000000],NUM_QUERIES=1000)
 def run_prl():
     ALGORITHM_LIST = [ProgressiveRadixsortLSDCostModel]
