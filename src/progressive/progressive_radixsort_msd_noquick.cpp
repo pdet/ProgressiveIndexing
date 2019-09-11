@@ -143,8 +143,9 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
 }
 
 static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
+    remaining_budget = remaining_budget/3.5;
     if(!p_3){
-        fprintf(stderr, "Phase 2 on query %zu\\n", current_query);
+        fprintf(stderr, "Phase 3 on query %zu\\n", current_query);
         p_3 = true;
     }
 	//! final runs: move elements into the result array

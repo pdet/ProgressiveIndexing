@@ -97,7 +97,7 @@ def run_experiment(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORITHM,NUM_QUE
         print("Failed!")
 
 def template_correctness():
-    ALGORITHM_LIST = list(range(1,18))
+    ALGORITHM_LIST = [17] #list(range(1,18))
     # ALGORITHM_LIST = [ProgressiveQuicksortCostModel]
     COLUMN_SIZE_LIST = [1000000]
     syntethical_workload_list = [Random]
