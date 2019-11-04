@@ -18,16 +18,14 @@ This project is a stand-alone implementation of all the current progressive inde
 
 ## SkyServer
 The Sloan Digital Sky Survey is a project that maps the universe. The data set and interactive data exploration query logs are publicly available via the SkyServer website.
-The data set contains almost 600 million tuples, with around 160,000 range queries that focus on specific sections of the domain before moving to different areas. The data distribution and the workload distribution are shown below:
-<img src="https://github.com/pholanda/ProgressiveIndexing/blob/master/Images/skyserver.png" width="900" height="300" />
+The data set contains almost 600 million tuples, with around 160,000 range queries that focus on specific sections of the domain before moving to different areas. 
 
 ## Synthetic 
-The synthetic data set is composed of two data distributions, a random and a skewed one. They consist of n 8-byte integers distributed in the range of [0, n). All workloads consist of 10^5 queries in the form 
+The synthetic data set is composed of two data distributions, a random and a skewed one. They consist of n 8-byte integers distributed in the range of [0, n). All workloads consist of queries in the form 
 ```sql
 SELECT SUM(R.A) FROM R WHERE R.A BETWEEN low AND high
 ```
-The values for low and high are chosen based on the workload pattern. The different workload patterns and their mathematical description are depicted in the figure below, originally from the [Stochastic Cracking](http://www.cs.au.dk/~karras/StochasticDatabaseCracking.pdf) paper.
-![alt text](Images/Syn-work.png)
+The values for low and high are chosen based on the workload pattern. The different workload patterns and their mathematical description are originally from the [Stochastic Cracking](http://www.cs.au.dk/~karras/StochasticDatabaseCracking.pdf) paper.
 
 # Running the experiments
 The header for printed output:
@@ -42,7 +40,7 @@ cmake -DCMAKE_BUILD_TYPE=Release && make
 ### Generate Constants
 The Self-Adjusting Delta algorithms rely on constants hardware dependent (e.g., sequential scan, random writes, ...). Execute the following script to generate those constants before running said algorithms. 
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Release && make
+python scripts/cost_model/generate_constants.py
 ```
 
 ### Generate Data
@@ -132,7 +130,6 @@ Example with fixed interactivity:
 
 # Third-Party Code
 * Syntethical Workloads: www.github.com/felix-halim/scrack
-
 
 # Papers
 * [Progressive Indices: Indexing for Interactive Data Analysis @ VLDB 2020](https://pdet.github.io/assets/papers/progidx_vldb.pdf)

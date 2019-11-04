@@ -41,7 +41,7 @@ SkewedDist = 2
 SkyServerDist = 3
 baseline_list = []
 progressive_list = [ProgressiveQuicksort,ProgressiveBucketsortEquiheight,ProgressiveRadixsortLSD,ProgressiveRadixsortMSDPure]
-Progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDPureCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
+progressive_cm_list = [ProgressiveQuicksortCostModel,ProgressiveRadixsortMSDPureCostModel, ProgressiveRadixsortLSDCostModel, ProgressiveBucketsortEquiheightCostModel]
 syntethical_workload_list = [Random,SeqOver,Skew]
 
 def DownloadSkyServer():
@@ -173,7 +173,7 @@ def run_experiment_progressive(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGOR
         ANSWER_PATH = "real_data/skyserver/answer_"+str(QUERY_SELECTIVITY)
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
-             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) + " --correctness=" + str(0)
+             + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH) + " --delta=" + str(FIXED_DELTA) 
     print(codestr)
     (result,CONVERGED) = run_process(codestr)
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_delta,column_distribution_id, converged)
@@ -202,7 +202,7 @@ def run_experiment_cost_model(COLUMN_SIZE,QUERY_PATTERN,QUERY_SELECTIVITY,ALGORI
     codestr ="./main --num-queries=" + str(NUM_QUERIES) + " --column-size=" + str(COLUMN_SIZE) + \
              " --algorithm="+str(ALGORITHM)+ " --column-path=" + str(COLUMN_PATH) + " --query-path=" \
              + str(QUERY_PATH) + " --answer-path=" + str(ANSWER_PATH)  + " --interactivity-threshold=" + str(FIXED_INTERACTIVITY_THRESHOLD) \
-             + " --correctness=" + str(0) + " --interactivity-is-percentage="+str(INTERACTIVITY_IS_PERCENTAGE) + " --decay-queries="+str(QUERY_DECAY)
+             + " --interactivity-is-percentage="+str(INTERACTIVITY_IS_PERCENTAGE) 
     print(codestr)
     (result,CONVERGED) = run_process(codestr)
     cursor.execute('''INSERT INTO experiments(algorithm_id, workload_id, column_size, query_selectivity,fixed_interactivity_threshold,column_distribution_id, converged)
@@ -293,7 +293,7 @@ def template_run(ALGORITHM_LIST,DELTA_LIST=0,COLUMN_SIZE_LIST=[100000],COLUMN_DI
                                         run_experiment_cost_model(column_size,query,selectivity,algorithm,NUM_QUERIES,interactivity_threshold,column_dist,INTERACTIVITY_IS_PERCENTAGE)
                                     db.commit()
 
-def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUERY_SELECTIVITY_LIST=0,NUM_QUERIES = 158325, INTERACTIVITY_IS_PERCENTAGE=1, QUERY_DECAY=0):
+def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUERY_SELECTIVITY_LIST=0,NUM_QUERIES = 10, INTERACTIVITY_IS_PERCENTAGE=1, QUERY_DECAY=0):
     DownloadSkyServer()
     generate_cost_model(100000000) #Mock Gen
     compile()
@@ -371,9 +371,6 @@ def run_skyserver(ALGORITHM_LIST,DELTA_LIST=0,INTERACTIVITY_THRESHOLD_LIST=0,QUE
 def run_skyserver_progressive():
     ALGORITHM_LIST = progressive_list
     run_skyserver(ALGORITHM_LIST)
-
-
-
 
 run_skyserver_progressive()
 

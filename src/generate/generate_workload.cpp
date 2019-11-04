@@ -1,5 +1,3 @@
-#include "../include/full_index/bulkloading_bp_tree.h"
-#include "../include/full_index/hybrid_radix_insert_sort.h"
 #include "../include/generate/random.h"
 #include "../include/util/file_manager.h"
 
@@ -241,21 +239,6 @@ pair<string, string> split_once(string delimited, char delimiter) {
 	return {delimited.substr(0, pos), delimited.substr(pos + 1)};
 }
 
-void *fullIndex(IndexEntry *c) {
-	hybrid_radixsort_insert(c, COLUMN_SIZE);
-	void *I = build_bptree_bulk(c, COLUMN_SIZE);
-	return I;
-}
-
-int64_t scanQuery(IndexEntry *c, int64_t from, int64_t to) {
-	int64_t sum = 0;
-	for (int64_t i = from; i <= to; i++) {
-		sum += c[i].m_key;
-	}
-
-	return sum;
-}
-
 int main(int argc, char **argv) {
 	COLUMN_FILE_PATH = "column";
 	QUERIES_FILE_PATH = "query";
@@ -319,10 +302,12 @@ int main(int argc, char **argv) {
 		rightQuery.push_back(b);
 
 		//! Generate answers to all workloads.
-
-		int64_t offset1 = (T)->gte(a);
-		int64_t offset2 = (T)->lte(b);
-		int64_t sum = scanQuery(data, offset1, offset2);
+        int64_t sum = 0;
+        for (size_t col_it = 0; col_it < COLUMN_SIZE; col_it++ ){
+            if (data[col_it].m_key >= a && data[col_it].m_key <=b ){
+                sum += data[col_it].m_key;
+            }
+        }
 		queryAnswer.push_back(sum);
 	}
 	FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");
