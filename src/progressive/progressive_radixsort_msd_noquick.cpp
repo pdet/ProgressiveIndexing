@@ -1,4 +1,4 @@
-#include "../include/full_index/hybrid_radix_insert_sort.h"
+#include "../include/util/hybrid_radix_insert_sort.h"
 #include "../include/progressive/constants.h"
 #include "../include/progressive/incremental.h"
 #include "../include/util/binary_search.h"
@@ -25,10 +25,10 @@ static inline int get_bucket_index(int64_t point, int64_t mask, int64_t shift) {
 }
 
 static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
-    if(!p_2){
-        fprintf(stderr, "Phase 2 on query %zu\\n", current_query);
-        p_2 = true;
-    }
+	if (!p_2) {
+		fprintf(stderr, "Phase 2 on query %zu\\n", current_query);
+		p_2 = true;
+	}
 
 	//! subsequent run: move elements from the previous iteration of buckets to the next iteration of
 	//! buckets
@@ -143,11 +143,11 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
 }
 
 static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
-    remaining_budget = remaining_budget/3.5;
-    if(!p_3){
-        fprintf(stderr, "Phase 3 on query %zu\\n", current_query);
-        p_3 = true;
-    }
+	remaining_budget = remaining_budget / 3.5;
+	if (!p_3) {
+		fprintf(stderr, "Phase 3 on query %zu\\n", current_query);
+		p_3 = true;
+	}
 	//! final runs: move elements into the result array
 	int64_t final_mask = c.msd.masks.back();
 	while (remaining_budget > 0) {

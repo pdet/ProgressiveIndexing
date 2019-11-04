@@ -516,4 +516,3 @@ typedef struct {
 	ADAPT_FUNC F;
 	offset_t maxRecursionCount;
 } wdPartitioned_t;
-

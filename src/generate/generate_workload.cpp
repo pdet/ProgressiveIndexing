@@ -302,7 +302,6 @@ int main(int argc, char **argv) {
 	int64_t a, b;
 	Column c;
 	IndexEntry *data;
-	BulkBPTree *T;
 	c.data = vector<int64_t>(COLUMN_SIZE);
 	load_column(&c, COLUMN_FILE_PATH, COLUMN_SIZE);
 	data = (IndexEntry *)malloc(COLUMN_SIZE * 2 * sizeof(int64_t));
@@ -310,7 +309,6 @@ int main(int argc, char **argv) {
 		data[i].m_key = c.data[i];
 		data[i].m_rowId = i;
 	}
-	T = (BulkBPTree *)fullIndex(data);
 
 	for (size_t i = 0; i < NUM_QUERIES; i++) {
 		W.query(a, b);
@@ -320,7 +318,8 @@ int main(int argc, char **argv) {
 			b -= 2;
 		rightQuery.push_back(b);
 
-		//! Using Full Index to generate answers to all workloads.
+		//! Generate answers to all workloads.
+
 		int64_t offset1 = (T)->gte(a);
 		int64_t offset2 = (T)->lte(b);
 		int64_t sum = scanQuery(data, offset1, offset2);
