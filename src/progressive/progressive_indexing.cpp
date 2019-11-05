@@ -38,7 +38,6 @@ void progressive_indexing(Column &column, RangeQuery &rangeQueries, vector<int64
 		results = function(column, rangeQueries.leftpredicate[current_query],
 		                   rangeQueries.rightpredicate[current_query], DELTA);
 		end = chrono::system_clock::now();
-
 		prefix_sum += chrono::duration<double>(end - start).count();
 		query_times.prefix_sum[current_query] += prefix_sum;
 		query_times.idx_time[current_query].index_creation += chrono::duration<double>(end - start).count() - baseline;
@@ -76,7 +75,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 	start = chrono::system_clock::now();
 	results = function(column, rangeQueries.leftpredicate[0], rangeQueries.rightpredicate[0], 0);
 	end = chrono::system_clock::now();
-	assert (results.sum == answers[0]);
+	assert(results.sum == answers[0]);
 	double full_scan_time = chrono::duration<double>(end - start).count();
 	double best_convergence_delta_time = 1.5 * full_scan_time;
 	double ratio, initial_query_time, final_query_time;
@@ -90,7 +89,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 			results = function(column, rangeQueries.leftpredicate[current_query],
 			                   rangeQueries.rightpredicate[current_query], 0);
 			end = chrono::system_clock::now();
-			assert (results.sum == answers[current_query]);
+			assert(results.sum == answers[current_query]);
 			double base_time = chrono::duration<double>(end - start).count();
 			query_times.q_time[current_query].query_processing += base_time;
 			double estimated_time = 0;
@@ -117,7 +116,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 			double time = chrono::duration<double>(end - start).count();
 			prefix_sum += chrono::duration<double>(end - start).count();
 			query_times.prefix_sum[current_query] += prefix_sum;
-			assert (sum == answers[current_query]);
+			assert(sum == answers[current_query]);
 			//! now interpolate the real delta
 			double cost_per_delta = (time - base_time) / estimated_delta;
 			double real_delta = (best_convergence_delta_time - base_time) / cost_per_delta;
@@ -126,7 +125,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 			results = function(column, rangeQueries.leftpredicate[current_query + 1],
 			                   rangeQueries.rightpredicate[current_query + 1], 0);
 			end = chrono::system_clock::now();
-			assert (results.sum == answers[current_query + 1]);
+			assert(results.sum == answers[current_query + 1]);
 			full_scan_time = chrono::duration<double>(end - start).count();
 		} else {
 
@@ -157,7 +156,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 				results = function(column, rangeQueries.leftpredicate[current_query],
 				                   rangeQueries.rightpredicate[current_query], 0);
 				end = chrono::system_clock::now();
-				assert (results.sum == answers[current_query]);
+				assert(results.sum == answers[current_query]);
 				double base_time = chrono::duration<double>(end - start).count();
 				query_times.q_time[current_query].query_processing += base_time;
 
@@ -171,7 +170,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 				double time = chrono::duration<double>(end - start).count();
 				prefix_sum += chrono::duration<double>(end - start).count();
 				query_times.prefix_sum[current_query] += prefix_sum;
-				assert (sum == answers[current_query]);
+				assert(sum == answers[current_query]);
 				//! now interpolate the real delta
 				double cost_per_delta = (time - base_time) / estimated_delta;
 				double real_delta = (INTERACTIVITY_THRESHOLD - base_time) / cost_per_delta;
@@ -195,7 +194,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 				results = function(column, rangeQueries.leftpredicate[current_query],
 				                   rangeQueries.rightpredicate[current_query], 0);
 				end = chrono::system_clock::now();
-				assert (results.sum == answers[current_query]);
+				assert(results.sum == answers[current_query]);
 				base_time = chrono::duration<double>(end - start).count();
 				query_times.q_time[current_query].query_processing += base_time;
 
@@ -209,7 +208,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 				time = chrono::duration<double>(end - start).count();
 				prefix_sum += chrono::duration<double>(end - start).count();
 				query_times.prefix_sum[current_query] += prefix_sum;
-				assert (sum == answers[current_query]);
+				assert(sum == answers[current_query]);
 				//! now interpolate the real delta
 				cost_per_delta = (time - base_time) / estimated_delta;
 				real_delta = (int_thres_aux - base_time) / cost_per_delta;
@@ -221,7 +220,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 				results = function(column, rangeQueries.leftpredicate[current_query],
 				                   rangeQueries.rightpredicate[current_query], 0);
 				end = chrono::system_clock::now();
-				assert (results.sum == answers[current_query]);
+				assert(results.sum == answers[current_query]);
 				double base_time = chrono::duration<double>(end - start).count();
 				query_times.q_time[current_query].query_processing += base_time;
 
@@ -235,7 +234,7 @@ void progressive_indexing_cost_model(Column &column, RangeQuery &rangeQueries, v
 				double time = chrono::duration<double>(end - start).count();
 				prefix_sum += chrono::duration<double>(end - start).count();
 				query_times.prefix_sum[current_query] += prefix_sum;
-				assert (sum == answers[current_query]);
+				assert(sum == answers[current_query]);
 				//! now interpolate the real delta
 				double cost_per_delta = (time - base_time) / estimated_delta;
 				double real_delta = (INTERACTIVITY_THRESHOLD - base_time) / cost_per_delta;

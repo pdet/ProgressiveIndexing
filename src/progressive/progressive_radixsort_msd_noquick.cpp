@@ -15,7 +15,7 @@ using namespace std;
 //! since our max value is 10^8, ceil(log2(10^8)) = 27
 extern int RADIXSORT_TOTAL_BYTES;
 extern size_t current_query;
-
+extern int64_t COLUMN_SIZE;
 constexpr size_t RADIX_BUCKET_COUNT = 1 << RADIXSORT_MSD_BYTES;
 
 static inline int get_bucket_index(int64_t point, int64_t mask, int64_t shift) {
@@ -137,7 +137,7 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
 }
 
 static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
-	remaining_budget = remaining_budget / 3.5;
+	//	remaining_budget = remaining_budget / 3.5;
 	//! final runs: move elements into the result array
 	int64_t final_mask = c.msd.masks.back();
 	while (remaining_budget > 0) {
@@ -220,99 +220,110 @@ static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
 ResultStruct range_query_incremental_radixsort_msd_noquick(Column &c, int64_t low, int64_t high, double delta) {
 	ResultStruct results;
 	results.reserve(c.data.size());
-
-	//! first search the already indexed buckets for elements
-	if (c.bucket_index.buckets.size() == 0) {
-		c.bucket_index.buckets.resize(RADIX_BUCKET_COUNT);
-		//! create all bitshifts and bitmasks
-		int64_t current_shift = RADIXSORT_TOTAL_BYTES - RADIXSORT_MSD_BYTES;
-		c.msd.shifts.push_back(current_shift);
-		c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
-		current_shift -= RADIXSORT_MSD_BYTES;
-		c.msd.shifts.push_back(current_shift);
-		c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
-
-		c.msd.remaining_buckets = 1 << current_shift;
-		c.msd.shifts.push_back(0);
-		c.msd.masks.push_back((c.msd.remaining_buckets - 1));
-	}
-
-	if (!c.msd.prev_array) {
-		auto first_bucket_id = low >> c.msd.shifts[0];
-		auto last_bucket_id = high >> c.msd.shifts[0];
-		for (size_t i = first_bucket_id; i <= last_bucket_id; i++) {
-			BucketRoot &bucket = c.bucket_index.buckets[i];
-			if (i > first_bucket_id && i < last_bucket_id) {
-				bucket.AddAllElements(results);
-			} else {
-				bucket.RangeQuery(low, high, results);
-			}
+	//! FIXME: For now Binary Search to fix Tests
+	if (c.converged) {
+		int64_t offset_1 = binary_search_gte(c.final_data, low, 0, COLUMN_SIZE - 1);
+		int64_t offset_2 = binary_search_lte(c.final_data, high, offset_1, COLUMN_SIZE - 1);
+		for (size_t col_it = offset_1; col_it < offset_2; col_it++) {
+			results.push_back(c.final_data[col_it]);
 		}
+
 	} else {
-		int64_t start_pos = 0, end_pos = 0;
-		//! get the bucket position for the start and end entry
-		for (size_t i = 0; i < c.msd.shift_index; i++) {
-			start_pos = start_pos * RADIX_BUCKET_COUNT + get_bucket_index(low, c.msd.masks[i], c.msd.shifts[i]);
-			end_pos = end_pos * RADIX_BUCKET_COUNT + get_bucket_index(high, c.msd.masks[i], c.msd.shifts[i]);
+		//! first search the already indexed buckets for elements
+		if (c.bucket_index.buckets.size() == 0) {
+			c.bucket_index.buckets.resize(RADIX_BUCKET_COUNT);
+			//! create all bitshifts and bitmasks
+			int64_t current_shift = RADIXSORT_TOTAL_BYTES - RADIXSORT_MSD_BYTES;
+			c.msd.shifts.push_back(current_shift);
+			c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
+			current_shift -= RADIXSORT_MSD_BYTES;
+			c.msd.shifts.push_back(current_shift);
+			c.msd.masks.push_back((RADIX_BUCKET_COUNT - 1) << current_shift);
+
+			c.msd.remaining_buckets = 1 << current_shift;
+			c.msd.shifts.push_back(0);
+			c.msd.masks.push_back((c.msd.remaining_buckets - 1));
 		}
-		//! now perform the actual scan
-		//! the results MAYBE match in the buckets that "start_pos" and "end_pos" fall into
-		//! first check the start_pos bucket
-		if (start_pos == end_pos) {
-			//! both are in the same bucket, just scan this bucket
-			size_t start = c.msd.prev_offsets[start_pos];
-			size_t end = end_pos + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[end_pos + 1];
-			for (size_t i = start; i < end; i++) {
-				int matching = c.msd.prev_array[i] >= low && c.msd.prev_array[i] <= high;
-				results.maybe_push_back(c.msd.prev_array[i], matching);
+
+		if (!c.msd.prev_array) {
+			auto first_bucket_id = low >> c.msd.shifts[0];
+			auto last_bucket_id = high >> c.msd.shifts[0];
+			for (size_t i = first_bucket_id; i <= last_bucket_id; i++) {
+				BucketRoot &bucket = c.bucket_index.buckets[i];
+				if (i > first_bucket_id && i < last_bucket_id) {
+					bucket.AddAllElements(results);
+				} else {
+					bucket.RangeQuery(low, high, results);
+				}
 			}
 		} else {
-			//! both are different buckets, scan the "start" and "end" buckets separately
-			size_t first_bucket_start = c.msd.prev_offsets[start_pos];
-			size_t first_bucket_end = c.msd.prev_offsets[start_pos + 1];
-			size_t last_bucket_start = c.msd.prev_offsets[end_pos];
-			size_t last_bucket_end =
-			    end_pos + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[end_pos + 1];
-			//! first scan the start bucket
-			for (size_t i = first_bucket_start; i < first_bucket_end; i++) {
-				int matching = c.msd.prev_array[i] >= low && c.msd.prev_array[i] <= high;
-				results.maybe_push_back(c.msd.prev_array[i], matching);
+			int64_t start_pos = 0, end_pos = 0;
+			//! get the bucket position for the start and end entry
+			for (size_t i = 0; i < c.msd.shift_index; i++) {
+				start_pos = start_pos * RADIX_BUCKET_COUNT + get_bucket_index(low, c.msd.masks[i], c.msd.shifts[i]);
+				end_pos = end_pos * RADIX_BUCKET_COUNT + get_bucket_index(high, c.msd.masks[i], c.msd.shifts[i]);
 			}
-			//! scan everything in between, for this we know that the query predicate always matches
-			for (size_t i = first_bucket_end; i < last_bucket_start; i++) {
-				results.push_back(c.msd.prev_array[i]);
-			}
-			//! finally scan the end bucket
-			for (size_t i = last_bucket_start; i < last_bucket_end; i++) {
-				int matching = c.msd.prev_array[i] >= low && c.msd.prev_array[i] <= high;
-				results.maybe_push_back(c.msd.prev_array[i], matching);
+			//! now perform the actual scan
+			//! the results MAYBE match in the buckets that "start_pos" and "end_pos" fall into
+			//! first check the start_pos bucket
+			if (start_pos == end_pos) {
+				//! both are in the same bucket, just scan this bucket
+				size_t start = c.msd.prev_offsets[start_pos];
+				size_t end = end_pos + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[end_pos + 1];
+				for (size_t i = start; i < end; i++) {
+					int matching = c.msd.prev_array[i] >= low && c.msd.prev_array[i] <= high;
+					results.maybe_push_back(c.msd.prev_array[i], matching);
+				}
+			} else {
+				//! both are different buckets, scan the "start" and "end" buckets separately
+				size_t first_bucket_start = c.msd.prev_offsets[start_pos];
+				size_t first_bucket_end = c.msd.prev_offsets[start_pos + 1];
+				size_t last_bucket_start = c.msd.prev_offsets[end_pos];
+				size_t last_bucket_end =
+				    end_pos + 1 == c.msd.prev_bucket_count ? c.data.size() : c.msd.prev_offsets[end_pos + 1];
+				//! first scan the start bucket
+				for (size_t i = first_bucket_start; i < first_bucket_end; i++) {
+					int matching = c.msd.prev_array[i] >= low && c.msd.prev_array[i] <= high;
+					results.maybe_push_back(c.msd.prev_array[i], matching);
+				}
+				//! scan everything in between, for this we know that the query predicate always matches
+				for (size_t i = first_bucket_end; i < last_bucket_start; i++) {
+					results.push_back(c.msd.prev_array[i]);
+				}
+				//! finally scan the end bucket
+				for (size_t i = last_bucket_start; i < last_bucket_end; i++) {
+					int matching = c.msd.prev_array[i] >= low && c.msd.prev_array[i] <= high;
+					results.maybe_push_back(c.msd.prev_array[i], matching);
+				}
 			}
 		}
-	}
-	if (c.bucket_index.index_position < c.data.size()) {
-		//! initial run: have to insert elements into the buckets
-		size_t next_position = std::min(c.bucket_index.index_position + (size_t)(c.data.size() * delta), c.data.size());
-		for (auto &i = c.bucket_index.index_position; i < next_position; i++) {
-			auto bucket_id = c.data[i] >> c.msd.shifts[0];
-			c.bucket_index.buckets[bucket_id].AddElement(i, c.data[i]);
-			int matching = c.data[i] >= low && c.data[i] <= high;
-			results.maybe_push_back(c.data[i], matching);
-		}
-		//! now scan the remainder of the data
-		for (size_t i = next_position; i < c.data.size(); i++) {
-			int matching = c.data[i] >= low && c.data[i] <= high;
-			results.maybe_push_back(c.data[i], matching);
-		}
-	} else if (c.msd.prev_array_index == -1) {
-		int64_t remaining_budget = c.data.size() * delta;
-		radixsort_pivot_phase2(c, remaining_budget);
-		if (remaining_budget > 0) {
+		if (c.bucket_index.index_position < c.data.size()) {
+			//! initial run: have to insert elements into the buckets
+			size_t next_position =
+			    std::min(c.bucket_index.index_position + (size_t)(c.data.size() * delta), c.data.size());
+			for (auto &i = c.bucket_index.index_position; i < next_position; i++) {
+				auto bucket_id = c.data[i] >> c.msd.shifts[0];
+				c.bucket_index.buckets[bucket_id].AddElement(i, c.data[i]);
+				int matching = c.data[i] >= low && c.data[i] <= high;
+				results.maybe_push_back(c.data[i], matching);
+			}
+			//! now scan the remainder of the data
+			for (size_t i = next_position; i < c.data.size(); i++) {
+				int matching = c.data[i] >= low && c.data[i] <= high;
+				results.maybe_push_back(c.data[i], matching);
+			}
+		} else if (c.msd.prev_array_index == -1) {
+			int64_t remaining_budget = c.data.size() * delta;
+			radixsort_pivot_phase2(c, remaining_budget);
+			if (remaining_budget > 0) {
+				radixsort_pivot_phase3(c, remaining_budget);
+			}
+		} else {
+			int64_t remaining_budget = c.data.size() * delta;
 			radixsort_pivot_phase3(c, remaining_budget);
 		}
-	} else {
-		int64_t remaining_budget = c.data.size() * delta;
-		radixsort_pivot_phase3(c, remaining_budget);
 	}
+
 	return results;
 }
 

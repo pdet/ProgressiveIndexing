@@ -533,10 +533,10 @@ void IncrementalQuicksortIndex::clear() {
 	root.right = -1;
 	root.sorted = false;
 	current_pivot = 0;
-//	if (index)
-//		free (index);
-//	if (data)
-//		free (data);
+	//	if (index)
+	//		free (index);
+	//	if (data)
+	//		free (data);
 	index = nullptr;
 	data = nullptr;
 }
