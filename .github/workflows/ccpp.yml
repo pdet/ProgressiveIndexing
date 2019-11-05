@@ -11,4 +11,4 @@ jobs:
     - uses: actions/checkout@v1
     - run: |
         cmake -DCMAKE_BUILD_TYPE=Release && make
-        bin/tests
+        test/tests
