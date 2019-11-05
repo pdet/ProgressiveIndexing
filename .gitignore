@@ -51,7 +51,6 @@ src/include/progressive/constants.h
 real_data/
 column
 results.db
-CMakeLists.txt
 test/catch2-prefix/
 test/tests
 
