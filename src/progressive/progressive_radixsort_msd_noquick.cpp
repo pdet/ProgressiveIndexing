@@ -15,8 +15,6 @@ using namespace std;
 //! since our max value is 10^8, ceil(log2(10^8)) = 27
 extern int RADIXSORT_TOTAL_BYTES;
 extern size_t current_query;
-bool p_2 = false;
-bool p_3 = false;
 
 constexpr size_t RADIX_BUCKET_COUNT = 1 << RADIXSORT_MSD_BYTES;
 
@@ -25,10 +23,6 @@ static inline int get_bucket_index(int64_t point, int64_t mask, int64_t shift) {
 }
 
 static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
-	if (!p_2) {
-		fprintf(stderr, "Phase 2 on query %zu\\n", current_query);
-		p_2 = true;
-	}
 
 	//! subsequent run: move elements from the previous iteration of buckets to the next iteration of
 	//! buckets
@@ -144,10 +138,6 @@ static void radixsort_pivot_phase2(Column &c, int64_t &remaining_budget) {
 
 static void radixsort_pivot_phase3(Column &c, int64_t &remaining_budget) {
 	remaining_budget = remaining_budget / 3.5;
-	if (!p_3) {
-		fprintf(stderr, "Phase 3 on query %zu\\n", current_query);
-		p_3 = true;
-	}
 	//! final runs: move elements into the result array
 	int64_t final_mask = c.msd.masks.back();
 	while (remaining_budget > 0) {

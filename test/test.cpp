@@ -66,27 +66,30 @@ TEST_CASE("Check all algorithms under Uniform Random", "[Random]") {
 	}
 
 	//! Run Workload on all algorithms FIXED_DELTA = 0.2
+    fprintf(stderr, "Testing P. QuickSort Fixed Delta\n", current_query);
 	progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_quicksort);
 	c.Clear();
+    fprintf(stderr, "Testing P. BucketSort Fixed Delta\n", current_query);
 	progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_bucketsort_equiheight);
     c.Clear();
-	progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd);
+    fprintf(stderr, "Testing P. Radixsort LSD Fixed Delta\n", current_query);
+    progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd);
     c.Clear();
 //	progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick);
 //    c.Clear();
 
 	//! Run Workload on all algorithms INTERACTIVITY_THRESHOLD = 1.2*FS
-	progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_quicksort,
-	                                get_estimated_time_quicksort);
-c.Clear();
-
-progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_bucketsort_equiheight,
-	                                get_estimated_time_bucketsort);
-c.Clear();
-
-	progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd,
-	                                get_estimated_time_radixsort_lsd);
-c.Clear();
+//	progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_quicksort,
+//	                                get_estimated_time_quicksort);
+//c.Clear();
+//
+//progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_bucketsort_equiheight,
+//	                                get_estimated_time_bucketsort);
+//c.Clear();
+//
+//	progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd,
+//	                                get_estimated_time_radixsort_lsd);
+//c.Clear();
 
 //progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick,
 //	                                get_estimated_time_radixsort_msd_noquick);

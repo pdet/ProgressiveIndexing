@@ -52,5 +52,7 @@ real_data/
 column
 results.db
 CMakeLists.txt
+test/catch2-prefix/
+test/tests
 
 deps/
