@@ -1,7 +1,5 @@
 #pragma once
 
-#include "setup.h"
-
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -405,39 +403,6 @@ public:
 	}
 };
 
-struct int_pair {
-	int64_t first;
-	int64_t second;
-};
-typedef struct int_pair *IntPair;
-
-typedef int64_t ElementType;
-
-struct AvlNode;
-
-typedef struct AvlNode *PositionAVL;
-typedef struct AvlNode *AvlTree;
-
-struct AvlNode {
-	ElementType Element;
-	int64_t offset;
-
-	AvlTree Left;
-	AvlTree Right;
-	int64_t Height;
-};
-
-//! Used for stochastic cracking to check its views
-struct QueryOutput {
-	int64_t sum;             //! stores the sum result
-	IndexEntry *view1;       //! stores a materialized view of the lower part
-	int64_t view_size1;      //! stores the size of the view of the lower part
-	IndexEntry *middlePart;  //! if there is a middle part, store the address
-	int64_t middlePart_size; //! and the corresponding size here
-	IndexEntry *view2;       //! stores a materialized view of the upper part
-	int64_t view_size2;      //! stores the size of the view of the upper part
-};
-
 struct IndexingTime {
 	double index_creation = 0;
 };
@@ -460,59 +425,3 @@ struct TotalTime {
 		cost_model = std::vector<double>(query_number);
 	};
 };
-
-//! Structs used for Adaptive Adaptive Indexing
-typedef uint64_t entry_t;
-typedef int64_t offset_t;
-typedef struct {
-	entry_t rowId;
-	entry_t cols[1];
-} row_t;
-
-typedef struct {
-	entry_t rowId;
-	entry_t col;
-} crow_t;
-
-typedef struct {
-	offset_t offset;
-	offset_t entryLength;
-	bool sorted;
-} offset_length_t;
-
-typedef struct {
-	entry_t first;
-	entry_t second;
-} entry_pair_t;
-
-typedef struct {
-	entry_t entry;
-	offset_length_t offsetWithLength;
-} entry_offset_pair_t;
-
-typedef struct {
-	entry_offset_pair_t first;
-	entry_offset_pair_t second;
-} working_area_t;
-
-typedef offset_t (*ADAPT_FUNC)(const working_area_t p, const offset_t numBits, const offset_t bMin, const offset_t bMax,
-                               const offset_t sThreshold);
-
-typedef std::map<entry_t, offset_length_t> map_t;
-typedef map_t *cracker_index_t;
-typedef map_t::iterator cracker_index_iterator_t;
-typedef struct {
-	row_t *src;
-	crow_t *dst;
-	offset_t bMin;
-	offset_t bMax;
-	offset_t sThreshold;
-	offset_t sComplete;
-	offset_t sRecursion;
-	offset_t sTolerance;
-	double tMax;
-	entry_t maxKey;
-	offset_t numOOPBits;
-	ADAPT_FUNC F;
-	offset_t maxRecursionCount;
-} wdPartitioned_t;

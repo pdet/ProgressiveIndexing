@@ -302,12 +302,12 @@ int main(int argc, char **argv) {
 		rightQuery.push_back(b);
 
 		//! Generate answers to all workloads.
-        int64_t sum = 0;
-        for (size_t col_it = 0; col_it < COLUMN_SIZE; col_it++ ){
-            if (data[col_it].m_key >= a && data[col_it].m_key <=b ){
-                sum += data[col_it].m_key;
-            }
-        }
+		int64_t sum = 0;
+		for (size_t col_it = 0; col_it < COLUMN_SIZE; col_it++) {
+			if (data[col_it].m_key >= a && data[col_it].m_key <= b) {
+				sum += data[col_it].m_key;
+			}
+		}
 		queryAnswer.push_back(sum);
 	}
 	FILE *f = fopen(QUERIES_FILE_PATH.c_str(), "w+");

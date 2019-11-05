@@ -1,7 +1,7 @@
-#include "../include/util/hybrid_radix_insert_sort.h"
 #include "../include/progressive/constants.h"
 #include "../include/progressive/incremental.h"
 #include "../include/util/binary_search.h"
+#include "../include/util/hybrid_radix_insert_sort.h"
 
 void range_query_sorted_subsequent_value(int64_t *index, size_t index_size, int64_t low, int64_t high, int64_t min,
                                          int64_t max, ResultStruct &results) {
@@ -533,10 +533,10 @@ void IncrementalQuicksortIndex::clear() {
 	root.right = -1;
 	root.sorted = false;
 	current_pivot = 0;
-	if (index)
-		delete index;
-	if (data)
-		delete data;
+//	if (index)
+//		free (index);
+//	if (data)
+//		free (data);
 	index = nullptr;
 	data = nullptr;
 }

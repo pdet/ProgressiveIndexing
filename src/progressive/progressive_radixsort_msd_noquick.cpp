@@ -1,7 +1,7 @@
-#include "../include/util/hybrid_radix_insert_sort.h"
 #include "../include/progressive/constants.h"
 #include "../include/progressive/incremental.h"
 #include "../include/util/binary_search.h"
+#include "../include/util/hybrid_radix_insert_sort.h"
 
 #include <algorithm>
 #include <memory>

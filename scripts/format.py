@@ -52,4 +52,5 @@ def format_directory(directory, sort_includes=False):
 					break
 
 format_directory('src/',True)
+format_directory('test/',True)
 format_directory('scripts/',True)
