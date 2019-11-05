@@ -74,9 +74,9 @@ TEST_CASE("Check all algorithms under Uniform Random", "[Random]") {
 	fprintf(stderr, "Testing P. Radixsort LSD Fixed Delta\n", current_query);
 	progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd);
 	c.Clear();
-	//    fprintf(stderr, "Testing P. Radixsort MSD Fixed Delta\n", current_query);
-	//	progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick);
-	//    c.Clear();
+    fprintf(stderr, "Testing P. Radixsort MSD Fixed Delta\n", current_query);
+    progressive_indexing(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick);
+    c.Clear();
 
 	//! Run Workload on all algorithms INTERACTIVITY_THRESHOLD = 1.2*FS
 	fprintf(stderr, "Testing P. QuickSort Variable Delta\n", current_query);
@@ -94,8 +94,8 @@ TEST_CASE("Check all algorithms under Uniform Random", "[Random]") {
 	progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_radixsort_lsd,
 	                                get_estimated_time_radixsort_lsd);
 	c.Clear();
-	// fprintf(stderr, "Testing P. Radixsort MSD Variable Delta\n", current_query);
+	fprintf(stderr, "Testing P. Radixsort MSD Variable Delta\n", current_query);
 
-	// progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick,
-	//	                                get_estimated_time_radixsort_msd_noquick);
+	progressive_indexing_cost_model(c, rangequeries, answers, deltas, range_query_incremental_radixsort_msd_noquick,
+		                                get_estimated_time_radixsort_msd_noquick);
 }
