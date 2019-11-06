@@ -1,4 +1,4 @@
-# Progressive Indexing ![Build](https://github.com/pdet/MultidimensionalAdaptiveIndexing/workflows/CI/badge.svg)
+# Progressive Indexing ![Build](https://github.com/pdet/ProgressiveIndexing/workflows/CI/badge.svg)
 
 This project is a stand-alone implementation of all the current progressive indexing algorithms.
 
