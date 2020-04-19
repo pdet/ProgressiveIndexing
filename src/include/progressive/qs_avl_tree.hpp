@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <vector>
 
 //! From stackoverflow nice templated function to static_cast unique_ptr
 //! conversion: unique_ptr<FROM>->FROM*->TO*->unique_ptr<TO>
