@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
-project(ProgressiveIndexingTests)
+project(ProgressiveUpdatesTests)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 # Catch lib for unit tests
 include(ExternalProject)
@@ -16,9 +16,11 @@ ExternalProject_Add(catch2
         )
 
 include_directories(${CMAKE_SOURCE_DIR}/deps/include/catch2)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -Og -g -march=native -fsanitize=address")
+set(CMAKE_VERBOSE_MAKEFILE  ON)
 
 # Compile tests
 set(TEST_SOURCES test.cpp)
-add_executable(tests ${TEST_SOURCES})
-target_link_libraries(tests PI_lib)
-add_dependencies(tests catch2)
+add_executable(PITest ${TEST_SOURCES})
+target_link_libraries(PITest ProgressiveIndexing)
+add_dependencies(PITest catch2)
