@@ -1,12 +1,11 @@
-  
-name: Ubuntu
+name: Mac
 
 on: [push]
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     
     
     steps:
