@@ -240,7 +240,7 @@ ResultStruct ProgressiveQuicksort::create(vector<int64_t>& originalColumn, ssize
 
     //! Check if we are finished with the initial run
     if (next_index == originalColumn.size()) {
-        cout << "created" << endl;
+//        cout << "created" << endl;
         assert(root->current_start >= root->current_end);
         //! construct the left and right side of the root node
         int64_t pivot = column->size / 4;
@@ -349,7 +349,7 @@ int64_t ProgressiveQuicksort::run_query(std::vector<int64_t>& originalColumn, in
         //! Creation Phase
         //! TODO: We might still have swaps left to do after the  creation phase Need to implement a smooth transition
         result = create(originalColumn, remaining_swaps, low, high);
-        cout << query_it << "  creating"<< endl;
+//        cout << query_it << "  creating"<< endl;
     } else if (tree->root.get() && !tree->noChildren()) {
         //! Refinement Phase
         //! TODO: We might still have swaps left to do after the refinement phase Need to implement a smooth transition
@@ -363,7 +363,7 @@ int64_t ProgressiveQuicksort::run_query(std::vector<int64_t>& originalColumn, in
     } else {
         //! Consolidation Phase
         if (!fullIndex.get()) {
-            cout << "converged" << endl;
+//            cout << "converged" << endl;
             consolidate(remaining_swaps);
         }
         result = consolidate_scan(low, high);
@@ -371,7 +371,7 @@ int64_t ProgressiveQuicksort::run_query(std::vector<int64_t>& originalColumn, in
     auto endTimer = system_clock::now();
    time[query_it] += duration<double>(endTimer - startTimer).count();
 
-    cout <<  time[query_it] << "\n";
+//    cout <<  time[query_it] << "\n";
 
     return result.sum;
 }

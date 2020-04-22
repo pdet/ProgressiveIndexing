@@ -8,8 +8,8 @@ using namespace chrono;
 // algorithm_id){
 //  load_column(column_path);
 //}
-Experiments::Experiments(unique_ptr<vector<int64_t>> column, unique_ptr<vector<RangeQuery>> queries, unique_ptr<vector<IndexId>> algorithms)
-    : column(move(column)), queries(move(queries)), algorithms(move(algorithms)) {}
+Experiments::Experiments(unique_ptr<vector<int64_t>> column, unique_ptr<vector<RangeQuery>> queries, IndexId algorithm)
+    : column(move(column)), queries(move(queries)), algorithm(algorithm) {}
 
 void Experiments::progressive_indexing_initialize() {
 
@@ -42,10 +42,17 @@ void Experiments::run() {
     //! Initialize Profiling
     time = make_unique<std::vector<double>>(queries->size());
 
-    //! Run Algorithms
-    for (auto const& algorithm : *algorithms) {
-        switch (algorithm) {
-        case IndexId ::PROGRESSIVEINDEXING: {
+    //! Run Algorithm
+	switch (algorithm) {
+        case IndexId ::PROGRESSIVEQUICKSORT: {
+		    interactivity_threshold =0;
+            for (size_t i = 0; i < queries->size(); i++) {
+                progressive_indexing(i);
+            }
+            break;
+        }
+	    case IndexId ::PROGRESSIVEQUICKSORTCM: {
+		    interactivity_threshold = 1.2;
             progressive_indexing_initialize();
             for (size_t i = 0; i < queries->size(); i++) {
                 progressive_indexing(i);
@@ -53,31 +60,48 @@ void Experiments::run() {
             break;
         }
         default:
-            throw "Algorithm Does Not Exist";
+            throw invalid_argument("Algorithm Does Not Exist");
         }
-    }
+
 }
 
-int64_t Experiments::run_query(size_t query_it) {
+int64_t Experiments::run_query(size_t query_it, int64_t &result) {
     //! Initialize Profiling if we are running first query
     if (query_it == 0) {
         progressive_indexing_initialize();
         time = make_unique<std::vector<double>>(queries->size());
     }
-    for (auto const& algorithm : *algorithms) {
         switch (algorithm) {
-        case IndexId ::PROGRESSIVEINDEXING: {
+        case IndexId ::PROGRESSIVEQUICKSORT: {
+		    interactivity_threshold =0;
             return progressive_indexing(query_it);
         }
-
-        default:
-            throw "Algorithm Does Not Exist";
+		case IndexId ::PROGRESSIVEQUICKSORTCM: {
+		    interactivity_threshold = 1.2;
+            return progressive_indexing(query_it);
         }
-    }
+        default:
+            throw invalid_argument("Algorithm Does Not Exist");
+        }
+
 }
 void Experiments::print_results() {
+	int alg_id;
+	switch (algorithm) {
+	case IndexId ::PROGRESSIVEQUICKSORT: {
+		alg_id = 1;
+		break;
+	}
+	case IndexId ::PROGRESSIVEQUICKSORTCM: {
+		alg_id = 2;
+		break;
+	}
+	default:
+            throw invalid_argument("Algorithm Does Not Exist");
+	}
+        //! algorithm, query#, time
     for (size_t i = 0; i < time->size(); i++) {
-        cout << time->at(i) << "\n";
+        cout << alg_id<< "," << i << "," << time->at(i)<< "\n";
     }
 };
 

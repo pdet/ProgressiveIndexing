@@ -2,7 +2,9 @@
                           //! this in one cpp file
 
 #include <catch.hpp>
+#include <algorithm>
 #include <experiment/experiments.hpp>
+#include <random>
 
 using namespace std;
 using namespace chrono;
@@ -27,10 +29,6 @@ int64_t full_scan(vector<int64_t>& c, int64_t posL, int64_t posH) {
 TEST_CASE("Progressive Indexing", "[PI]") {
     cout << "Progressive Indexing"<< endl;
 
-    //! Algorithms for Testing
-    auto algorithms = make_unique<vector<IndexId>>();
-    algorithms->push_back(IndexId::PROGRESSIVEINDEXING);
-
     //! Generate Column
     auto column = make_unique<vector<int64_t>>(column_size);
     for (size_t i = 0; i < column_size; i++) {
@@ -49,7 +47,7 @@ TEST_CASE("Progressive Indexing", "[PI]") {
     }
 
     //! Generate actual experiment class
-    Experiments experiment(move(column), move(queries), move(algorithms));
+    Experiments experiment(move(column), move(queries), IndexId::PROGRESSIVEQUICKSORT);
 
 
     //! Set test flag on
@@ -58,7 +56,8 @@ TEST_CASE("Progressive Indexing", "[PI]") {
     for (size_t i = 0; i < experiment.queries->size(); i++) {
         auto left_predicate = experiment.queries->at(i).left_predicate;
         auto right_predicate = experiment.queries->at(i).right_predicate;
-        int64_t result = experiment.run_query(i);
+		int64_t result;
+		experiment.run_query(i,result);
         int64_t answer = full_scan(*experiment.column, left_predicate, right_predicate);
         REQUIRE(result == answer);
     }
@@ -66,10 +65,6 @@ TEST_CASE("Progressive Indexing", "[PI]") {
 
 TEST_CASE("Progressive Indexing Cost Model", "[PI]") {
     cout << "Progressive Indexing Cost Model" << endl;
-
-    //! Algorithms for Testing
-    auto algorithms = make_unique<vector<IndexId>>();
-    algorithms->push_back(IndexId::PROGRESSIVEINDEXING);
 
     //! Generate Column
     auto column = make_unique<vector<int64_t>>(column_size);
@@ -89,7 +84,7 @@ TEST_CASE("Progressive Indexing Cost Model", "[PI]") {
     }
 
     //! Generate actual experiment class
-    Experiments experiment(move(column), move(queries), move(algorithms));
+    Experiments experiment(move(column), move(queries), IndexId::PROGRESSIVEQUICKSORTCM);
 
     //! Set test flag on
     // experiment.test = true;
@@ -100,7 +95,8 @@ TEST_CASE("Progressive Indexing Cost Model", "[PI]") {
     for (size_t i = 0; i < experiment.queries->size(); i++) {
         auto left_predicate = experiment.queries->at(i).left_predicate;
         auto right_predicate = experiment.queries->at(i).right_predicate;
-        int64_t result = experiment.run_query(i);
+        int64_t result;
+		experiment.run_query(i,result);
         int64_t answer = full_scan(*experiment.column,  left_predicate, right_predicate);
         REQUIRE(result == answer);
     }
